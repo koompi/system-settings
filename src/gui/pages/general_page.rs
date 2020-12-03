@@ -153,9 +153,11 @@ impl General {
                                 Button::new(
                                     light_btn,
                                     Image::new(format!(
-                                        "{}/assets/images/account.svg",
+                                        "{}/assets/images/light_theme.png",
                                         env!("CARGO_MANIFEST_DIR")
-                                    )),
+                                    ))
+                                    .width(Length::Units(90))
+                                    .height(Length::Units(60)),
                                 )
                                 .on_press(GeneralMessage::LightButton)
                                 .min_width(80)
@@ -172,9 +174,11 @@ impl General {
                                 Button::new(
                                     dark_btn,
                                     Image::new(format!(
-                                        "{}/assets/images/battery.svg",
+                                        "{}/assets/images/dark_theme.png",
                                         env!("CARGO_MANIFEST_DIR")
-                                    )),
+                                    ))
+                                    .width(Length::Units(90))
+                                    .height(Length::Units(60)),
                                 )
                                 .on_press(GeneralMessage::DarkButton)
                                 .min_width(80)
@@ -215,14 +219,14 @@ impl General {
         let header_section = Row::new()
             .spacing(10)
             .width(Length::Fill)
-            .align_items(Align::Start)
+            .align_items(Align::Center)
             .push(
                 Column::new()
                     .width(Length::Fill)
                     .align_items(Align::End)
                     .spacing(10)
-                    .push(Text::new("Appearance").size(16))
-                    .push(Space::with_height(Length::Units(50)))
+                    .push(Text::new("Appearance:").size(16))
+                    .push(Space::with_height(Length::Units(35)))
                     .push(Text::new("Accent color:").size(16))
                     .push(Space::with_height(Length::Units(2)))
                     .push(Text::new("Hightight color:").size(16))
