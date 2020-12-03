@@ -1,6 +1,6 @@
 use super::super::styles::{CustomButton, CustomContainer, CustomRadio, CustomSelect};
 use iced::{
-    button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Image,
+    button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Svg,
     Length, PickList, Radio, Row, Rule, Scrollable, Space, Text,
 };
 #[macro_export]
@@ -152,12 +152,12 @@ impl General {
                             .push(
                                 Button::new(
                                     light_btn,
-                                    Image::new(format!(
-                                        "{}/assets/images/light_theme.png",
+                                    Svg::from_path(format!(
+                                        "{}/assets/images/light.svg",
                                         env!("CARGO_MANIFEST_DIR")
                                     ))
-                                    .width(Length::Units(90))
-                                    .height(Length::Units(60)),
+                                    .width(Length::Units(64))
+                                    .height(Length::Units(64)),
                                 )
                                 .on_press(GeneralMessage::LightButton)
                                 .min_width(80)
@@ -173,12 +173,12 @@ impl General {
                             .push(
                                 Button::new(
                                     dark_btn,
-                                    Image::new(format!(
-                                        "{}/assets/images/dark_theme.png",
+                                    Svg::from_path(format!(
+                                        "{}/assets/images/dark.svg",
                                         env!("CARGO_MANIFEST_DIR")
                                     ))
-                                    .width(Length::Units(90))
-                                    .height(Length::Units(60)),
+                                    .width(Length::Units(64))
+                                    .height(Length::Units(64)),
                                 )
                                 .on_press(GeneralMessage::DarkButton)
                                 .min_width(80)
