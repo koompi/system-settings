@@ -2,9 +2,10 @@
 mod sound_page;
 mod bluetooth_page;
 mod general_page;
-
+mod network_page;
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
+use network_page::{NetMessage, NetworkPage};
 use iced::{Container, Element, Length, Space};
 use sound_page::{SoundMessage, SoundPage};
 
@@ -18,6 +19,7 @@ pub enum PagesMessage {
     BluetoothMessage(BluetoothMessage),
     SoundMessage(SoundMessage),
     GeneralMessage(GeneralMessage),
+    NetMessage(NetMessage)
 }
 
 #[derive(Debug, Clone)]
@@ -32,7 +34,7 @@ pub enum PageModel {
     NotiPage,
     SecurityPage,
     UpdatePage,
-    NetworkPage,
+    NetworkPage {network: NetworkPage},
     BluetoothPageModel { bluetooth_page: BluetoothPage },
     SoundPageModel { sound_page: SoundPage },
     PrinterPage,
@@ -62,7 +64,9 @@ impl Pages {
                 NotiPage,
                 SecurityPage,
                 UpdatePage,
-                NetworkPage,
+                NetworkPage {
+                    network: network_page::NetworkPage::new(),
+                },
                 BluetoothPageModel {
                     bluetooth_page: BluetoothPage::new(),
                 },
@@ -119,6 +123,11 @@ impl PageModel {
                     general_page.update(msg);
                 }
             }
+            NetMessage(msg) => {
+                if let NetworkPage { network} = self {
+                    network.update(msg);
+                }
+            }
         }
     }
 
@@ -137,7 +146,7 @@ impl PageModel {
             NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
             SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
             UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
-            NetworkPage => Container::new(Space::with_width(Length::Shrink)).into(),
+            NetworkPage {network} => network.view().map(move |msg| PagesMessage::NetMessage(msg)),
             BluetoothPageModel { bluetooth_page } => bluetooth_page
                 .view()
                 .map(move |msg| PagesMessage::BluetoothMessage(msg)),
@@ -168,7 +177,7 @@ impl PageModel {
             NotiPage => "Notifications",
             SecurityPage => "Security & Privacy",
             UpdatePage => "Software Update",
-            NetworkPage => "Network",
+            NetworkPage {..} => "Network",
             BluetoothPageModel { .. } => "Bluetooth",
             SoundPageModel { .. } => "Sound",
             PrinterPage => "Printers & Scanners",

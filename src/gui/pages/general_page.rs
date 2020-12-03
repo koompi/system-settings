@@ -65,6 +65,7 @@ impl General {
             scroll_content: scrollable::State::new(),
         }
     }
+    
     pub fn update(&mut self, msg: GeneralMessage) {
         match msg {
             GeneralMessage::CheckboxToggle(value) => {
