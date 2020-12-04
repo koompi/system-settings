@@ -113,13 +113,7 @@ impl Application for SystemSetting {
    }
 
    fn view(&mut self) -> Element<Self::Message> {
-      let search = TextInput::new(&mut self.input_search, "Search", &mut self.search_text, Self::Message::SearchChanged)
-         .padding(10)
-         .max_width(800)
-         .width(Length::Units(500))
-         .size(17)
-         .style(CustomTextInput::Default)
-         .on_submit(Self::Message::ActionSearch);
+      let search = TextInput::new(&mut self.input_search, "Search", &mut self.search_text, Self::Message::SearchChanged).padding(10).max_width(800).width(Length::Units(500)).size(17).style(CustomTextInput::Default).on_submit(Self::Message::ActionSearch);
       let search_section = Container::new(search).center_x().center_y().width(Length::Fill);
       let mut search_bar = Row::new().spacing(20).padding(30);
       if self.selected_pref.is_some() {
@@ -160,8 +154,7 @@ impl Application for SystemSetting {
          });
          
          let personal_section = Container::new(
-            Column::new()
-            .spacing(15)
+            Column::new().spacing(15)
             .push(
                Row::new()
                .push(Space::with_width(Length::Units(20)))
@@ -170,8 +163,7 @@ impl Application for SystemSetting {
             .push(personal_prefs)
          );
          let device_section = Container::new(
-            Column::new()
-            .spacing(15)
+            Column::new().spacing(15)
             .push(
                Row::new()
                .push(Space::with_width(Length::Units(20)))
@@ -181,8 +173,7 @@ impl Application for SystemSetting {
          );
          
          Container::new(
-            Scrollable::new(&mut self.scroll)
-            .padding(20)
+            Scrollable::new(&mut self.scroll).padding(20)
             .push(
                Column::new()
                .spacing(30)
@@ -191,8 +182,7 @@ impl Application for SystemSetting {
                .push(personal_section)
                .push(device_section)
             )
-         )
-         .width(Length::Fill)
+         ).width(Length::Fill)
       };
 
       let content = self.pages.view().map(SystemMessage::PagesMessage);
@@ -214,7 +204,7 @@ impl SystemSetting {
       SystemSetting::run(Settings {
          default_text_size: 13,
          window: window::Settings {
-            min_size: Some((600, 700)),
+            min_size: Some((750, 700)),
             ..window::Settings::default()
          },
          ..Settings::default()

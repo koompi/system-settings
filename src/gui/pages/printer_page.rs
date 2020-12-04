@@ -77,10 +77,7 @@ impl PrinterPage {
          )
       });
       
-      let left_pane = Column::new()
-         .width(Length::Fill)
-         .height(Length::Fill)
-         .spacing(10)
+      let left_pane = Column::new().width(Length::Fill).height(Length::Fill).spacing(10)
          .push(device_group)
          .push(btn_group);
 
@@ -113,11 +110,7 @@ impl PrinterPage {
          )
          .push(bottom_col);
 
-      Container::new(content)
-         .padding(20)
-         .width(Length::FillPortion(15))
-         .height(Length::Fill)
-         .style(CustomContainer::Background).into()
+      Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
    }
 }
 

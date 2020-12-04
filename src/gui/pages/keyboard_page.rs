@@ -1,10 +1,10 @@
 use iced::{
-   pick_list, slider, button, scrollable, Element, Align, Space, Length, Color,
-   Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList, Slider, Svg, Radio,
+   pick_list, slider, button, scrollable, Element, Align, Space, Length, Svg,
+   Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList, Slider, Radio,
 };
 use iced_custom_widget::Icon;
 use vedas_core::svg;
-use super::super::styles::{CustomButton, CustomContainer};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -139,9 +139,9 @@ impl KeyboardPage {
             } = keyboard;
 
             let lb_key_repeat = Text::new("Key Repeat").size(14);
-            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(150));
+            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
             let lb_delay_repeat = Text::new("Delay Until Repeat").size(14);
-            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(150));
+            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
             let key_repeat_row = Row::new().width(Length::Fill).padding(20).spacing(50).align_items(Align::Center)
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
@@ -155,8 +155,8 @@ impl KeyboardPage {
                );
             let key_repeat_con = Container::new(key_repeat_row).center_x();
 
-            let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", KeyboardMessage::AdjustBrightnessToggled).spacing(10);
-            let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", KeyboardMessage::TurnBacklightOffToggled).spacing(10);
+            let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", KeyboardMessage::AdjustBrightnessToggled).spacing(10).style(CustomCheckbox::Default);
+            let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", KeyboardMessage::TurnBacklightOffToggled).spacing(10).style(CustomCheckbox::Default);
             let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged);
             let lb_inactivity = Text::new("of inactivity");
             let keyboard_backligh_off_row = Row::new().spacing(15).align_items(Align::Center)
@@ -200,7 +200,7 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងស្ដាំ
             let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut, state))| {
-               let row = Row::new().align_items(Align::Center).push(Checkbox::new(*is_checked, title.as_str(), KeyboardMessage::RightPaneSelectedToggled)).push(Space::with_width(Length::Fill)).push(Text::new(shortcut.as_str()).color(Color::from_rgb8(41, 98, 255))).push(Space::with_width(Length::Units(27)));
+               let row = Row::new().align_items(Align::Center).push(Checkbox::new(*is_checked, title.as_str(), KeyboardMessage::RightPaneSelectedToggled).spacing(10)).push(Space::with_width(Length::Fill)).push(Text::new(shortcut.as_str())).push(Space::with_width(Length::Units(15)));
                col.push(
                   Button::new(state, row).width(Length::Fill).on_press(KeyboardMessage::RightPaneSelectedChanged(idx)).style(if *right_pane_selected == idx {CustomButton::Selected} else {CustomButton::Text})
                )
@@ -213,14 +213,14 @@ impl KeyboardPage {
             let restore_row = Row::new().spacing(20).align_items(Align::Center).push(Text::new(if *is_restore_clicked {"Processing restore to default settings"} else {""})).push(btn_restore);
             let restore_section = Container::new(restore_row).width(Length::Fill).align_x(Align::End);
             
-            let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyboardMessage::KeyNavToggled).spacing(10);
+            let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyboardMessage::KeyNavToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_hint = Text::new("Press the Tab key to move focus forward and Shift tab to move focus backward.");
 
             let bottom_col = Column::new().spacing(10).width(Length::Fill)
                .push(restore_section)
                .push(Space::with_height(Length::Units(50)))
                .push(chb_keyboard_nav)
-               .push(Row::new().push(Space::with_width(Length::Units(27))).push(txt_hint));
+               .push(Row::new().push(Space::with_width(Length::Units(30))).push(txt_hint));
             
             Container::new(
                Column::new().spacing(10)
@@ -301,8 +301,8 @@ impl KeyboardPage {
             ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
-            let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10);
-            let chb_auto_switch = Checkbox::new(*auto_switch, "Automatically switch to a document's input source", KeyboardMessage::AutoSwitchToggled).spacing(10);
+            let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_switch = Checkbox::new(*auto_switch, "Automatically switch to a document's input source", KeyboardMessage::AutoSwitchToggled).spacing(10).style(CustomCheckbox::Default);
             let bottom_right_col = Column::new().spacing(10)
                .push(chb_show_input_menu)
                .push(chb_auto_switch);
@@ -334,14 +334,14 @@ impl KeyboardPage {
             } = dictation;
 
             // ផ្ទាំងខាងឆ្វេង
-            let mic_image = svg!("assets/images/mic.svg").width(Length::Fill).height(Length::Units(200));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).height(Length::Fill).center_x().center_y();
+            let mic_image = svg!("assets/images/mic.svg").height(Length::Units(150));
+            let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).height(Length::Fill).center_x().center_y();
 
             // ផ្ទាំងខាងស្ដាំ
             let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
             let lb_dictation = Text::new("Dictation:");
-            let rd_dictaion_on = Radio::new(*turn_on_dict, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13);
-            let rd_dictaion_off = Radio::new(!(*turn_on_dict), "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13);
+            let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
+            let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
             let dictation_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_dictation)
                .push(rd_dictaion_on)
@@ -362,10 +362,13 @@ impl KeyboardPage {
             let right_con = Container::new(
                Column::new().spacing(20)
                .push(txt_dictation)
-               .push(dictation_section)
-               .push(language_section)
-               .push(shortcut_section)
-            ).width(Length::FillPortion(6)).height(Length::Fill).center_x();
+               .push(
+                  Column::new().spacing(10)
+                  .push(dictation_section)
+                  .push(language_section)
+                  .push(shortcut_section)
+               )
+            ).width(Length::FillPortion(7)).height(Length::Fill);
          
             Container::new(
                Column::new().spacing(10)
@@ -398,9 +401,7 @@ impl KeyboardPage {
          .push(tabview.height(Length::Fill).padding(20).style(CustomContainer::ForegroundGray))
          .push(bottom_section);
 
-      Container::new(content).width(Length::FillPortion(15)).padding(20)
-         .height(Length::Fill)
-         .style(CustomContainer::Background).into()
+      Container::new(content).width(Length::FillPortion(15)).padding(20).height(Length::Fill).style(CustomContainer::Background).into()
    }
 }
 
