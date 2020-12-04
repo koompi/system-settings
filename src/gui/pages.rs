@@ -2,9 +2,13 @@
 mod sound_page;
 mod general_page;
 mod bluetooth_page;
+mod printer_page;
+mod keyboard_page;
 
 use bluetooth_page::{BluetoothPage, BluetoothMessage};
 use sound_page::{SoundPage, SoundMessage};
+use printer_page::{PrinterPage, PrinterMessage};
+use keyboard_page::{KeyboardPage, KeyboardMessage};
 use iced::{
    Element, Container, Length, Space
 }; 
@@ -18,7 +22,9 @@ pub struct Pages {
 pub enum PagesMessage {
    CheckboxToggle(bool),
    BluetoothMessage(BluetoothMessage),
-   SoundMessage(SoundMessage)
+   SoundMessage(SoundMessage),
+   PrinterMessage(PrinterMessage),
+   KeyboardMessage(KeyboardMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -42,9 +48,12 @@ pub enum PageModel {
    SoundPageModel {
       sound_page: SoundPage
    },
-   PrinterPage,
-   CameraPage,
-   KeyboardPage,
+   PrinterPageModel {
+      printer_page: PrinterPage
+   },
+   KeyboardPageModel {
+      keyboard_page: KeyboardPage
+   },
    TouchpadPage,
    MousePage,
    DisplayPage,
@@ -76,9 +85,12 @@ impl Pages {
             SoundPageModel {
                sound_page: SoundPage::new()
             },
-            PrinterPage,
-            CameraPage,
-            KeyboardPage,
+            PrinterPageModel {
+               printer_page: PrinterPage::new()
+            },
+            KeyboardPageModel {
+               keyboard_page: KeyboardPage::new()
+            },
             TouchpadPage,
             MousePage,
             DisplayPage,
@@ -126,6 +138,16 @@ impl PageModel {
                sound_page.update(msg);
             }
          }
+         PrinterMessage(msg) => {
+            if let PrinterPageModel{ printer_page } = self {
+               printer_page.update(msg);
+            }
+         }
+         KeyboardMessage(msg) => {
+            if let KeyboardPageModel{ keyboard_page } = self {
+               keyboard_page.update(msg);
+            }
+         }
       }
    }
 
@@ -145,9 +167,8 @@ impl PageModel {
          NetworkPage => Container::new(Space::with_width(Length::Shrink)).into(),
          BluetoothPageModel { bluetooth_page } => bluetooth_page.view().map(move |msg| PagesMessage::BluetoothMessage(msg)),
          SoundPageModel{ sound_page } => sound_page.view().map(move |msg| PagesMessage::SoundMessage(msg)),
-         PrinterPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         CameraPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         KeyboardPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         PrinterPageModel{ printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
+         KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
          TouchpadPage=> Container::new(Space::with_width(Length::Shrink)).into(),
          MousePage=> Container::new(Space::with_width(Length::Shrink)).into(),
          DisplayPage=> Container::new(Space::with_width(Length::Shrink)).into(),
@@ -172,9 +193,8 @@ impl PageModel {
          NetworkPage => "Network",
          BluetoothPageModel {..} => "Bluetooth",
          SoundPageModel {..} => "Sound",
-         PrinterPage => "Printers & Scanners",
-         CameraPage => "Camera",
-         KeyboardPage => "Keyboard",
+         PrinterPageModel {..} => "Printers & Scanners",
+         KeyboardPageModel {..} => "Keyboard",
          TouchpadPage=> "Touchpad",
          MousePage=> "Mouse",
          DisplayPage=> "Display",

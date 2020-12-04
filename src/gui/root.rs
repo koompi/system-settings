@@ -18,7 +18,6 @@ pub struct SystemSetting {
    scroll: scrollable::State,
 }
 
-
 #[derive(Debug, Clone)]
 pub enum SystemMessage {
    SearchChanged(String),
@@ -53,7 +52,6 @@ impl Application for SystemSetting {
          pref("bluetooth", "Bluetooth", Hardware),
          pref("sound", "Sound", Hardware),
          pref("printer", "Printers & Scanners", Hardware),
-         pref("camera", "Camera", Hardware),
          pref("keyboard", "Keyboard", Hardware),
          pref("touchpad", "Touchpad", Hardware),
          pref("mouse", "Mouse", Hardware),
@@ -123,17 +121,13 @@ impl Application for SystemSetting {
          .style(CustomTextInput::Default)
          .on_submit(Self::Message::ActionSearch);
       let search_section = Container::new(search).center_x().center_y().width(Length::Fill);
-      let mut back_btn = Button::new(&mut self.back_btn_state, Icon::new('\u{f0ce}').size(20))
-         .padding(7)
-         .style(CustomButton::Text);
+      let mut search_bar = Row::new().spacing(20).padding(30);
       if self.selected_pref.is_some() {
-         back_btn = back_btn.on_press(SystemMessage::NavigateBack);
+         search_bar = search_bar.push(
+            Button::new(&mut self.back_btn_state, Icon::new('\u{f0ce}').size(20)).on_press(SystemMessage::NavigateBack).padding(7).style(CustomButton::Text)
+         );
       }
-      let search_bar = Row::new()
-         .spacing(20)
-         .padding(30)
-         .push(back_btn)
-         .push(search_section);
+      search_bar = search_bar.push(search_section);
 
       let sidebar = if let Some(selected_pref) = &self.selected_pref {
          let (personal_prefs, device_prefs) = self.prefs.iter_mut().enumerate()
@@ -143,24 +137,19 @@ impl Application for SystemSetting {
                   Category::Hardware => (personal_prefs, device_prefs.push(pref.view_sidebar(idx == *selected_pref).map(move |message| SystemMessage::PrefMessage(idx, message))))
                }
             });
-         let personal_section = Column::new()
-            .spacing(15)
+         let personal_section = Column::new().width(Length::Fill).spacing(15).align_items(Align::Center)
             .push(Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             .push(personal_prefs);
-         let device_section = Column::new()
-            .spacing(15)
+         let device_section = Column::new().width(Length::Fill).spacing(15).align_items(Align::Center)
             .push(Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             .push(device_prefs);
          Container::new(
-            Scrollable::new(&mut self.sidebar_scroll)
-            .padding(15)
-            .spacing(20)
-            .scroller_width(5)
-            .scrollbar_width(5)
+            Scrollable::new(&mut self.sidebar_scroll).padding(15).spacing(20).scroller_width(3)
+            .scrollbar_width(3)
             .push(personal_section)
             .push(device_section)
          )
-         .width(Length::Units(110))
+         .width(Length::Units(127)).style(CustomContainer::Background)
       } else {
          let (personal_prefs, device_prefs) = self.prefs.iter_mut().enumerate()
          .fold((Grid::new().column_width(125), Grid::new().column_width(125)), |(personal_prefs, device_prefs), (idx, pref)| {
@@ -209,13 +198,10 @@ impl Application for SystemSetting {
       let content = self.pages.view().map(SystemMessage::PagesMessage);
 
       Container::new(
-         Column::new()
-         .spacing(10)
-         .width(Length::Fill)
+         Column::new().spacing(15).width(Length::Fill)
          .push(search_bar)
          .push(
-            Row::new()
-            .spacing(15)
+            Row::new().spacing(27)
             .push(sidebar)
             .push(content)
          )

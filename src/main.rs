@@ -1,3 +1,5 @@
+#[macro_use]
+pub mod helpers;
 pub mod gui;
 
 use gui::SystemSetting;

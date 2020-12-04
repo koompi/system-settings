@@ -136,7 +136,7 @@ impl text_input::StyleSheet for CustomTextInput {
 
    fn selection_color(&self) -> Color {
       match self {
-         Self::Default => Color::from_rgb8(255, 171, 0)
+         Self::Default => Color::from_rgb8(189, 195, 199)
       }
    }
 
