@@ -10,6 +10,21 @@ use serde_json::Value;
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
+pub enum SoundMessage {
+   TabChanged(usize),
+   SoundEffectDeviceChanged(SoundEffectDevice),
+   AlertVolumeChanged(u8),
+   TogglePlayStartup(bool),
+   TogglePlaySoundEffects(bool),
+   TogglePlayFeedback(bool),
+   OutputVolumeChanged(u8),
+   ToggleMute(bool),
+   ToggleShowVolumn(bool),
+   OutputBalanceChanged(u8),
+   InputVolumeChanged(u8),
+}
+
+#[derive(Debug, Clone)]
 pub struct SoundPage {
     tabbar_state: Vec<(String, button::State)>,
     current_tab_idx: usize,
@@ -263,12 +278,10 @@ impl SoundPage {
                     SoundMessage::OutputBalanceChanged,
                 )
                 .width(Length::Units(150));
-                let balance_row = Row::new()
-                    .spacing(20)
-                    .align_items(Align::Center)
+                let balance_row = Row::new().spacing(20).align_items(Align::Center)
                     .push(lb_balance)
                     .push(slider_balance);
-                let balance_section = Container::new(balance_row).width(Length::Fill).center_x();
+                let balance_section = Container::new(balance_row).width(Length::Fill);
 
                 Container::new(
                     Column::new()
@@ -315,14 +328,12 @@ impl SoundPage {
                 let ic_volume_up = Icon::new('\u{f130}')
                     .size(27)
                     .color(Color::from_rgb8(66, 66, 66));
-                let input_vol_row = Row::new()
-                    .spacing(5)
-                    .align_items(Align::Center)
+                let input_vol_row = Row::new().spacing(5).align_items(Align::Center)
                     .push(lb_balance)
                     .push(ic_volume_down)
                     .push(slider_balance)
                     .push(ic_volume_up);
-                let input_vol_con = Container::new(input_vol_row).width(Length::Fill).center_x();
+                let input_vol_con = Container::new(input_vol_row).width(Length::Fill);
 
                 Container::new(
                     Column::new()
@@ -405,21 +416,6 @@ impl SoundPage {
             .style(CustomContainer::Background)
             .into()
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum SoundMessage {
-    TabChanged(usize),
-    SoundEffectDeviceChanged(SoundEffectDevice),
-    AlertVolumeChanged(u8),
-    TogglePlayStartup(bool),
-    TogglePlaySoundEffects(bool),
-    TogglePlayFeedback(bool),
-    OutputVolumeChanged(u8),
-    ToggleMute(bool),
-    ToggleShowVolumn(bool),
-    OutputBalanceChanged(u8),
-    InputVolumeChanged(u8),
 }
 
 #[derive(Debug, Clone, SmartDefault)]

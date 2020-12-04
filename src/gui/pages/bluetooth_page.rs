@@ -4,6 +4,12 @@ use iced::{
 use super::super::styles::{CustomButton, CustomContainer};
 
 #[derive(Debug, Clone)]
+pub enum BluetoothMessage {
+   ToggleBluetooth,
+   ToggleShowBT(bool),
+}
+
+#[derive(Debug, Clone)]
 pub struct BluetoothPage {
    turn_bt: button::State, 
    advanced_btn: button::State, 
@@ -87,10 +93,4 @@ impl BluetoothPage {
          .height(Length::Fill)
          .style(CustomContainer::Background).into()
    }
-}
-
-#[derive(Debug, Clone)]
-pub enum BluetoothMessage {
-   ToggleBluetooth,
-   ToggleShowBT(bool),
 }
