@@ -34,8 +34,8 @@ impl button::StyleSheet for CustomButton {
                a: 0.3,
                ..ACCENT
             },
-            CustomButton::SelectedTab => Color::WHITE,
-            CustomButton::Text | CustomButton::Tab | CustomButton::Card | CustomButton::Sidebar => Color::TRANSPARENT,
+            CustomButton::SelectedTab | CustomButton::Card  => Color::WHITE,
+            CustomButton::Text | CustomButton::Tab | CustomButton::Sidebar => Color::TRANSPARENT,
             _ => Color::WHITE,
          })),
          border_radius: match self {
