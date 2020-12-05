@@ -11,30 +11,36 @@ const HOVERED: Color = Color::from_rgb(189.0/255.0, 195.0/255.0, 199.0/255.0);
 pub enum CustomButton {
    Default,
    Secondary,
-   Sidebar,
    Text,
    Selected,
+   Sidebar,
+   SelectedSidebar,
    Tab,
    SelectedTab,
+   Card,
+   SelectedCard,
 }
 
 impl button::StyleSheet for CustomButton {
    fn active(&self) -> button::Style {
       button::Style {
          text_color: match self {
-            CustomButton::Selected => ACCENT,
+            CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
+            CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
             _ => Color::BLACK,
          },
          background: Some(Background::Color(match self {
-            CustomButton::Selected | CustomButton::SelectedTab => Color {
+            CustomButton::Selected | CustomButton::SelectedCard | CustomButton::SelectedSidebar => Color {
                a: 0.3,
-               ..ACTIVE
+               ..ACCENT
             },
-            CustomButton::Text | CustomButton::Tab => Color::TRANSPARENT,
+            CustomButton::SelectedTab => Color::WHITE,
+            CustomButton::Text | CustomButton::Tab | CustomButton::Card | CustomButton::Sidebar => Color::TRANSPARENT,
             _ => Color::WHITE,
          })),
          border_radius: match self {
-            CustomButton::Text | CustomButton::Selected => 7.0,
+            CustomButton::Card | CustomButton::SelectedCard => 12.0,
+            CustomButton::Tab | CustomButton::SelectedTab => 7.0,
             _ => 5.0
          },
          border_color: match self {
@@ -42,7 +48,7 @@ impl button::StyleSheet for CustomButton {
             _ => Color::TRANSPARENT,
          },
          border_width: match self {
-            CustomButton::Secondary => 1.0,
+            CustomButton::Secondary | CustomButton::Tab | CustomButton::SelectedTab => 1.0,
             _ => 0.0,
          },
          shadow_offset: match self {
@@ -56,7 +62,7 @@ impl button::StyleSheet for CustomButton {
       let active = self.active();
 
       match self {
-         CustomButton::Sidebar | CustomButton::Text | CustomButton::Tab => button::Style {
+         CustomButton::Sidebar | CustomButton::Text | CustomButton::Tab | CustomButton::Card => button::Style {
             background: Some(Color {
                a: 0.3,
                ..HOVERED
@@ -75,34 +81,34 @@ pub enum CustomContainer {
    Header,
    Segment,
    FadedBrightForeground,
+   Hovered
 }
 
 impl container::StyleSheet for CustomContainer {
    fn style(&self) -> container::Style {
       container::Style {
          background: Some(Background::Color(match self {
-            CustomContainer::Background => BACKGROUND,
+            CustomContainer::Background | CustomContainer::Header => BACKGROUND,
             CustomContainer::ForegroundWhite => Color::WHITE,
-            CustomContainer::ForegroundGray => FOREGROUND,
-            CustomContainer::Segment => Color::TRANSPARENT,
-            CustomContainer::Header => BACKGROUND,
+            CustomContainer::ForegroundGray | CustomContainer::Segment => FOREGROUND,
+            CustomContainer::Hovered => Color{ a: 0.2, ..Color::BLACK},
             CustomContainer::FadedBrightForeground => Color {
                a: 0.8,
-               ..BACKGROUND
+               ..FOREGROUND
             },
          })),
          border_radius: match self {
-            CustomContainer::ForegroundGray | CustomContainer::Segment => 7.0,
+            CustomContainer::Segment => 10.0,
+            CustomContainer::ForegroundGray | CustomContainer::Hovered => 7.0,
             CustomContainer::FadedBrightForeground => 4.0,
             _ => 0.0,
          },
          border_width: match self {
-            CustomContainer::Header | CustomContainer::Segment => 0.5,
+            CustomContainer::Header | CustomContainer::Segment => 1.0,
             _ => 0.0,
          },
          border_color: match self {
             CustomContainer::Header => Color::TRANSPARENT,
-            CustomContainer::Segment => ACCENT,
             _ => BACKGROUND,
          },
          ..container::Style::default()
@@ -291,7 +297,7 @@ pub enum CustomSlider {
 impl slider::StyleSheet for CustomSlider {
    fn active(&self) -> slider::Style {
       slider::Style {
-         rail_colors: (ACTIVE, Color { a: 0.1, ..ACTIVE }),
+         rail_colors: (HOVERED, Color { a: 0.1, ..HOVERED }),
          handle: slider::Handle {
             shape: slider::HandleShape::Circle { radius: 7.0 },
             color: ACTIVE,
@@ -304,15 +310,7 @@ impl slider::StyleSheet for CustomSlider {
    }
 
    fn hovered(&self) -> slider::Style {
-      let active = self.active();
-
-      slider::Style {
-         handle: slider::Handle {
-            color: ACTIVE,
-            ..active.handle
-         },
-         ..active
-      }
+      self.active()
    }
 
    fn dragging(&self) -> slider::Style {
@@ -328,7 +326,7 @@ impl progress_bar::StyleSheet for CustomProgressBar {
    fn style(&self) -> progress_bar::Style {
       progress_bar::Style {
          background: FOREGROUND.into(),
-         bar: ACTIVE.into(),
+         bar: ACCENT.into(),
          border_radius: 7.0,
       }
    }
@@ -343,16 +341,13 @@ impl checkbox::StyleSheet for CustomCheckbox {
       checkbox::Style {
          background: if is_checked { ACTIVE } else { HOVERED }.into(),
          checkmark_color: Color::WHITE,
-         border_radius: 4.0,
+         border_radius: 5.0,
          border_width: 0.0,
          border_color: ACTIVE,
       }
    }
 
    fn hovered(&self, is_checked: bool) -> checkbox::Style {
-      checkbox::Style {
-         background: if is_checked { ACTIVE } else { HOVERED }.into(),
-         ..self.active(is_checked)
-      }
+      self.active(is_checked)
    }
 }

@@ -4,12 +4,14 @@ mod bluetooth_page;
 mod general_page;
 mod keyboard_page;
 mod printer_page;
+mod touchpad_page;
 
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
 use sound_page::{SoundMessage, SoundPage};
 use printer_page::{PrinterPage, PrinterMessage};
 use keyboard_page::{KeyboardPage, KeyboardMessage};
+use touchpad_page::{TouchpadPage, TouchpadMessage};
 use iced::{Container, Element, Length, Space};
 
 pub struct Pages {
@@ -24,6 +26,7 @@ pub enum PagesMessage {
    GeneralMessage(GeneralMessage),
    PrinterMessage(PrinterMessage),
    KeyboardMessage(KeyboardMessage),
+   TouchpadMessage(TouchpadMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -43,7 +46,7 @@ pub enum PageModel {
    SoundPageModel { sound_page: SoundPage },
    PrinterPageModel { printer_page: PrinterPage },
    KeyboardPageModel { keyboard_page: KeyboardPage },
-   TouchpadPage,
+   TouchpadPageModel { touchpad_page: TouchpadPage },
    MousePage,
    DisplayPage,
    BatteryPage,
@@ -80,7 +83,9 @@ impl Pages {
             KeyboardPageModel {
                keyboard_page: KeyboardPage::new(),
             },
-            TouchpadPage,
+            TouchpadPageModel {
+               touchpad_page: TouchpadPage::new(),
+            },
             MousePage,
             DisplayPage,
             BatteryPage,
@@ -137,6 +142,11 @@ impl PageModel {
                keyboard_page.update(msg);
             }
          }
+         TouchpadMessage(msg) => {
+            if let TouchpadPageModel { touchpad_page } = self {
+               touchpad_page.update(msg);
+            }
+         }
       }
    }
 
@@ -158,7 +168,7 @@ impl PageModel {
          SoundPageModel { sound_page } => sound_page.view().map(move |msg| PagesMessage::SoundMessage(msg)),
          PrinterPageModel { printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
          KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
-         TouchpadPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         TouchpadPageModel { touchpad_page } => touchpad_page.view().map(move |msg| PagesMessage::TouchpadMessage(msg)),
          MousePage => Container::new(Space::with_width(Length::Shrink)).into(),
          DisplayPage => Container::new(Space::with_width(Length::Shrink)).into(),
          BatteryPage => Container::new(Space::with_width(Length::Shrink)).into(),
@@ -184,7 +194,7 @@ impl PageModel {
          SoundPageModel { .. } => "Sound",
          PrinterPageModel { .. } => "Printers & Scanners",
          KeyboardPageModel { .. } => "Keyboard",
-         TouchpadPage => "Touchpad",
+         TouchpadPageModel { .. } => "Touchpad",
          MousePage => "Mouse",
          DisplayPage => "Display",
          BatteryPage => "Battery",

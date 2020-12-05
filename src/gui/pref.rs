@@ -43,7 +43,7 @@ impl Pref {
          .height(Length::Units(80))
          .padding(10)
          .on_press(PrefMessage::PrefClicked)
-         .style(CustomButton::Text);
+         .style(CustomButton::Card);
       let name = Text::new(&self.name).horizontal_alignment(HorizontalAlignment::Center);
       let pref = Column::new().spacing(10).align_items(Align::Center).push(icon_button).push(name);
       Container::new(pref).width(Length::Units(100)).into()
@@ -61,8 +61,8 @@ impl Pref {
          .padding(6)
          .on_press(PrefMessage::PrefClicked)
          .style(
-            if is_selected {CustomButton::Selected} 
-            else {CustomButton::Sidebar}
+            if is_selected {CustomButton::SelectedCard} 
+            else {CustomButton::Card}
          ).into()
    }
 }

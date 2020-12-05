@@ -58,8 +58,8 @@ impl PrinterPage {
          default_paper_size,
       } = self;
       // ផ្ទាំងខាងឆ្វេង
-      let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Tab);
-      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Tab);
+      let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Text);
+      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
       if selected_device.is_some() {
          btn_remove = btn_remove.on_press(PrinterMessage::BtnRemoveClicked);
       }
@@ -70,9 +70,9 @@ impl PrinterPage {
       let device_group = ls_devices.iter_mut().enumerate().fold(Column::new().height(Length::Fill).padding(7).spacing(4), |col, (idx, (title, state))| {
          col.push(
             if let Some(selected_idx) = selected_device {
-               Button::new(state, Text::new(title.as_str())).width(Length::Fill).on_press(PrinterMessage::DeviceSelected(idx)).style(if *selected_idx == idx {CustomButton::SelectedTab} else {CustomButton::Tab})
+               Button::new(state, Text::new(title.as_str())).width(Length::Fill).on_press(PrinterMessage::DeviceSelected(idx)).style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
             } else {
-               Button::new(state, Text::new(title.as_str())).width(Length::Fill).on_press(PrinterMessage::DeviceSelected(idx)).style(CustomButton::Tab)
+               Button::new(state, Text::new(title.as_str())).width(Length::Fill).on_press(PrinterMessage::DeviceSelected(idx)).style(CustomButton::Sidebar)
             }
          )
       });

@@ -201,10 +201,17 @@ impl Application for SystemSetting {
 
 impl SystemSetting {
    pub fn init() -> iced::Result {
+      let image = image::open(format!("{}/assets/images/icon.png", env!("CARGO_MANIFEST_DIR")))
+         .expect("Failed to open icon path")
+         .into_rgba8();
+      let (width, height) = image.dimensions();
+      let rgba = image.into_raw();
+
       SystemSetting::run(Settings {
          default_text_size: 13,
          window: window::Settings {
             min_size: Some((750, 700)),
+            icon: Some(window::Icon::from_rgba(rgba, width, height).expect("Failed to open icon")),
             ..window::Settings::default()
          },
          ..Settings::default()

@@ -192,21 +192,21 @@ impl KeyboardPage {
             // ផ្ទាំងខាងឆ្វេង
             let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
                col.push(
-                  Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedTab} else {CustomButton::Tab})
+                  Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                )
             });
             
-            let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            let left_pane = Container::new(left_tab_col).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
             let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut, state))| {
-               let row = Row::new().align_items(Align::Center).push(Checkbox::new(*is_checked, title.as_str(), KeyboardMessage::RightPaneSelectedToggled).spacing(10)).push(Space::with_width(Length::Fill)).push(Text::new(shortcut.as_str())).push(Space::with_width(Length::Units(15)));
+               let row = Row::new().align_items(Align::Center).push(Checkbox::new(*is_checked, title.as_str(), KeyboardMessage::RightPaneSelectedToggled).spacing(10).style(CustomCheckbox::Default)).push(Space::with_width(Length::Fill)).push(Text::new(shortcut.as_str())).push(Space::with_width(Length::Units(15)));
                col.push(
                   Button::new(state, row).width(Length::Fill).on_press(KeyboardMessage::RightPaneSelectedChanged(idx)).style(if *right_pane_selected == idx {CustomButton::Selected} else {CustomButton::Text})
                )
             });
 
-            let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            let right_pane = Container::new(right_pane_col).width(Length::FillPortion(7)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
             let btn_restore = Button::new(btn_restore, Text::new("Restore Defaults")).on_press(KeyboardMessage::RestoreDefaultClicked(!(*is_restore_clicked))).style(CustomButton::Default);
@@ -256,14 +256,14 @@ impl KeyboardPage {
             let left_tab_col = input_sources_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
                col.push(
                   if let Some(selected_idx) = input_sources_selected {
-                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(if *selected_idx == idx {CustomButton::SelectedTab} else {CustomButton::Tab})
+                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                   } else {
-                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(CustomButton::Tab)
+                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(CustomButton::Sidebar)
                   }
                )
             });
-            let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Tab);
-            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Tab);
+            let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
+            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
             if input_sources_selected.is_some() && tab_len > 1 {
                btn_remove = btn_remove.on_press(KeyboardMessage::BtnRemoveClicked);
             }
@@ -274,7 +274,7 @@ impl KeyboardPage {
                Column::new()
                .push(left_tab_col)
                .push(btn_group)
-            ).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            ).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
             let keyboard_image_con = match input_sources_selected {
@@ -298,7 +298,7 @@ impl KeyboardPage {
 
             let right_pane = Container::new(
                Scrollable::new(right_pane_scroll).push(keyboard_image_con)
-            ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            ).width(Length::FillPortion(7)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
             let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
