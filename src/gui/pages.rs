@@ -5,6 +5,8 @@ mod general_page;
 mod keyboard_page;
 mod printer_page;
 mod touchpad_page;
+mod mouse_page;
+mod display_page;
 
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
@@ -12,6 +14,8 @@ use sound_page::{SoundMessage, SoundPage};
 use printer_page::{PrinterPage, PrinterMessage};
 use keyboard_page::{KeyboardPage, KeyboardMessage};
 use touchpad_page::{TouchpadPage, TouchpadMessage};
+use mouse_page::{MousePage, MouseMessage};
+use display_page::{DisplayPage, DisplayMessage};
 use iced::{Container, Element, Length, Space};
 
 pub struct Pages {
@@ -27,6 +31,8 @@ pub enum PagesMessage {
    PrinterMessage(PrinterMessage),
    KeyboardMessage(KeyboardMessage),
    TouchpadMessage(TouchpadMessage),
+   MouseMessage(MouseMessage),
+   DisplayMessage(DisplayMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -47,8 +53,8 @@ pub enum PageModel {
    PrinterPageModel { printer_page: PrinterPage },
    KeyboardPageModel { keyboard_page: KeyboardPage },
    TouchpadPageModel { touchpad_page: TouchpadPage },
-   MousePage,
-   DisplayPage,
+   MousePageModel { mouse_page: MousePage },
+   DisplayPageModel { display_page: DisplayPage },
    BatteryPage,
    DiskDrivePage,
 }
@@ -86,8 +92,12 @@ impl Pages {
             TouchpadPageModel {
                touchpad_page: TouchpadPage::new(),
             },
-            MousePage,
-            DisplayPage,
+            MousePageModel {
+               mouse_page: MousePage::new()
+            },
+            DisplayPageModel {
+               display_page: DisplayPage::new()
+            },
             BatteryPage,
             DiskDrivePage,
          ],
@@ -147,6 +157,16 @@ impl PageModel {
                touchpad_page.update(msg);
             }
          }
+         MouseMessage(msg) => {
+            if let MousePageModel { mouse_page } = self {
+               mouse_page.update(msg);
+            }
+         }
+         DisplayMessage(msg) => {
+            if let DisplayPageModel { display_page } = self {
+               display_page.update(msg);
+            }
+         }
       }
    }
 
@@ -169,8 +189,8 @@ impl PageModel {
          PrinterPageModel { printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
          KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
          TouchpadPageModel { touchpad_page } => touchpad_page.view().map(move |msg| PagesMessage::TouchpadMessage(msg)),
-         MousePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         DisplayPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         MousePageModel { mouse_page } => mouse_page.view().map(move |msg| PagesMessage::MouseMessage(msg)),
+         DisplayPageModel { display_page } => display_page.view().map(move |msg| PagesMessage::DisplayMessage(msg)),
          BatteryPage => Container::new(Space::with_width(Length::Shrink)).into(),
          DiskDrivePage => Container::new(Space::with_width(Length::Shrink)).into(),
       }
@@ -195,8 +215,8 @@ impl PageModel {
          PrinterPageModel { .. } => "Printers & Scanners",
          KeyboardPageModel { .. } => "Keyboard",
          TouchpadPageModel { .. } => "Touchpad",
-         MousePage => "Mouse",
-         DisplayPage => "Display",
+         MousePageModel { .. } => "Mouse",
+         DisplayPageModel { .. } => "Display",
          BatteryPage => "Battery",
          DiskDrivePage => "Disk Drive",
       }

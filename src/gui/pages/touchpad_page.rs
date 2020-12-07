@@ -323,7 +323,7 @@ impl TouchpadPage {
       // ផ្នែកខាងក្រោម
       let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
          .push(Text::new(if *is_setup_bt_touchpad {"Sorry, It's just UI"} else {""}))
-         .push(Button::new(btn_setup_bt_touchpad, Text::new("Set Up Bluetooth Touchpad...")).style(CustomButton::Default).on_press(TouchpadMessage::SetUpBluetoothTouchpad(!self.is_setup_bt_touchpad)));
+         .push(Button::new(btn_setup_bt_touchpad, Text::new("  Set Up Bluetooth Touchpad...  ")).style(CustomButton::Default).on_press(TouchpadMessage::SetUpBluetoothTouchpad(!self.is_setup_bt_touchpad)));
       let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
       // មាតិកា   

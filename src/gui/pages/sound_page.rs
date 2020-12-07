@@ -101,9 +101,7 @@ impl SoundPage {
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(name.as_str()))
-            .padding(5)
-            .on_press(SoundMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(SoundMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -132,14 +130,9 @@ impl SoundPage {
             let label_alert_sound = Text::new("Select an alert sound:").size(14);
             let mut device_pane_col = Scrollable::new(alert_sound_scroll).width(Length::Fill);
 
-            device_pane_col = AlertSound::ALL
-               .iter()
-               .enumerate()
-               .fold(device_pane_col, |col, (idx, alert_sound)| {
+            device_pane_col = AlertSound::ALL.iter().enumerate().fold(device_pane_col, |col, (idx, alert_sound)| {
                   let mut alert_con = Container::new(
-                     Row::new()
-                        .padding(3)
-                        .align_items(Align::Center)
+                     Row::new().padding(3).align_items(Align::Center)
                         .push(Space::with_width(Length::Units(7)))
                         .push(Text::new(alert_sound.to_string())),
                   )
@@ -154,90 +147,53 @@ impl SoundPage {
             let device_pane = Container::new(
                Column::new()
                   .push(
-                     Container::new(Text::new("Names").size(12))
-                        .width(Length::Fill)
-                        .padding(7)
-                        .style(CustomContainer::Header),
+                     Container::new(Text::new("Names").size(12)).width(Length::Fill).padding(7).style(CustomContainer::Header),
                   )
                   .push(device_pane_col),
-            )
-            .height(Length::Units(150))
-            .style(CustomContainer::ForegroundWhite);
+            ).height(Length::Units(150)).style(CustomContainer::ForegroundWhite);
 
             let lb_sound_effect = Text::new("Play sound effects through:");
-            let pl_sound_effect = PickList::new(
-               sound_effect_device,
-               &SoundEffectDevice::ALL[..],
-               Some(*selected_sound_effect_device),
-               SoundMessage::SoundEffectDeviceChanged,
-            );
-            let sound_effect_device = Row::new()
-               .spacing(10)
-               .align_items(Align::Center)
+            let pl_sound_effect = PickList::new(sound_effect_device, &SoundEffectDevice::ALL[..], Some(*selected_sound_effect_device), SoundMessage::SoundEffectDeviceChanged);
+            let sound_effect_device = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_sound_effect)
                .push(pl_sound_effect)
                .push(Space::with_width(Length::Units(180)));
 
             let lb_alert_volumn = Text::new("Alert volume:");
             let ic_volumn_down = Icon::new('\u{f027}').size(27).color(Color::from_rgb8(66, 66, 66));
-            let slider_alert_volumn = Slider::new(
-               alert_volumn_state,
-               0..=100,
-               *alert_volumn_value,
-               SoundMessage::AlertVolumeChanged,
-            ).width(Length::Units(227)).style(CustomSlider::Default);
+            let slider_alert_volumn = Slider::new(alert_volumn_state, 0..=100, *alert_volumn_value, SoundMessage::AlertVolumeChanged).width(Length::Units(227)).style(CustomSlider::Default);
             let ic_volumn_up = Icon::new('\u{f028}').size(27).color(Color::from_rgb8(66, 66, 66));
-            let alert_volumn_section = Row::new()
-               .spacing(10)
-               .align_items(Align::Center)
+            let alert_volumn_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_alert_volumn)
                .push(ic_volumn_down)
                .push(slider_alert_volumn)
                .push(ic_volumn_up);
 
-            let chk_play_on_startup =
-               Checkbox::new(*play_on_startup, "Play sound on startup", SoundMessage::TogglePlayStartup).spacing(10).style(CustomCheckbox::Default);
-            let chk_play_sound_effects = Checkbox::new(
-               *play_sound_effects,
-               "Play user interface sound effects",
-               SoundMessage::TogglePlaySoundEffects,
-            ).spacing(10).style(CustomCheckbox::Default);
-            let chk_play_feedback = Checkbox::new(
-               *play_feedback,
-               "Play feedback when volume is changed",
-               SoundMessage::TogglePlayFeedback,
-            ).spacing(10).style(CustomCheckbox::Default);
+            let chk_play_on_startup = Checkbox::new(*play_on_startup, "Play sound on startup", SoundMessage::TogglePlayStartup).spacing(10).style(CustomCheckbox::Default);
+            let chk_play_sound_effects = Checkbox::new(*play_sound_effects, "Play user interface sound effects", SoundMessage::TogglePlaySoundEffects).spacing(10).style(CustomCheckbox::Default);
+            let chk_play_feedback = Checkbox::new(*play_feedback, "Play feedback when volume is changed", SoundMessage::TogglePlayFeedback).spacing(10).style(CustomCheckbox::Default);
 
             let container = Container::new(
-               Column::new()
-                  .width(Length::Fill)
-                  .spacing(10)
-                  .align_items(Align::Center)
-                  .push(sound_effect_device)
-                  .push(alert_volumn_section)
+               Column::new().width(Length::Fill).spacing(10).align_items(Align::Center)
+               .push(sound_effect_device)
+               .push(alert_volumn_section)
+               .push(
+                  Row::new()
+                  .push(Space::with_width(Length::Units(10)))
                   .push(
-                     Row::new()
-                        .push(chk_play_on_startup)
-                        .push(Space::with_width(Length::Units(80))),
-                  )
-                  .push(
-                     Row::new()
-                        .push(chk_play_sound_effects)
-                        .push(Space::with_width(Length::Units(25))),
-                  )
-                  .push(Row::new().push(Space::with_width(Length::Units(10))).push(chk_play_feedback)),
-            )
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x()
-            .center_y();
+                     Column::new().spacing(10)
+                     .push(chk_play_on_startup)
+                     .push(chk_play_sound_effects)
+                     .push(chk_play_feedback)
+                  ),
+               )
+            ).width(Length::Fill).height(Length::Fill).center_x().center_y();
 
             Container::new(
-               Column::new()
-                  .spacing(10)
-                  .push(label_alert_sound)
-                  .push(device_pane)
-                  .push(container),
+               Column::new().spacing(10)
+               .push(label_alert_sound)
+               .push(device_pane)
+               .push(container),
             )
          }
          1 => {
@@ -254,24 +210,16 @@ impl SoundPage {
 
             let lb_selected_device = Text::new("Settings for the selected device:");
             let lb_balance = Text::new("Balance:");
-            let slider_balance = Slider::new(
-               balance_output_state,
-               0..=100,
-               *balance_output_value,
-               SoundMessage::OutputBalanceChanged,
-            ).width(Length::Units(150)).style(CustomSlider::Default);
-            let balance_row = Row::new()
-               .spacing(20)
-               .align_items(Align::Center)
+            let slider_balance = Slider::new(balance_output_state, 0..=100, *balance_output_value, SoundMessage::OutputBalanceChanged).width(Length::Units(150)).style(CustomSlider::Default);
+            let balance_row = Row::new().spacing(20).align_items(Align::Center)
                .push(lb_balance)
                .push(slider_balance);
             let balance_section = Container::new(balance_row).width(Length::Fill);
 
             Container::new(
-               Column::new()
-                  .spacing(20)
-                  .push(Column::new().spacing(7).push(lb_output_device).push(tb_output_device))
-                  .push(Column::new().spacing(15).push(lb_selected_device).push(balance_section)),
+               Column::new().spacing(20)
+               .push(Column::new().spacing(7).push(lb_output_device).push(tb_output_device))
+               .push(Column::new().spacing(15).push(lb_selected_device).push(balance_section)),
             )
          }
          2 => {
@@ -289,16 +237,9 @@ impl SoundPage {
             let lb_selected_device = Text::new("Settings for the selected device:");
             let lb_balance = Text::new("Input volume:");
             let ic_volume_down = Icon::new('\u{f131}').size(27).color(Color::from_rgb8(66, 66, 66));
-            let slider_balance = Slider::new(
-               input_volume_state,
-               0..=100,
-               *input_volume_value,
-               SoundMessage::InputVolumeChanged,
-            ).width(Length::Units(200)).style(CustomSlider::Default);
+            let slider_balance = Slider::new(input_volume_state, 0..=100, *input_volume_value, SoundMessage::InputVolumeChanged).width(Length::Units(200)).style(CustomSlider::Default);
             let ic_volume_up = Icon::new('\u{f130}').size(27).color(Color::from_rgb8(66, 66, 66));
-            let input_vol_row = Row::new()
-               .spacing(5)
-               .align_items(Align::Center)
+            let input_vol_row = Row::new().spacing(5).align_items(Align::Center)
                .push(lb_balance)
                .push(ic_volume_down)
                .push(slider_balance)
@@ -306,10 +247,9 @@ impl SoundPage {
             let input_vol_con = Container::new(input_vol_row).width(Length::Fill);
 
             Container::new(
-               Column::new()
-                  .spacing(20)
-                  .push(Column::new().spacing(7).push(lb_input_device).push(tb_input_device))
-                  .push(Column::new().spacing(15).push(lb_selected_device).push(input_vol_con)),
+               Column::new().spacing(20)
+               .push(Column::new().spacing(7).push(lb_input_device).push(tb_input_device))
+               .push(Column::new().spacing(15).push(lb_selected_device).push(input_vol_con)),
             )
          }
          _ => Container::new(Space::with_height(Length::Fill)),
@@ -318,12 +258,7 @@ impl SoundPage {
       // ផ្នែកខាងក្រោម
       let lb_output_volumn = Text::new("Output volume:");
       let ic_volumn_down = Icon::new('\u{f027}').size(27).color(Color::from_rgb8(66, 66, 66));
-      let slider_output_volumn = Slider::new(
-         output_volumn_state,
-         0..=100,
-         *output_volumn_value,
-         SoundMessage::OutputVolumeChanged,
-      ).width(Length::Units(227)).style(CustomSlider::Default);
+      let slider_output_volumn = Slider::new(output_volumn_state, 0..=100, *output_volumn_value, SoundMessage::OutputVolumeChanged).width(Length::Units(227)).style(CustomSlider::Default);
       let ic_volumn_up = Icon::new('\u{f028}').size(27).color(Color::from_rgb8(66, 66, 66));
       let chk_mute = Checkbox::new(*mute, "Mute", SoundMessage::ToggleMute).spacing(10).style(CustomCheckbox::Default);
       let chk_show_volumn = Checkbox::new(*show_volumn, "Show volume in menu bar", SoundMessage::ToggleShowVolumn).spacing(10).style(CustomCheckbox::Default);

@@ -86,7 +86,7 @@ impl PrinterPage {
             Column::new().spacing(10).align_items(Align::Center)
             .push(Text::new("No printers are available."))
             .push(Text::new("Click Add (+) to set up a printer."))
-         ).height(Length::Fill).width(Length::FillPortion(12)).center_x().center_y().style(CustomContainer::ForegroundGray);
+         ).height(Length::Fill).width(Length::FillPortion(6)).center_x().center_y().style(CustomContainer::ForegroundGray);
 
       // ផ្នែកខាងក្រោម
       let lb_printer = Text::new("Default printer:");

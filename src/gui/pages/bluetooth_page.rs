@@ -43,7 +43,7 @@ impl BluetoothPage {
       let bt = Container::new(bt_logo).width(Length::Units(150)).height(Length::Units(150)).center_x();
       let bt_state = |is_on| if is_on {"On"} else {"Off"};
       let bt_text = Text::new(format!("Bluetooth: {}", bt_state(self.is_on))).size(15);
-      let turn_bt_btn = Button::new(&mut self.turn_bt, Text::new(format!("Turn Bluetooth {}", bt_state(!self.is_on)))).on_press(BluetoothMessage::ToggleBluetooth).style(CustomButton::Default);
+      let turn_bt_btn = Button::new(&mut self.turn_bt, Text::new(format!("  Turn Bluetooth {}  ", bt_state(!self.is_on)))).on_press(BluetoothMessage::ToggleBluetooth).style(CustomButton::Default);
       let mut left_pane = Column::new().spacing(10).align_items(Align::Center)
          .push(bt)
          .push(bt_text)
@@ -68,7 +68,7 @@ impl BluetoothPage {
 
       let device_pane = Container::new(device_pane_col).height(Length::Fill).style(CustomContainer::ForegroundWhite);
       let chk_show = Checkbox::new(self.show_in_menu_bar, "Show Bluetooth in menu bar", BluetoothMessage::ToggleShowBT).spacing(10).style(CustomCheckbox::Default);
-      let advanced_btn = Button::new(&mut self.advanced_btn, Text::new("Advanced")).style(CustomButton::Default);
+      let advanced_btn = Button::new(&mut self.advanced_btn, Text::new("  Advanced  ")).style(CustomButton::Default);
       let bottom = Row::new().push(chk_show).push(Space::with_width(Length::Fill)).push(advanced_btn);
       let right_pane = Column::new().spacing(20)
          .push(device_pane)

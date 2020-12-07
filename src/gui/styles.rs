@@ -81,7 +81,8 @@ pub enum CustomContainer {
    Header,
    Segment,
    FadedBrightForeground,
-   Hovered
+   Hovered,
+   Primary
 }
 
 impl container::StyleSheet for CustomContainer {
@@ -96,6 +97,7 @@ impl container::StyleSheet for CustomContainer {
                a: 0.8,
                ..FOREGROUND
             },
+            CustomContainer::Primary => Color { a: 0.7, ..ACCENT }
          })),
          border_radius: match self {
             CustomContainer::Segment => 10.0,
@@ -105,10 +107,12 @@ impl container::StyleSheet for CustomContainer {
          },
          border_width: match self {
             CustomContainer::Header | CustomContainer::Segment => 1.0,
+            CustomContainer::Primary => 0.5,
             _ => 0.0,
          },
          border_color: match self {
             CustomContainer::Header => Color::TRANSPARENT,
+            CustomContainer::Primary => Color::BLACK,
             _ => BACKGROUND,
          },
          ..container::Style::default()
@@ -297,10 +301,10 @@ pub enum CustomSlider {
 impl slider::StyleSheet for CustomSlider {
    fn active(&self) -> slider::Style {
       slider::Style {
-         rail_colors: (HOVERED, Color { a: 0.1, ..HOVERED }),
+         rail_colors: (ACCENT, Color::TRANSPARENT),
          handle: slider::Handle {
-            shape: slider::HandleShape::Circle { radius: 7.0 },
-            color: ACTIVE,
+            shape: slider::HandleShape::Circle { radius: 9.0 },
+            color: ACCENT,
             border_width: match self {
                CustomSlider::Default => 0.0
             },
@@ -339,11 +343,11 @@ pub enum CustomCheckbox {
 impl checkbox::StyleSheet for CustomCheckbox {
    fn active(&self, is_checked: bool) -> checkbox::Style {
       checkbox::Style {
-         background: if is_checked { ACTIVE } else { HOVERED }.into(),
+         background: if is_checked { ACCENT } else { HOVERED }.into(),
          checkmark_color: Color::WHITE,
          border_radius: 5.0,
          border_width: 0.0,
-         border_color: ACTIVE,
+         border_color: ACCENT,
       }
    }
 
