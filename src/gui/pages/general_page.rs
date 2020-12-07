@@ -1,7 +1,7 @@
 use super::super::styles::{CustomButton, CustomContainer, CustomRadio, CustomSelect};
 use iced::{
-    button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Svg,
-    Length, PickList, Radio, Row, Rule, Scrollable, Space, Text,
+    button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Length,
+    PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
 };
 #[macro_export]
 macro_rules! select_display {
@@ -65,7 +65,6 @@ impl General {
             scroll_content: scrollable::State::new(),
         }
     }
-    
     pub fn update(&mut self, msg: GeneralMessage) {
         match msg {
             GeneralMessage::CheckboxToggle(value) => {
