@@ -335,7 +335,7 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let mic_image = svg!("assets/images/mic.svg").height(Length::Units(150));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).height(Length::Fill).center_x().center_y();
+            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).center_x();
 
             // ផ្ទាំងខាងស្ដាំ
             let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");

@@ -14,7 +14,15 @@ pub enum DisplayMessage {
    TrueToneToggled(bool),
    ShowMirrorToggled(bool),
    MirrorDisplay(bool),
-   DisplayPosChanged(DisplayPosition)
+   DisplayPosChanged(DisplayPosition),
+   DisplayProfileChanged(usize),
+   ShowProfilesToggled(bool),
+   BtnCreateClicked,
+   BtnOpenClicked(usize),
+   BtnDeleteClicked(usize),
+   ScheduleChanged(Schedule),
+   TurnNightShiftTmr(bool),
+   ColorTempChanged(u8),
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +64,17 @@ impl DisplayPage {
          DisplayMessage::ShowMirrorToggled(is_checked) => self.show_mirror = is_checked,
          DisplayMessage::MirrorDisplay(is_checked) => self.arrangement.mirror_display = is_checked,
          DisplayMessage::DisplayPosChanged(val) => self.arrangement.display_pos = val,
+         DisplayMessage::DisplayProfileChanged(idx) => self.color.selected_profile = Some(idx),
+         DisplayMessage::ShowProfilesToggled(is_checked) => self.color.show_profiles = is_checked,
+         DisplayMessage::BtnCreateClicked => self.color.display_profiles.push(("New Profile".to_string(), button::State::new())),
+         DisplayMessage::BtnOpenClicked(selected_idx) => self.color.opened_display = format!("Open Profile Index: {}", selected_idx),
+         DisplayMessage::BtnDeleteClicked(selected_idx) => {
+            self.color.display_profiles.remove(selected_idx);
+            self.color.selected_profile = None;
+         },
+         DisplayMessage::ScheduleChanged(val) => self.night_shift.selected_schedule = val,
+         DisplayMessage::TurnNightShiftTmr(is_checked) => self.night_shift.turn_on_tmr = is_checked,
+         DisplayMessage::ColorTempChanged(val) => self.night_shift.color_temp_val = val,
       }
    }
 
@@ -180,10 +199,10 @@ impl DisplayPage {
                },
             };
             let btn_group = Column::new().spacing(10).align_items(Align::End)
-               .push(Button::new(btn_left, Text::new("  Left Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Left)).style(CustomButton::Secondary))
-               .push(Button::new(btn_top, Text::new("  Top Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Top)).style(CustomButton::Secondary))
-               .push(Button::new(btn_right, Text::new("  Right Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Right)).style(CustomButton::Secondary))
-               .push(Button::new(btn_bottom, Text::new("  Bottom Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Bottom)).style(CustomButton::Secondary));
+               .push(Button::new(btn_left, Text::new("  Left Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Left)).style(CustomButton::Text))
+               .push(Button::new(btn_top, Text::new("  Top Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Top)).style(CustomButton::Text))
+               .push(Button::new(btn_right, Text::new("  Right Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Right)).style(CustomButton::Text))
+               .push(Button::new(btn_bottom, Text::new("  Bottom Position  ")).on_press(DisplayMessage::DisplayPosChanged(DisplayPosition::Bottom)).style(CustomButton::Text));
             let display_con = Container::new(
                Row::new().padding(15)
                .push(
@@ -202,84 +221,109 @@ impl DisplayPage {
                .push(chb_mirror_display)
             ).width(Length::Fill)
          }
-         // 2 => {
-         //    let SoundInput {
-         //       input_devices,
-         //       tb_devices_state,
-         //       input_volume_state,
-         //       input_volume_value,
-         //    } = sound_input;
+         2 => {
+            let Color {
+               display_profiles,
+               selected_profile,
+               btn_create_state,
+               btn_open_state,
+               btn_delete_state,
+               show_profiles,
+               scroll,
+               opened_display,
+            } = color;
 
-         // device_pane_col = AlertSound::ALL
-         //    .iter()
-         //    .enumerate()
-         //    .fold(device_pane_col, |col, (idx, alert_sound)| {
-         //       let mut alert_con = Container::new(
-         //          Row::new()
-         //             .padding(3)
-         //             .align_items(Align::Center)
-         //             .push(Space::with_width(Length::Units(7)))
-         //             .push(Text::new(alert_sound.to_string())),
-         //       )
-         //       .width(Length::Fill);
+            // ផ្ទាំងខាងឆ្វេង
+            let lb_display_profile = Text::new("Display profile:");
+            let profile_pane = display_profiles.iter_mut().enumerate().fold(Scrollable::new(scroll).spacing(4), |scrollable, (idx, (name, state))| {
+               let mut profile = Button::new(state, Text::new(name.to_string())).width(Length::Fill).on_press(DisplayMessage::DisplayProfileChanged(idx));
+               profile = if let Some(selected_idx) = selected_profile {
+                  if *selected_idx == idx {
+                     profile.style(CustomButton::Selected)
+                  } else {
+                     profile.style(CustomButton::Text)
+                  }
+               } else {
+                  profile.style(CustomButton::Text)
+               };
+               scrollable.push(profile)
+            });
+            let chb_show_profile = Checkbox::new(*show_profiles, "Show profiles for this display only", DisplayMessage::ShowProfilesToggled).spacing(10).style(CustomCheckbox::Default);
+            let left_pane = Container::new(
+               Column::new().spacing(15)
+               .push(lb_display_profile)
+               .push(
+                  Container::new(profile_pane).height(Length::Fill).width(Length::Fill).padding(7).style(CustomContainer::ForegroundWhite)
+               )
+               .push(chb_show_profile)
+            ).width(Length::FillPortion(5)).height(Length::Fill);
 
-         //       if *alert_idx == idx {
-         //          alert_con = alert_con.style(CustomContainer::Background);
-         //       }
-         //       col.push(alert_con)
-         //    });
+            // ផ្ទាំងខាងស្ដាំ
+            let btn_create = Button::new(btn_create_state, Text::new("  New Profile  ")).on_press(DisplayMessage::BtnCreateClicked).style(CustomButton::Default);
+            let mut btn_open = Button::new(btn_open_state, Text::new("  Open Profile  ")).style(CustomButton::Default);
+            let mut btn_delete = Button::new(btn_delete_state, Text::new("  Delete Profile  ")).style(CustomButton::Default);
+            if let Some(selected_idx) = selected_profile {
+               btn_open = btn_open.on_press(DisplayMessage::BtnOpenClicked(*selected_idx));
+               btn_delete = btn_delete.on_press(DisplayMessage::BtnDeleteClicked(*selected_idx));
+            } 
 
-         // let device_pane = Container::new(
-         //    Column::new()
-         //       .push(
-         //          Container::new(Text::new("Names").size(12))
-         //             .width(Length::Fill)
-         //             .padding(7)
-         //             .style(CustomContainer::Header),
-         //       )
-         //       .push(device_pane_col),
-         // )
-         // .height(Length::Units(150))
-         // .style(CustomContainer::ForegroundWhite);
+            let btn_group = Column::new().spacing(15).align_items(Align::End)
+               .push(btn_create)
+               .push(
+                  Row::new().spacing(15).align_items(Align::Center)
+                  .push(Text::new(opened_display.as_str()))
+                  .push(btn_open)
+               )
+               .push(btn_delete);
+            let right_pane = Container::new(btn_group).width(Length::FillPortion(5)).height(Length::Fill).align_x(Align::End).center_y();
+         
+            Container::new(
+               Row::new().spacing(15)
+               .push(left_pane)
+               .push(right_pane)
+            )
+         }
+         3 => {
+            let NightShift {
+               schedule_state,
+               selected_schedule,
+               turn_on_tmr,
+               color_temp_state,
+               color_temp_val,
+            } = night_shift;
 
-         // let lb_sound_effect = Text::new("Play sound effects through:");
-         // let pl_sound_effect = PickList::new(
-         //    sound_effect_device,
-         //    &SoundEffectDevice::ALL[..],
-         //    Some(*selected_sound_effect_device),
-         //    DisplayMessage::SoundEffectDeviceChanged,
-         // );
+            let txt_hint = Text::new("Night Shift automatically shifts the colors of display to warmer end of the color spectrum after dark. This may help you get a better night's sleep.");
 
-         //    let lb_input_device = Text::new("Select a device for sound input:");
-         //    let tb_columns = table_columns![("name", "Name"), ("type", "Type"),];
-         //    let tb_input_device = Table::new(tb_devices_state, tb_columns, input_devices).width(Length::Fill);
+            let lb_schedule = Text::new("Schedule:");
+            let pl_schedule = PickList::new(schedule_state, &Schedule::ALL[..], Some(*selected_schedule), DisplayMessage::ScheduleChanged);
+            let schedule_row = Row::new().spacing(15).align_items(Align::Center).push(lb_schedule).push(pl_schedule);
 
-         //    let lb_selected_device = Text::new("Settings for the selected device:");
-         //    let lb_balance = Text::new("Input volume:");
-         //    let ic_volume_down = Icon::new('\u{f131}').size(27).color(Color::from_rgb8(66, 66, 66));
-         //    let slider_balance = Slider::new(
-         //       input_volume_state,
-         //       0..=100,
-         //       *input_volume_value,
-         //       DisplayMessage::InputVolumeChanged,
-         //    ).width(Length::Units(200)).style(CustomSlider::Default);
-         //    let ic_volume_up = Icon::new('\u{f130}').size(27).color(Color::from_rgb8(66, 66, 66));
-         //    let input_vol_row = Row::new()
-         //       .spacing(5)
-         //       .align_items(Align::Center)
-         //       .push(lb_balance)
-         //       .push(ic_volume_down)
-         //       .push(slider_balance)
-         //       .push(ic_volume_up);
-         //    let input_vol_con = Container::new(input_vol_row).width(Length::Fill);
+            let lb_manual = Text::new("Manual:");
+            let chb_manual = Checkbox::new(*turn_on_tmr, "Turn on until Tomorrow", DisplayMessage::TurnNightShiftTmr).style(CustomCheckbox::Default);
+            let manual_row = Row::new().spacing(15).align_items(Align::Center).push(lb_manual).push(chb_manual);
 
-         //    Container::new(
-         //       Column::new()
-         //          .spacing(20)
-         //          .push(Column::new().spacing(7).push(lb_input_device).push(tb_input_device))
-         //          .push(Column::new().spacing(15).push(lb_selected_device).push(input_vol_con)),
-         //    )
-         // }
+            let lb_color_temp = Text::new("Color Temperature:");
+            let slider_color_temp = Slider::new(color_temp_state, 0..=100, *color_temp_val, DisplayMessage::ColorTempChanged).width(Length::Units(250)).style(CustomSlider::Default);
+            let color_temp_row = Row::new().spacing(15).align_items(Align::Center).push(lb_color_temp).push(slider_color_temp);
+         
+            Container::new(
+               Row::new()
+               .push(Space::with_width(Length::FillPortion(2)))
+               .push(
+                  Container::new(
+                     Column::new().spacing(30)
+                     .push(txt_hint)
+                     .push(
+                        Column::new().spacing(10).align_items(Align::Center)
+                        .push(schedule_row)
+                        .push(Row::new().push(Space::with_width(Length::Units(40))).push(manual_row))
+                        .push(Row::new().push(Space::with_width(Length::Units(80))).push(color_temp_row))
+                     )
+                  ).width(Length::FillPortion(6))
+               )
+               .push(Space::with_width(Length::FillPortion(2)))
+            ).center_x()
+         }
          _ => Container::new(Space::with_height(Length::Fill)),
       };
 
@@ -359,12 +403,12 @@ impl Arrangement {
 pub struct Color {
    display_profiles: Vec<(String, button::State)>,
    selected_profile: Option<usize>,
-   btn_create: button::State,
-   btn_open: button::State,
-   is_opened: bool,
-   btn_delete: button::State,
+   btn_create_state: button::State,
+   btn_open_state: button::State,
+   btn_delete_state: button::State,
    show_profiles: bool,
-   scroll: scrollable::State
+   scroll: scrollable::State,
+   opened_display: String,
 }
 
 impl Color {
@@ -381,8 +425,8 @@ impl Color {
 
 #[derive(Debug, Clone, Default)]
 pub struct NightShift {
-   scedule_state: pick_list::State<Schedule>,
-   selected_scedule: Schedule,
+   schedule_state: pick_list::State<Schedule>,
+   selected_schedule: Schedule,
    turn_on_tmr: bool,
    color_temp_state: slider::State,
    color_temp_val: u8,
@@ -397,7 +441,7 @@ impl NightShift {
    }
 }
 
-#[derive(Debug, Clone, SmartDefault)]
+#[derive(Debug, Clone, Copy, SmartDefault, Eq, PartialEq)]
 pub enum Schedule {
    #[default]
    Off,

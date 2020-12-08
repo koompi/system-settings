@@ -7,6 +7,7 @@ mod printer_page;
 mod touchpad_page;
 mod mouse_page;
 mod display_page;
+mod battery_page;
 
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
@@ -16,6 +17,7 @@ use keyboard_page::{KeyboardPage, KeyboardMessage};
 use touchpad_page::{TouchpadPage, TouchpadMessage};
 use mouse_page::{MousePage, MouseMessage};
 use display_page::{DisplayPage, DisplayMessage};
+use battery_page::{BatteryPage, BatteryMessage};
 use iced::{Container, Element, Length, Space};
 
 pub struct Pages {
@@ -33,6 +35,7 @@ pub enum PagesMessage {
    TouchpadMessage(TouchpadMessage),
    MouseMessage(MouseMessage),
    DisplayMessage(DisplayMessage),
+   BatteryMessage(BatteryMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +58,7 @@ pub enum PageModel {
    TouchpadPageModel { touchpad_page: TouchpadPage },
    MousePageModel { mouse_page: MousePage },
    DisplayPageModel { display_page: DisplayPage },
-   BatteryPage,
+   BatteryPageModel { battery_page: BatteryPage },
    DiskDrivePage,
 }
 
@@ -98,7 +101,9 @@ impl Pages {
             DisplayPageModel {
                display_page: DisplayPage::new()
             },
-            BatteryPage,
+            BatteryPageModel {
+               battery_page: BatteryPage::new()
+            },
             DiskDrivePage,
          ],
          current: 0,
@@ -167,6 +172,11 @@ impl PageModel {
                display_page.update(msg);
             }
          }
+         BatteryMessage(msg) => {
+            if let BatteryPageModel { battery_page } = self {
+               battery_page.update(msg);
+            }
+         }
       }
    }
 
@@ -191,7 +201,7 @@ impl PageModel {
          TouchpadPageModel { touchpad_page } => touchpad_page.view().map(move |msg| PagesMessage::TouchpadMessage(msg)),
          MousePageModel { mouse_page } => mouse_page.view().map(move |msg| PagesMessage::MouseMessage(msg)),
          DisplayPageModel { display_page } => display_page.view().map(move |msg| PagesMessage::DisplayMessage(msg)),
-         BatteryPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         BatteryPageModel { battery_page } => battery_page.view().map(move |msg| PagesMessage::BatteryMessage(msg)),
          DiskDrivePage => Container::new(Space::with_width(Length::Shrink)).into(),
       }
    }
@@ -217,7 +227,7 @@ impl PageModel {
          TouchpadPageModel { .. } => "Touchpad",
          MousePageModel { .. } => "Mouse",
          DisplayPageModel { .. } => "Display",
-         BatteryPage => "Battery",
+         BatteryPageModel { .. } => "Battery",
          DiskDrivePage => "Disk Drive",
       }
    }

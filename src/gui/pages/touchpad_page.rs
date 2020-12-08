@@ -310,10 +310,10 @@ impl TouchpadPage {
             Container::new(
                Row::new().width(Length::Fill).spacing(15)
                .push(
-                  Container::new(left_tabs).width(Length::FillPortion(4))
+                  Container::new(left_tabs).width(Length::FillPortion(5))
                )
                .push(
-                  Container::new(right_view).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite)
+                  Container::new(right_view).width(Length::FillPortion(5)).height(Length::Fill).style(CustomContainer::ForegroundWhite)
                )
             ).width(Length::Fill).height(Length::Fill)
          },

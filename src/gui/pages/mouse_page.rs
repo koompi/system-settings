@@ -1,5 +1,5 @@
 use iced::{
-   Container, Checkbox, button, slider, Row, Svg, Length, Text, Button, Column, Align, Element, Radio, Slider
+   Container, Checkbox, button, slider, Row, Svg, Length, Text, Button, Column, Align, Element, Radio, Slider, Space
 };
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomRadio, CustomSlider};
 use smart_default::SmartDefault;
@@ -10,7 +10,7 @@ pub enum MouseMessage {
    PointerSpeedChanged(u8),
    DoubleClickSpeedChanged(u8),
    ReverseScrollingToggled(bool),
-   RestoreDefaultClicked(bool)
+   RestoreDefaultClicked
 }
 
 #[derive(Debug, Clone)]
@@ -22,7 +22,6 @@ pub struct MousePage {
    double_click_speed: u8,
    reverse_scrolling: bool,
    btn_default_state: button::State,
-   is_default_clicked: bool,
 }
 
 impl MousePage {
@@ -35,7 +34,6 @@ impl MousePage {
          double_click_speed: 80,
          reverse_scrolling: false,
          btn_default_state: button::State::new(),
-         is_default_clicked: false,
       }
    }
 
@@ -45,7 +43,7 @@ impl MousePage {
          MouseMessage::PointerSpeedChanged(val) => self.pointer_speed = val,
          MouseMessage::DoubleClickSpeedChanged(val) => self.double_click_speed = val,
          MouseMessage::ReverseScrollingToggled(is_checked) => self.reverse_scrolling = is_checked,
-         MouseMessage::RestoreDefaultClicked(is_clicked) => self.is_default_clicked = is_clicked,
+         MouseMessage::RestoreDefaultClicked => *self = Self::new(),
       }
    }
 
@@ -58,7 +56,6 @@ impl MousePage {
          double_click_speed,
          reverse_scrolling,
          btn_default_state,
-         is_default_clicked,
       } = self;
       
       // ផ្ទាំងខាងឆ្វេង
@@ -67,7 +64,7 @@ impl MousePage {
 
       // ផ្ទាំងខាងស្ដាំ
       let rd_primary_button = PrimaryButton::ALL.iter().fold(
-         Row::new().spacing(15).push(Text::new("Primary Button:")),
+         Row::new().spacing(15).push(Space::with_width(Length::Units(10))).push(Text::new("Primary Button:")),
          |row, button| {
             row.push(
                Radio::new(*button, &format!("{:?}", button), Some(*primary_button),MouseMessage::PrimaryButtonChanged).size(15).spacing(10).style(if *primary_button == *button {CustomRadio::Active} else {CustomRadio::Disactive}),
@@ -78,6 +75,7 @@ impl MousePage {
       let lb_pointer_speed = Text::new("Pointer Speed:");
       let slider_pointer_speed  = Slider::new(pointer_speed_state, 0..=100, *pointer_speed, MouseMessage::PointerSpeedChanged).width(Length::Units(200)).style(CustomSlider::Default);
       let pointer_speed_row = Row::new().spacing(15).align_items(Align::Center)
+         .push(Space::with_width(Length::Units(15)))
          .push(lb_pointer_speed)
          .push(slider_pointer_speed);
 
@@ -88,7 +86,9 @@ impl MousePage {
          .push(slider_double_click_speed);
 
       let chb_reverse = Checkbox::new(*reverse_scrolling, "Reverse Scrolling Direction", MouseMessage::ReverseScrollingToggled).spacing(10).style(CustomCheckbox::Default);
-      let reverse_row = Row::new().spacing(15).push(chb_reverse);
+      let reverse_row = Row::new().spacing(15)
+         .push(Space::with_width(Length::Units(100)))
+         .push(chb_reverse);
 
       let right_pane = Container::new(
          Column::new().spacing(15)
@@ -99,8 +99,8 @@ impl MousePage {
       ).width(Length::FillPortion(6));
 
       // ផ្នែកខាងក្រោម
-      let btn_restore_default = Button::new(btn_default_state, Text::new("  Restore Defaults  ")).on_press(MouseMessage::RestoreDefaultClicked(!(*is_default_clicked))).style(CustomButton::Default);
-      let bottom = Row::new().spacing(15).align_items(Align::Center).push(Text::new(if *is_default_clicked {"Processing restore to default settings"} else {""})).push(btn_restore_default);
+      let btn_restore_default = Button::new(btn_default_state, Text::new("  Restore Defaults  ")).on_press(MouseMessage::RestoreDefaultClicked).style(CustomButton::Default);
+      let bottom = Row::new().spacing(15).align_items(Align::Center).push(btn_restore_default);
       let bottom_section = Container::new(bottom).width(Length::Fill).padding(20).align_x(Align::End);
 
       // មាតិកា   

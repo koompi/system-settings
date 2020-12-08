@@ -161,7 +161,7 @@ impl Application for SystemSetting {
                .push(Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             )
             .push(personal_prefs)
-         );
+         ).width(Length::Fill).center_x();
          let device_section = Container::new(
             Column::new().spacing(15)
             .push(
@@ -170,18 +170,12 @@ impl Application for SystemSetting {
                .push(Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             )
             .push(device_prefs)
-         );
+         ).width(Length::Fill).center_x();
          
          Container::new(
-            Scrollable::new(&mut self.scroll).padding(20)
-            .push(
-               Column::new()
-               .spacing(30)
-               .width(Length::Fill)
-               .align_items(Align::Center)
-               .push(personal_section)
-               .push(device_section)
-            )
+            Scrollable::new(&mut self.scroll).spacing(30).width(Length::Fill).align_items(Align::Center)
+            .push(personal_section)
+            .push(device_section)
          ).width(Length::Fill)
       };
 
