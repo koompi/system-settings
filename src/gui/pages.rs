@@ -1,18 +1,20 @@
 #[macro_use]
 mod sound_page;
 mod bluetooth_page;
+#[macro_use]
 mod general_page;
 mod keyboard_page;
+mod network_page;
 mod printer_page;
 mod touchpad_page;
-
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
-use sound_page::{SoundMessage, SoundPage};
-use printer_page::{PrinterPage, PrinterMessage};
-use keyboard_page::{KeyboardPage, KeyboardMessage};
-use touchpad_page::{TouchpadPage, TouchpadMessage};
 use iced::{Container, Element, Length, Space};
+use keyboard_page::{KeyboardMessage, KeyboardPage};
+use network_page::{NetMessage, NetworkPage};
+use printer_page::{PrinterMessage, PrinterPage};
+use sound_page::{SoundMessage, SoundPage};
+use touchpad_page::{TouchpadMessage, TouchpadPage};
 
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -27,6 +29,7 @@ pub enum PagesMessage {
    PrinterMessage(PrinterMessage),
    KeyboardMessage(KeyboardMessage),
    TouchpadMessage(TouchpadMessage),
+   NetMessage(NetMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +44,7 @@ pub enum PageModel {
    NotiPage,
    SecurityPage,
    UpdatePage,
-   NetworkPage,
+   NetworkPageModel { network_page: NetworkPage },
    BluetoothPageModel { bluetooth_page: BluetoothPage },
    SoundPageModel { sound_page: SoundPage },
    PrinterPageModel { printer_page: PrinterPage },
@@ -70,7 +73,9 @@ impl Pages {
             NotiPage,
             SecurityPage,
             UpdatePage,
-            NetworkPage,
+            NetworkPageModel {
+               network_page: NetworkPage::new(),
+            },
             BluetoothPageModel {
                bluetooth_page: BluetoothPage::new(),
             },
@@ -147,6 +152,11 @@ impl PageModel {
                touchpad_page.update(msg);
             }
          }
+         NetMessage(msg) => {
+            if let NetworkPageModel { network_page } = self {
+               network_page.update(msg);
+            }
+         }
       }
    }
 
@@ -154,7 +164,9 @@ impl PageModel {
       use PageModel::*;
       match self {
          HomePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         GeneralPage { general_page } => general_page.view().map(move |msg| PagesMessage::GeneralMessage(msg)),
+         GeneralPage { general_page } => general_page
+            .view()
+            .map(move |msg| PagesMessage::GeneralMessage(msg)),
          DateTimePage => Container::new(Space::with_width(Length::Shrink)).into(),
          LanguagePage => Container::new(Space::with_width(Length::Shrink)).into(),
          UsersPage => Container::new(Space::with_width(Length::Shrink)).into(),
@@ -163,12 +175,24 @@ impl PageModel {
          NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
          UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         NetworkPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         BluetoothPageModel { bluetooth_page } => bluetooth_page.view().map(move |msg| PagesMessage::BluetoothMessage(msg)),
-         SoundPageModel { sound_page } => sound_page.view().map(move |msg| PagesMessage::SoundMessage(msg)),
-         PrinterPageModel { printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
-         KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
-         TouchpadPageModel { touchpad_page } => touchpad_page.view().map(move |msg| PagesMessage::TouchpadMessage(msg)),
+         NetworkPageModel { network_page } => network_page
+            .view()
+            .map(move |msg| PagesMessage::NetMessage(msg)),
+         BluetoothPageModel { bluetooth_page } => bluetooth_page
+            .view()
+            .map(move |msg| PagesMessage::BluetoothMessage(msg)),
+         SoundPageModel { sound_page } => sound_page
+            .view()
+            .map(move |msg| PagesMessage::SoundMessage(msg)),
+         PrinterPageModel { printer_page } => printer_page
+            .view()
+            .map(move |msg| PagesMessage::PrinterMessage(msg)),
+         KeyboardPageModel { keyboard_page } => keyboard_page
+            .view()
+            .map(move |msg| PagesMessage::KeyboardMessage(msg)),
+         TouchpadPageModel { touchpad_page } => touchpad_page
+            .view()
+            .map(move |msg| PagesMessage::TouchpadMessage(msg)),
          MousePage => Container::new(Space::with_width(Length::Shrink)).into(),
          DisplayPage => Container::new(Space::with_width(Length::Shrink)).into(),
          BatteryPage => Container::new(Space::with_width(Length::Shrink)).into(),
@@ -189,7 +213,7 @@ impl PageModel {
          NotiPage => "Notifications",
          SecurityPage => "Security & Privacy",
          UpdatePage => "Software Update",
-         NetworkPage => "Network",
+         NetworkPageModel { .. } => "Network",
          BluetoothPageModel { .. } => "Bluetooth",
          SoundPageModel { .. } => "Sound",
          PrinterPageModel { .. } => "Printers & Scanners",

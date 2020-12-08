@@ -9,8 +9,9 @@ edition = "2018"
 [dependencies]
 iced = { version = "0.2", features = ["debug", "svg"] }
 iced_style = "0.2"
+iced_native = "0.2"
 iced_custom_widget = { git="https://github.com/leang27/iced_custom_widget", branch="master" }
-vedas_core = { git="https://github.com/koompi/vedas", branch="master" }
+vedas_core = { git="https://github.com/koompi/vedas", branch="dev" }
 
 image = "0.23"
 serde = { version = "1.0", features=['derive'] }

@@ -1,12 +1,12 @@
 use iced::{
-   button, container, text_input, slider, checkbox, progress_bar, Background, Color, Vector
+   button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
-const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
-const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
-const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
-const ACTIVE: Color = Color::from_rgb(41.0/255.0, 98.0/255.0, 1.0);
-const HOVERED: Color = Color::from_rgb(189.0/255.0, 195.0/255.0, 199.0/255.0);
+const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
+const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
+const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
+const ACTIVE: Color = Color::from_rgb(41.0 / 255.0, 98.0 / 255.0, 1.0);
+const HOVERED: Color = Color::from_rgb(189.0 / 255.0, 195.0 / 255.0, 199.0 / 255.0);
 
 pub enum CustomButton {
    Default,
@@ -30,18 +30,17 @@ impl button::StyleSheet for CustomButton {
             _ => Color::BLACK,
          },
          background: Some(Background::Color(match self {
-            CustomButton::Selected | CustomButton::SelectedCard | CustomButton::SelectedSidebar => Color {
-               a: 0.3,
-               ..ACCENT
-            },
-            CustomButton::SelectedTab | CustomButton::Card  => Color::WHITE,
+            CustomButton::Selected | CustomButton::SelectedCard | CustomButton::SelectedSidebar => {
+               Color { a: 0.3, ..ACCENT }
+            }
+            CustomButton::SelectedTab | CustomButton::Card => Color::WHITE,
             CustomButton::Text | CustomButton::Tab | CustomButton::Sidebar => Color::TRANSPARENT,
             _ => Color::WHITE,
          })),
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Tab | CustomButton::SelectedTab => 7.0,
-            _ => 5.0
+            _ => 5.0,
          },
          border_color: match self {
             CustomButton::Default | CustomButton::Secondary => Color::BLACK,
@@ -62,13 +61,12 @@ impl button::StyleSheet for CustomButton {
       let active = self.active();
 
       match self {
-         CustomButton::Sidebar | CustomButton::Text | CustomButton::Tab | CustomButton::Card => button::Style {
-            background: Some(Color {
-               a: 0.3,
-               ..HOVERED
-            }.into()),
-            ..active
-         },
+         CustomButton::Sidebar | CustomButton::Text | CustomButton::Tab | CustomButton::Card => {
+            button::Style {
+               background: Some(Color { a: 0.3, ..HOVERED }.into()),
+               ..active
+            }
+         }
          _ => active,
       }
    }
@@ -81,7 +79,7 @@ pub enum CustomContainer {
    Header,
    Segment,
    FadedBrightForeground,
-   Hovered
+   Hovered,
 }
 
 impl container::StyleSheet for CustomContainer {
@@ -91,7 +89,10 @@ impl container::StyleSheet for CustomContainer {
             CustomContainer::Background | CustomContainer::Header => BACKGROUND,
             CustomContainer::ForegroundWhite => Color::WHITE,
             CustomContainer::ForegroundGray | CustomContainer::Segment => FOREGROUND,
-            CustomContainer::Hovered => Color{ a: 0.2, ..Color::BLACK},
+            CustomContainer::Hovered => Color {
+               a: 0.2,
+               ..Color::BLACK
+            },
             CustomContainer::FadedBrightForeground => Color {
                a: 0.8,
                ..FOREGROUND
@@ -175,7 +176,7 @@ pub enum CustomRadio {
    Green,
    Gray,
    Disactive,
-   Active
+   Active,
 }
 
 impl radio::StyleSheet for CustomRadio {
@@ -254,7 +255,7 @@ impl radio::StyleSheet for CustomRadio {
          background: match self {
             CustomRadio::Active => ACTIVE.into(),
             CustomRadio::Disactive => HOVERED.into(),
-            _ => Background::Color(Color::from_rgb8(75, 101, 132))
+            _ => Background::Color(Color::from_rgb8(75, 101, 132)),
          },
          ..self.active()
       }
@@ -268,7 +269,9 @@ pub enum CustomSelect {
 use iced_style::menu;
 impl pick_list::StyleSheet for CustomSelect {
    fn menu(&self) -> menu::Style {
-      menu::Style { ..Default::default() }
+      menu::Style {
+         ..Default::default()
+      }
    }
    fn active(&self) -> pick_list::Style {
       match self {
@@ -291,7 +294,7 @@ impl pick_list::StyleSheet for CustomSelect {
 }
 
 pub enum CustomSlider {
-   Default
+   Default,
 }
 
 impl slider::StyleSheet for CustomSlider {
@@ -302,7 +305,7 @@ impl slider::StyleSheet for CustomSlider {
             shape: slider::HandleShape::Circle { radius: 7.0 },
             color: ACTIVE,
             border_width: match self {
-               CustomSlider::Default => 0.0
+               CustomSlider::Default => 0.0,
             },
             border_color: Color::TRANSPARENT,
          },
@@ -319,7 +322,7 @@ impl slider::StyleSheet for CustomSlider {
 }
 
 pub enum CustomProgressBar {
-   Default
+   Default,
 }
 
 impl progress_bar::StyleSheet for CustomProgressBar {
@@ -333,7 +336,7 @@ impl progress_bar::StyleSheet for CustomProgressBar {
 }
 
 pub enum CustomCheckbox {
-   Default
+   Default,
 }
 
 impl checkbox::StyleSheet for CustomCheckbox {
