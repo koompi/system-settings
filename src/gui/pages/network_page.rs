@@ -1,11 +1,11 @@
 use super::super::styles::{CustomButton, CustomContainer};
-use super::general_page::*;
 use iced::{
     button, pick_list, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
     HorizontalAlignment, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
     TextInput,
 };
 use iced_custom_widget::Grid;
+use vedas_core::macros::select::*;
 #[derive(Debug, Clone)]
 pub struct NetworkPage {
     search: text_input::State,
