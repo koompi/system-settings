@@ -2,7 +2,8 @@ use super::super::styles::{CustomButton, CustomContainer};
 use super::general_page::*;
 use iced::{
     button, pick_list, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
-    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput,
+    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
+    TextInput,
 };
 use iced_custom_widget::Grid;
 #[derive(Debug, Clone)]
@@ -20,6 +21,7 @@ pub struct NetworkPage {
     apply: button::State,
     cancel: button::State,
     list_wifi: Vec<ListCon>,
+    scr_list: scrollable::State,
 }
 #[derive(Debug, Copy, Clone)]
 pub enum Control {
@@ -49,6 +51,24 @@ impl NetworkPage {
             ListCon::new(name.to_string(), icon.to_string(), status.to_string())
         };
         let prefe = vec![
+            function("Koompi Attic", "wireless", "connected "),
+            function("Koompi OS", "wireless", "connected "),
+            function("SmallWorld Venture", "wireless", "connected "),
+            function("Smallworld Space", "wireless", "connected "),
+            function("Kong buthon", "wireless", "connected "),
+            function("Koompi lab", "wireless", "connected "),
+            function("Koompi Attic", "wireless", "connected "),
+            function("Koompi OS", "wireless", "connected "),
+            function("SmallWorld Venture", "wireless", "connected "),
+            function("Smallworld Space", "wireless", "connected "),
+            function("Kong buthon", "wireless", "connected "),
+            function("Koompi lab", "wireless", "connected "),
+            function("Koompi Attic", "wireless", "connected "),
+            function("Koompi OS", "wireless", "connected "),
+            function("SmallWorld Venture", "wireless", "connected "),
+            function("Smallworld Space", "wireless", "connected "),
+            function("Kong buthon", "wireless", "connected "),
+            function("Koompi lab", "wireless", "connected "),
             function("Koompi Attic", "wireless", "connected "),
             function("Koompi OS", "wireless", "connected "),
             function("SmallWorld Venture", "wireless", "connected "),
@@ -88,6 +108,7 @@ impl NetworkPage {
             apply: button::State::new(),
             cancel: button::State::new(),
             list_wifi: prefe,
+            scr_list: scrollable::State::new(),
         }
     }
     pub fn update(&mut self, msg: NetMessage) {
@@ -136,6 +157,7 @@ impl NetworkPage {
             apply,
             cancel,
             list_wifi,
+            scr_list,
         } = self;
         let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
         for (idx, (name, btn_state, control)) in tabbar_state.iter_mut().enumerate() {
@@ -166,11 +188,18 @@ impl NetworkPage {
             Control::IPv4 => ipv4.view().map(move |msg| NetMessage::IPv4Msg(msg)),
             Control::Ipv6 => ipv6.view().map(move |msg| NetMessage::IPv6Msg(msg)),
         };
-
+        let list_view = Scrollable::new(scr_list).push(list_wifi.iter_mut().fold(
+            Column::new().spacing(5),
+            |column, pref| {
+                column
+                    .push(Rule::horizontal(4))
+                    .push(pref.view().map(move |msg| NetMessage::ListMessage(msg)))
+            },
+        ));
+        let list_container = Container::new(list_view).center_x().center_y();
         let list_side = Column::new()
             .width(Length::FillPortion(3))
             .align_items(Align::Center)
-            .height(Length::Fill)
             .spacing(10)
             .push(Text::new("Connection").size(25))
             .push(
@@ -179,14 +208,7 @@ impl NetworkPage {
                     .padding(5),
             )
             .push(Text::new("Wi-Fi").size(18))
-            .push(list_wifi.iter_mut().fold(
-                Column::new().spacing(5).height(Length::Fill),
-                |column, pref| {
-                    column
-                        .push(Rule::horizontal(4))
-                        .push(pref.view().map(move |msg| NetMessage::ListMessage(msg)))
-                },
-            ));
+            .push(list_container);
         let apply = Column::new().push(
             Row::new()
                 .spacing(10)
