@@ -2,14 +2,13 @@ use super::super::styles::{CustomButton, CustomContainer};
 use super::general_page::*;
 use iced::{
     button, pick_list, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
-    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Scrollable, Space, Text, TextInput,
+    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput,
 };
 use iced_custom_widget::Grid;
 #[derive(Debug, Clone)]
 pub struct NetworkPage {
     search: text_input::State,
     value: String,
-    scroll_content: scrollable::State,
     tabbar_state: Vec<(String, button::State, Control)>,
     current_idx: usize,
     select_tab: Control,
@@ -18,6 +17,9 @@ pub struct NetworkPage {
     security: Security,
     ipv4: IPV4,
     ipv6: IPV6,
+    apply: button::State,
+    cancel: button::State,
+    list_wifi: Vec<ListCon>,
 }
 #[derive(Debug, Copy, Clone)]
 pub enum Control {
@@ -36,14 +38,27 @@ pub enum NetMessage {
     SecureMsg(SecureMsg),
     IPv4Msg(IPv4Msg),
     IPv6Msg(IPv6Msg),
+    ListMessage(ListMessage),
+    ApplyChanged,
+    CancelChanged,
 }
 
 impl NetworkPage {
     pub fn new() -> Self {
+        let function = |name: &str, icon: &str, status: &str| {
+            ListCon::new(name.to_string(), icon.to_string(), status.to_string())
+        };
+        let prefe = vec![
+            function("Koompi Attic", "wireless", "connected "),
+            function("Koompi OS", "wireless", "connected "),
+            function("SmallWorld Venture", "wireless", "connected "),
+            function("Smallworld Space", "wireless", "connected "),
+            function("Kong buthon", "wireless", "connected "),
+            function("Koompi lab", "wireless", "connected "),
+        ];
         Self {
             search: text_input::State::new(),
             value: String::default(),
-            scroll_content: scrollable::State::new(),
             tabbar_state: vec![
                 (
                     "  General  ".to_string(),
@@ -70,6 +85,9 @@ impl NetworkPage {
             security: Security::new(),
             ipv4: IPV4::new(),
             ipv6: IPV6::new(),
+            apply: button::State::new(),
+            cancel: button::State::new(),
+            list_wifi: prefe,
         }
     }
     pub fn update(&mut self, msg: NetMessage) {
@@ -97,6 +115,9 @@ impl NetworkPage {
             NetMessage::IPv6Msg(msg) => {
                 self.ipv6.update(msg);
             }
+            NetMessage::ApplyChanged => {}
+            NetMessage::CancelChanged => {}
+            NetMessage::ListMessage(msg) => {}
         }
     }
 
@@ -104,7 +125,6 @@ impl NetworkPage {
         let NetworkPage {
             search,
             value,
-            scroll_content,
             tabbar_state,
             current_idx,
             select_tab,
@@ -113,6 +133,9 @@ impl NetworkPage {
             security,
             ipv4,
             ipv6,
+            apply,
+            cancel,
+            list_wifi,
         } = self;
         let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
         for (idx, (name, btn_state, control)) in tabbar_state.iter_mut().enumerate() {
@@ -143,6 +166,7 @@ impl NetworkPage {
             Control::IPv4 => ipv4.view().map(move |msg| NetMessage::IPv4Msg(msg)),
             Control::Ipv6 => ipv6.view().map(move |msg| NetMessage::IPv6Msg(msg)),
         };
+
         let list_side = Column::new()
             .width(Length::FillPortion(3))
             .align_items(Align::Center)
@@ -155,7 +179,36 @@ impl NetworkPage {
                     .padding(5),
             )
             .push(Text::new("Wi-Fi").size(18))
-            .push(Text::new("wifi list here"));
+            .push(list_wifi.iter_mut().fold(
+                Column::new().spacing(5).height(Length::Fill),
+                |column, pref| {
+                    column
+                        .push(Rule::horizontal(4))
+                        .push(pref.view().map(move |msg| NetMessage::ListMessage(msg)))
+                },
+            ));
+        let apply = Column::new().push(
+            Row::new()
+                .spacing(10)
+                .push(
+                    Button::new(
+                        apply,
+                        Text::new("Cancel").horizontal_alignment(HorizontalAlignment::Center),
+                    )
+                    .padding(10)
+                    .width(Length::Units(100))
+                    .on_press(NetMessage::ApplyChanged),
+                )
+                .push(
+                    Button::new(
+                        cancel,
+                        Text::new("Apply").horizontal_alignment(HorizontalAlignment::Center),
+                    )
+                    .width(Length::Units(100))
+                    .padding(10)
+                    .on_press(NetMessage::CancelChanged),
+                ),
+        );
         let content_side = Column::new()
             .align_items(Align::Center)
             .push(
@@ -165,8 +218,10 @@ impl NetworkPage {
             )
             .push(tabbar_section)
             .push(tabview)
-            .width(Length::FillPortion(6))
+            .push(apply.padding(10))
+            .width(Length::FillPortion(7))
             .height(Length::Fill);
+
         let main_layout: Element<_> = Row::new()
             .width(Length::Fill)
             .height(Length::Fill)
@@ -174,14 +229,13 @@ impl NetworkPage {
             .push(Rule::vertical(10))
             .push(content_side)
             .into();
-        let scroll = Scrollable::new(scroll_content).push(main_layout);
-        Container::new(scroll)
+        Container::new(main_layout)
             .padding(10)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
             .center_y()
-            .style(CustomContainer::Background)
+            .style(CustomContainer::FadedBrightForeground)
             .into()
     }
 }
@@ -1332,5 +1386,39 @@ impl IPV6 {
             .style(CustomContainer::ForegroundWhite)
             .width(Length::Fill)
             .into()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ListCon {
+    name: String,
+    icon: String,
+    status: String,
+}
+#[derive(Debug, Clone)]
+pub enum ListMessage {}
+impl ListCon {
+    pub fn new(n: String, i: String, s: String) -> Self {
+        Self {
+            name: n,
+            icon: i,
+            status: s,
+        }
+    }
+    pub fn view(&mut self) -> Element<ListMessage> {
+        let ListCon { name, icon, status } = self;
+        let data = Row::new()
+            .spacing(5)
+            .push(Svg::from_path(format!(
+                "{}/assets/images/{}.svg",
+                env!("CARGO_MANIFEST_DIR"),
+                icon
+            )))
+            .push(
+                Column::new()
+                    .push(Text::new(name.as_str()).size(20))
+                    .push(Text::new(status.as_str())),
+            );
+        data.into()
     }
 }
