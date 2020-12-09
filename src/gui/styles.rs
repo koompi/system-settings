@@ -4,7 +4,7 @@ use iced::{
 
 const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
 const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
-const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
 const ACTIVE: Color = Color::from_rgb(41.0/255.0, 98.0/255.0, 1.0);
 const HOVERED: Color = Color::from_rgb(189.0/255.0, 195.0/255.0, 199.0/255.0);
 
@@ -19,6 +19,7 @@ pub enum CustomButton {
    SelectedTab,
    Card,
    SelectedCard,
+   Primary
 }
 
 impl button::StyleSheet for CustomButton {
@@ -27,6 +28,7 @@ impl button::StyleSheet for CustomButton {
          text_color: match self {
             CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
             CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
+            CustomButton::Primary => Color::WHITE,
             _ => Color::BLACK,
          },
          background: Some(Background::Color(match self {
@@ -36,6 +38,7 @@ impl button::StyleSheet for CustomButton {
             },
             CustomButton::SelectedTab | CustomButton::Card  => Color::WHITE,
             CustomButton::Text | CustomButton::Tab | CustomButton::Sidebar => Color::TRANSPARENT,
+            CustomButton::Primary => ACCENT,
             _ => Color::WHITE,
          })),
          border_radius: match self {
@@ -82,7 +85,7 @@ pub enum CustomContainer {
    Segment,
    FadedBrightForeground,
    Hovered,
-   Primary
+   Primary,
 }
 
 impl container::StyleSheet for CustomContainer {
@@ -97,7 +100,7 @@ impl container::StyleSheet for CustomContainer {
                a: 0.8,
                ..FOREGROUND
             },
-            CustomContainer::Primary => Color { a: 0.7, ..ACCENT }
+            CustomContainer::Primary => Color { a: 0.7, ..ACCENT },
          })),
          border_radius: match self {
             CustomContainer::Segment => 10.0,

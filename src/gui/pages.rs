@@ -8,6 +8,7 @@ mod touchpad_page;
 mod mouse_page;
 mod display_page;
 mod battery_page;
+mod sys_info_page;
 
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
@@ -18,6 +19,7 @@ use touchpad_page::{TouchpadPage, TouchpadMessage};
 use mouse_page::{MousePage, MouseMessage};
 use display_page::{DisplayPage, DisplayMessage};
 use battery_page::{BatteryPage, BatteryMessage};
+use sys_info_page::{InfoPage, InfoMessage};
 use iced::{Container, Element, Length, Space};
 
 pub struct Pages {
@@ -36,6 +38,7 @@ pub enum PagesMessage {
    MouseMessage(MouseMessage),
    DisplayMessage(DisplayMessage),
    BatteryMessage(BatteryMessage),
+   InfoMessage(InfoMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -59,7 +62,7 @@ pub enum PageModel {
    MousePageModel { mouse_page: MousePage },
    DisplayPageModel { display_page: DisplayPage },
    BatteryPageModel { battery_page: BatteryPage },
-   DiskDrivePage,
+   InfoPageModel { info_page: InfoPage },
 }
 
 impl Pages {
@@ -104,7 +107,9 @@ impl Pages {
             BatteryPageModel {
                battery_page: BatteryPage::new()
             },
-            DiskDrivePage,
+            InfoPageModel {
+               info_page: InfoPage::new()
+            },
          ],
          current: 0,
       }
@@ -177,6 +182,11 @@ impl PageModel {
                battery_page.update(msg);
             }
          }
+         InfoMessage(msg) => {
+            if let InfoPageModel { info_page } = self {
+               info_page.update(msg);
+            }
+         }
       }
    }
 
@@ -202,7 +212,7 @@ impl PageModel {
          MousePageModel { mouse_page } => mouse_page.view().map(move |msg| PagesMessage::MouseMessage(msg)),
          DisplayPageModel { display_page } => display_page.view().map(move |msg| PagesMessage::DisplayMessage(msg)),
          BatteryPageModel { battery_page } => battery_page.view().map(move |msg| PagesMessage::BatteryMessage(msg)),
-         DiskDrivePage => Container::new(Space::with_width(Length::Shrink)).into(),
+         InfoPageModel { info_page } => info_page.view().map(move |msg| PagesMessage::InfoMessage(msg)),
       }
    }
 
@@ -228,7 +238,7 @@ impl PageModel {
          MousePageModel { .. } => "Mouse",
          DisplayPageModel { .. } => "Display",
          BatteryPageModel { .. } => "Battery",
-         DiskDrivePage => "Disk Drive",
+         InfoPageModel { .. } => "System Information",
       }
    }
 }

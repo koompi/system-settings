@@ -57,7 +57,7 @@ impl Application for SystemSetting {
          pref("mouse", "Mouse", Hardware),
          pref("display", "Display", Hardware),
          pref("battery", "Battery", Hardware),
-         pref("disk", "Disk Drive", Hardware),
+         pref("sys-info", "System Information", Hardware),
       ];
 
       (

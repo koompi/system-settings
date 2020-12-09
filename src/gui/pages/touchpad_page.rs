@@ -194,8 +194,8 @@ impl TouchpadPage {
 
             let right_view = match tab_selected {
                0 => {
-                  let scroll_up = svg!("assets/images/gestures/scroll-up.svg").height(Length::Units(200));
-                  let scroll_down = svg!("assets/images/gestures/scroll-down.svg").height(Length::Units(200));
+                  let scroll_up = svg!("assets/images/gestures/scroll-up.svg").height(Length::Units(100));
+                  let scroll_down = svg!("assets/images/gestures/scroll-down.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(scroll_up)
@@ -203,8 +203,8 @@ impl TouchpadPage {
                   ).width(Length::Fill).height(Length::Fill).center_x().center_y()
                },
                1 => {
-                  let zoom_in = svg!("assets/images/gestures/zoom-in.svg").height(Length::Units(200));
-                  let zoom_out = svg!("assets/images/gestures/zoom-out.svg").height(Length::Units(200));
+                  let zoom_in = svg!("assets/images/gestures/zoom-in.svg").height(Length::Units(100));
+                  let zoom_out = svg!("assets/images/gestures/zoom-out.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(zoom_in)
@@ -263,8 +263,8 @@ impl TouchpadPage {
                   ).width(Length::Fill).height(Length::Fill).center_x().center_y()
                },
                1 => {
-                  let tap_3_fingers = svg!("assets/images/gestures/tap-3.svg").height(Length::Units(200));
-                  let swipe_fingers = svg!("assets/images/gestures/swipe-2.svg").height(Length::Units(200));
+                  let tap_3_fingers = svg!("assets/images/gestures/tap-3.svg").height(Length::Units(100));
+                  let swipe_fingers = svg!("assets/images/gestures/swipe-2.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(tap_3_fingers)
@@ -278,8 +278,8 @@ impl TouchpadPage {
                   ).width(Length::Fill).height(Length::Fill).center_x().center_y()
                }, 
                3 => {
-                  let tap_3_fingers = svg!("assets/images/gestures/tap-3.svg").height(Length::Units(200));
-                  let swipe_up = svg!("assets/images/gestures/scroll-up.svg").height(Length::Units(200));
+                  let tap_3_fingers = svg!("assets/images/gestures/tap-3.svg").height(Length::Units(100));
+                  let swipe_up = svg!("assets/images/gestures/scroll-up.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(tap_3_fingers)
@@ -287,8 +287,8 @@ impl TouchpadPage {
                   ).width(Length::Fill).height(Length::Fill).center_x().center_y()
                }, 
                4 => {
-                  let tap_4_fingers = svg!("assets/images/gestures/tap-4.svg").height(Length::Units(200));
-                  let zoom_out = svg!("assets/images/gestures/zoom-out.svg").height(Length::Units(200));
+                  let tap_4_fingers = svg!("assets/images/gestures/tap-4.svg").height(Length::Units(100));
+                  let zoom_out = svg!("assets/images/gestures/zoom-out.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(tap_4_fingers)
@@ -296,8 +296,8 @@ impl TouchpadPage {
                   ).width(Length::Fill).height(Length::Fill).center_x().center_y()
                }, 
                5 => {
-                  let tap_4_fingers = svg!("assets/images/gestures/tap-4.svg").height(Length::Units(200));
-                  let zoom_in = svg!("assets/images/gestures/zoom-in.svg").height(Length::Units(200));
+                  let tap_4_fingers = svg!("assets/images/gestures/tap-4.svg").height(Length::Units(100));
+                  let zoom_in = svg!("assets/images/gestures/zoom-in.svg").height(Length::Units(100));
                   Container::new(
                      Column::new().spacing(15)
                      .push(tap_4_fingers)
