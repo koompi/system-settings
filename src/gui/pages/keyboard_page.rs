@@ -196,7 +196,7 @@ impl KeyboardPage {
                )
             });
             
-            let left_pane = Container::new(left_tab_col).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
             let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut, state))| {
@@ -206,10 +206,10 @@ impl KeyboardPage {
                )
             });
 
-            let right_pane = Container::new(right_pane_col).width(Length::FillPortion(7)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
-            let btn_restore = Button::new(btn_restore, Text::new("Restore Defaults")).on_press(KeyboardMessage::RestoreDefaultClicked(!(*is_restore_clicked))).style(CustomButton::Default);
+            let btn_restore = Button::new(btn_restore, Text::new("  Restore Defaults  ")).on_press(KeyboardMessage::RestoreDefaultClicked(!(*is_restore_clicked))).style(CustomButton::Default);
             let restore_row = Row::new().spacing(20).align_items(Align::Center).push(Text::new(if *is_restore_clicked {"Processing restore to default settings"} else {""})).push(btn_restore);
             let restore_section = Container::new(restore_row).width(Length::Fill).align_x(Align::End);
             
@@ -274,7 +274,7 @@ impl KeyboardPage {
                Column::new()
                .push(left_tab_col)
                .push(btn_group)
-            ).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            ).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
             let keyboard_image_con = match input_sources_selected {
@@ -298,7 +298,7 @@ impl KeyboardPage {
 
             let right_pane = Container::new(
                Scrollable::new(right_pane_scroll).push(keyboard_image_con)
-            ).width(Length::FillPortion(7)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+            ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
             let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
@@ -335,13 +335,13 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let mic_image = svg!("assets/images/mic.svg").height(Length::Units(150));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).height(Length::Fill).center_x().center_y();
+            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).center_x();
 
             // ផ្ទាំងខាងស្ដាំ
             let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
             let lb_dictation = Text::new("Dictation:");
-            let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
-            let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(13).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
+            let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
+            let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
             let dictation_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_dictation)
                .push(rd_dictaion_on)
@@ -368,7 +368,7 @@ impl KeyboardPage {
                   .push(language_section)
                   .push(shortcut_section)
                )
-            ).width(Length::FillPortion(7)).height(Length::Fill);
+            ).width(Length::FillPortion(6)).height(Length::Fill);
          
             Container::new(
                Column::new().spacing(10)
@@ -381,7 +381,7 @@ impl KeyboardPage {
                )
                .push(
                   Container::new(
-                     Button::new(btn_about, Text::new("About Dictation & Privacy")).on_press(KeyboardMessage::AboutClicked).style(CustomButton::Default)
+                     Button::new(btn_about, Text::new("  About Dictation & Privacy  ")).on_press(KeyboardMessage::AboutClicked).style(CustomButton::Default)
                   ).width(Length::Fill).align_x(Align::End)
                )
             ).width(Length::Fill).height(Length::Fill)
@@ -392,7 +392,7 @@ impl KeyboardPage {
       // ផ្នែកខាងក្រោម
       let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
          .push(Text::new(if *is_setup_bt_keyboard {"Sorry, It's just UI"} else {""}))
-         .push(Button::new(btn_setup_bt_keyboard, Text::new("Set Up Bluetooth Keyboard...")).style(CustomButton::Default).on_press(KeyboardMessage::SetUpBluetoothKeyboard(!self.is_setup_bt_keyboard)));
+         .push(Button::new(btn_setup_bt_keyboard, Text::new("  Set Up Bluetooth Keyboard...  ")).style(CustomButton::Default).on_press(KeyboardMessage::SetUpBluetoothKeyboard(!self.is_setup_bt_keyboard)));
       let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
       // មាតិកា   

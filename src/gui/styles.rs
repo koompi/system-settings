@@ -2,11 +2,11 @@ use iced::{
    button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
-const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
-const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
-const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
-const ACTIVE: Color = Color::from_rgb(41.0 / 255.0, 98.0 / 255.0, 1.0);
-const HOVERED: Color = Color::from_rgb(189.0 / 255.0, 195.0 / 255.0, 199.0 / 255.0);
+const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
+const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
+const ACTIVE: Color = Color::from_rgb(41.0/255.0, 98.0/255.0, 1.0);
+const HOVERED: Color = Color::from_rgb(189.0/255.0, 195.0/255.0, 199.0/255.0);
 
 pub enum CustomButton {
    Default,
@@ -19,6 +19,7 @@ pub enum CustomButton {
    SelectedTab,
    Card,
    SelectedCard,
+   Primary
 }
 
 impl button::StyleSheet for CustomButton {
@@ -27,6 +28,7 @@ impl button::StyleSheet for CustomButton {
          text_color: match self {
             CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
             CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
+            CustomButton::Primary => Color::WHITE,
             _ => Color::BLACK,
          },
          background: Some(Background::Color(match self {
@@ -35,6 +37,7 @@ impl button::StyleSheet for CustomButton {
             }
             CustomButton::SelectedTab | CustomButton::Card => Color::WHITE,
             CustomButton::Text | CustomButton::Tab | CustomButton::Sidebar => Color::TRANSPARENT,
+            CustomButton::Primary => ACCENT,
             _ => Color::WHITE,
          })),
          border_radius: match self {
@@ -80,6 +83,7 @@ pub enum CustomContainer {
    Segment,
    FadedBrightForeground,
    Hovered,
+   Primary,
 }
 
 impl container::StyleSheet for CustomContainer {
@@ -97,6 +101,7 @@ impl container::StyleSheet for CustomContainer {
                a: 0.8,
                ..FOREGROUND
             },
+            CustomContainer::Primary => Color { a: 0.7, ..ACCENT },
          })),
          border_radius: match self {
             CustomContainer::Segment => 10.0,
@@ -106,10 +111,12 @@ impl container::StyleSheet for CustomContainer {
          },
          border_width: match self {
             CustomContainer::Header | CustomContainer::Segment => 1.0,
+            CustomContainer::Primary => 0.5,
             _ => 0.0,
          },
          border_color: match self {
             CustomContainer::Header => Color::TRANSPARENT,
+            CustomContainer::Primary => Color::BLACK,
             _ => BACKGROUND,
          },
          ..container::Style::default()
@@ -300,10 +307,10 @@ pub enum CustomSlider {
 impl slider::StyleSheet for CustomSlider {
    fn active(&self) -> slider::Style {
       slider::Style {
-         rail_colors: (HOVERED, Color { a: 0.1, ..HOVERED }),
+         rail_colors: (ACCENT, Color::TRANSPARENT),
          handle: slider::Handle {
-            shape: slider::HandleShape::Circle { radius: 7.0 },
-            color: ACTIVE,
+            shape: slider::HandleShape::Circle { radius: 9.0 },
+            color: ACCENT,
             border_width: match self {
                CustomSlider::Default => 0.0,
             },
@@ -342,11 +349,11 @@ pub enum CustomCheckbox {
 impl checkbox::StyleSheet for CustomCheckbox {
    fn active(&self, is_checked: bool) -> checkbox::Style {
       checkbox::Style {
-         background: if is_checked { ACTIVE } else { HOVERED }.into(),
+         background: if is_checked { ACCENT } else { HOVERED }.into(),
          checkmark_color: Color::WHITE,
          border_radius: 5.0,
          border_width: 0.0,
-         border_color: ACTIVE,
+         border_color: ACCENT,
       }
    }
 
