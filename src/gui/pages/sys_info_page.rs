@@ -117,8 +117,8 @@ impl InfoPage {
          storage_total,
          storage_free,
          mem_total,
-         mem_free,
          mem_available,
+         ..
       } = self;
       
       // ផ្នែកក្បាល
