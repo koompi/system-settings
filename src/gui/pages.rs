@@ -7,6 +7,7 @@ mod keyboard_page;
 mod network_page;
 mod printer_page;
 mod touchpad_page;
+mod user_page;
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use general_page::{General, GeneralMessage};
 use iced::{Container, Element, Length, Space};
@@ -15,7 +16,7 @@ use network_page::{NetMessage, NetworkPage};
 use printer_page::{PrinterMessage, PrinterPage};
 use sound_page::{SoundMessage, SoundPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
-
+use user_page::{UserPage, UserPageMsg};
 pub struct Pages {
    pages: Vec<PageModel>,
    current: usize,
@@ -30,6 +31,7 @@ pub enum PagesMessage {
    KeyboardMessage(KeyboardMessage),
    TouchpadMessage(TouchpadMessage),
    NetMessage(NetMessage),
+   UserPageMsg(UserPageMsg),
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +40,7 @@ pub enum PageModel {
    GeneralPage { general_page: General },
    DateTimePage,
    LanguagePage,
-   UsersPage,
+   UsersPageModel { user_page: UserPage },
    AccessPage,
    AccountPage,
    NotiPage,
@@ -67,7 +69,9 @@ impl Pages {
             },
             DateTimePage,
             LanguagePage,
-            UsersPage,
+            UsersPageModel {
+               user_page: UserPage::new(),
+            },
             AccessPage,
             AccountPage,
             NotiPage,
@@ -157,6 +161,11 @@ impl PageModel {
                network_page.update(msg);
             }
          }
+         UserPageMsg(msg) => {
+            if let UsersPageModel { user_page } = self {
+               user_page.update(msg);
+            }
+         }
       }
    }
 
@@ -169,7 +178,9 @@ impl PageModel {
             .map(move |msg| PagesMessage::GeneralMessage(msg)),
          DateTimePage => Container::new(Space::with_width(Length::Shrink)).into(),
          LanguagePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         UsersPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         UsersPageModel { user_page } => user_page
+            .view()
+            .map(move |msg| PagesMessage::UserPageMsg(msg)),
          AccessPage => Container::new(Space::with_width(Length::Shrink)).into(),
          AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
          NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
@@ -207,7 +218,7 @@ impl PageModel {
          GeneralPage { .. } => "General",
          DateTimePage => "Date & Time",
          LanguagePage => "Language & Region",
-         UsersPage => "Users & Groups",
+         UsersPageModel { .. } => "Users & Groups",
          AccessPage => "Accessibility",
          AccountPage => "Accounts",
          NotiPage => "Notifications",
