@@ -1,3 +1,12 @@
+/// This file is used as part of system setting.
+/// it has some improvement to do is
+/// link change the selection of a user in the list when a new user will be added.
+/// initialize the AccountView with the state of the current user.
+/// this file has four main structs which repsent as the user interface backend.
+/// 1. UserPage
+/// 2 AccountItem which stands for each of users in the list.
+/// 3 AccountView which stands for each view that corresponds to the each user when selecting.
+/// 4 UserForm which is used to present as field to capture the data and put them to the list of user
 const FONT_SIZE: u16 = 16;
 use super::super::styles::{CustomButton, CustomContainer};
 use iced::{
@@ -33,15 +42,15 @@ impl UserPage {
         Self {
             list_acc: vec![
                 (
-                    Self::string_convert("sna", "online-user.svg", "admin"),
+                    Self::string_convert("sna", "online-user.svg", true),
                     button::State::new(),
                 ),
                 (
-                    Self::string_convert("rotha", "online-user.svg", "user"),
+                    Self::string_convert("rotha", "online-user.svg", false),
                     button::State::new(),
                 ),
                 (
-                    Self::string_convert("vannak", "kuser.svg", "user"),
+                    Self::string_convert("vannak", "kuser.svg", true),
                     button::State::new(),
                 ),
             ],
@@ -57,20 +66,9 @@ impl UserPage {
                 self.is_unlock = value;
             }
             AccountItemMsg(msg) => self.current_acc.update(msg),
-            UserAdded(value) => {
-                self.list_acc.push((
-                    AccountItem::new().set_props(
-                        "Sna".to_string(),
-                        "kuser.svg".to_string(),
-                        "Admin".to_string(),
-                    ),
-                    button::State::new(),
-                ));
-                // self.is_added = value
-            }
+            UserAdded(value) => self.is_added = value,
             UserPageMsg::UserRemove(idx) => {
                 self.current_index = idx;
-                println!("index: {}", idx);
                 if !self.list_acc.is_empty() {
                     if idx.lt(&self.list_acc.len()) & !idx.eq(&0) {
                         self.list_acc.remove(idx);
@@ -85,24 +83,43 @@ impl UserPage {
                 let data = self.list_acc.get(value).unwrap();
                 self.current_index = value;
                 self.list_view.set_props(&data.0);
+                self.is_added = false;
             }
             UserPageMsg::AccountViewMsg(msg) => {
                 self.list_view.update(msg);
             }
             UserPageMsg::UserInfomsg(msg) => {
-                self.user_info.update(msg);
+                let data = self.user_info.update(msg);
+                if data.user_added {
+                    self.list_acc.push((
+                        Self::string_convert(data.username.as_str(), "kuser.svg", data.type_val),
+                        button::State::new(),
+                    ));
+                    data.user_added = false;
+                    self.is_added = false;
+                    let lenght = self.list_acc.len();
+                    self.list_view
+                        .set_props(&self.list_acc.get(lenght - 1).unwrap().0);
+                    data.username = String::default();
+                    data.fullname = String::default();
+                    data.password = String::default();
+                    data.confirm = String::default();
+                } else if data.is_back {
+                    self.is_added = false;
+                    data.is_back = false;
+                } else {
+                    {}
+                }
             }
         }
     }
-    fn string_convert(name: &str, icon: &str, acc_type: &str) -> AccountItem {
-        AccountItem::new().set_props(name.to_string(), icon.to_string(), acc_type.to_string())
+    fn string_convert(name: &str, icon: &str, acc_type: bool) -> AccountItem {
+        AccountItem::new().set_props(name.to_string(), icon.to_string(), acc_type)
     }
     pub fn view(&mut self) -> Element<UserPageMsg> {
         let UserPage {
             unlock,
-            is_unlock,
             is_added,
-            current_acc,
             list_acc,
             list_view,
             user_info,
@@ -110,6 +127,7 @@ impl UserPage {
             add_btn,
             remove_btn,
             current_index,
+            ..
         } = self;
         let _banner = Row::new().push(Text::new("Security")).push(Text::new(
             "Unlock to Change Settings\nSome setting must be nlocked before they can be changed.",
@@ -154,16 +172,27 @@ impl UserPage {
                 Row::new()
                     .width(Length::Fill)
                     .push(
-                        Button::new(add_btn, Text::new("Add New User"))
-                            .width(Length::Fill)
-                            .on_press(UserPageMsg::UserAdded(true))
-                            .padding(10),
+                        Button::new(
+                            add_btn,
+                            Text::new("Add New User")
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .style(CustomButton::Apply)
+                        .width(Length::Units(100))
+                        .on_press(UserPageMsg::UserAdded(true))
+                        .padding(10),
                     )
+                    .spacing(10)
                     .push(
-                        Button::new(remove_btn, Text::new("Remove User"))
-                            .width(Length::Fill)
-                            .padding(10)
-                            .on_press(UserPageMsg::UserRemove(*current_index)),
+                        Button::new(
+                            remove_btn,
+                            Text::new("Remove User")
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .style(CustomButton::Delete)
+                        .width(Length::Units(100))
+                        .padding(10)
+                        .on_press(UserPageMsg::UserRemove(*current_index)),
                     ),
             );
         let account_veiw = Column::new()
@@ -197,7 +226,7 @@ pub struct AccountItem {
     icon: String,
     name: String,
     username: String,
-    acc_type: String,
+    acc_type: bool,
 }
 #[derive(Debug, Clone)]
 pub enum AccountItemMsg {}
@@ -207,10 +236,10 @@ impl AccountItem {
             icon: "setting.svg".to_string(),
             name: "Sna".to_string(),
             username: "Sna".to_string(),
-            acc_type: "Login User".to_string(),
+            acc_type: false,
         }
     }
-    fn set_props(mut self, name: String, icon: String, acc_type: String) -> Self {
+    fn set_props(mut self, name: String, icon: String, acc_type: bool) -> Self {
         self.name = name;
         self.icon = icon;
         self.acc_type = acc_type;
@@ -244,7 +273,7 @@ impl AccountItem {
                 Column::new()
                     .width(Length::Fill)
                     .push(Text::new(name.as_str()).size(18))
-                    .push(Text::new(acc_type.as_str())),
+                    .push(Text::new(if *acc_type { "admin" } else { "user" })),
             )
             .into()
     }
@@ -277,7 +306,7 @@ impl AccountView {
         }
     }
 
-    pub fn update(&mut self, msg: AccountViewMsg) {
+    pub fn update(&mut self, msg: AccountViewMsg) -> &mut Self {
         match msg {
             AccountViewMsg::AdminChanged(value) => {
                 self.is_admin = value;
@@ -292,6 +321,7 @@ impl AccountView {
             AccountViewMsg::ActivityChagned => {}
             AccountViewMsg::AvatarChanged => {}
         }
+        self
     }
     pub fn set_props(&mut self, item: &AccountItem) -> &mut Self {
         let AccountItem {
@@ -302,7 +332,7 @@ impl AccountView {
         } = item;
         self.name_value = name.to_string();
         self.avatar = icon.to_string();
-        self.is_admin = true;
+        self.is_admin = *acc_type;
         self
     }
     pub fn view(&mut self) -> Element<AccountViewMsg> {
@@ -366,14 +396,18 @@ pub enum UserInfomsg {
     AccountTypeChanged(bool),
     PasswordChanged(String),
     ConfirmChanged(String),
+    TypeChanged(usize),
     AddUser,
     Back,
 }
 
 #[derive(Default, Debug, Clone)]
 pub struct UserForm {
-    acount_type: [button::State; 2],
+    acount_type: Vec<(String, button::State)>,
     type_val: bool,
+    user_added: bool,
+    is_match: bool,
+    is_back: bool,
     fullname: String,
     fullname_ui: text_input::State,
     username: String,
@@ -384,16 +418,20 @@ pub struct UserForm {
     confirm_ui: text_input::State,
     add_btn: button::State,
     cancel_btn: button::State,
-    list_item: Vec<(AccountItem, button::State)>,
+    current_idx: usize,
 }
 
 impl UserForm {
     pub fn new() -> Self {
         Self {
+            acount_type: vec![
+                ("Standard".to_string(), button::State::new()),
+                ("Administrator".to_string(), button::State::new()),
+            ],
             ..Default::default()
         }
     }
-    pub fn update(&mut self, msg: UserInfomsg) {
+    pub fn update(&mut self, msg: UserInfomsg) -> &mut Self {
         use UserInfomsg::*;
         match msg {
             FullNameChanged(val) => {
@@ -411,15 +449,57 @@ impl UserForm {
             ConfirmChanged(val) => {
                 self.confirm = val;
             }
-            Back => {}
-            AddUser => {}
+            TypeChanged(idx) => {
+                if idx == 1 {
+                    self.type_val = true;
+                } else {
+                    self.type_val = false;
+                };
+                self.current_idx = idx;
+            }
+            Back => {
+                self.is_back = true;
+            }
+            AddUser => {
+                self.user_added = true;
+            }
         }
-    }
-    pub fn set_list(mut self, list: &[(AccountItem, button::State)]) -> Self {
-        self.list_item = list.to_vec();
         self
     }
+    fn apply_row<'a, F>(
+        name: &str,
+        input: &'a mut text_input::State,
+        value: &'a str,
+        f: F,
+    ) -> Element<'a, UserInfomsg>
+    where
+        F: Fn(String) -> UserInfomsg + 'static,
+    {
+        if name.eq_ignore_ascii_case("password") || name.eq_ignore_ascii_case("confirm") {
+            Row::new()
+                .align_items(Align::Center)
+                .push(Text::new(name).size(FONT_SIZE).width(Length::Units(100)))
+                .push(
+                    TextInput::new(input, "", &value, f)
+                        .password()
+                        .size(FONT_SIZE)
+                        .padding(10),
+                )
+                .into()
+        } else {
+            Row::new()
+                .align_items(Align::Center)
+                .push(Text::new(name).size(FONT_SIZE).width(Length::Units(100)))
+                .push(
+                    TextInput::new(input, "", &value, f)
+                        .size(FONT_SIZE)
+                        .padding(10),
+                )
+                .into()
+        }
+    }
     pub fn view(&mut self) -> Element<UserInfomsg> {
+        let UserForm { current_idx, .. } = self;
         let type_view = Row::new()
             .align_items(Align::Center)
             .push(
@@ -427,90 +507,50 @@ impl UserForm {
                     .size(FONT_SIZE)
                     .width(Length::Units(100)),
             )
-            .push(self.acount_type.iter_mut().fold(Row::new(), |row, state| {
-                row.push(
-                    Button::new(state, Text::new("Standard"))
-                        .padding(10)
-                        .width(Length::Fill),
-                )
-            }))
+            .push(self.acount_type.iter_mut().enumerate().fold(
+                Row::new(),
+                |row, (index, (name, state))| {
+                    row.push(
+                        Button::new(state, Text::new(name.as_str()))
+                            .width(Length::Fill)
+                            .padding(10)
+                            .on_press(UserInfomsg::TypeChanged(index))
+                            .style(if *current_idx == index {
+                                CustomButton::SelectType
+                            } else {
+                                CustomButton::Type
+                            }),
+                    )
+                },
+            ))
             .into();
-        let fullname = Row::new()
-            .align_items(Align::Center)
-            .push(
-                Text::new("FullName")
-                    .size(FONT_SIZE)
-                    .width(Length::Units(100)),
-            )
-            .push(
-                TextInput::new(
-                    &mut self.fullname_ui,
-                    "",
-                    &self.fullname,
-                    UserInfomsg::FullNameChanged,
-                )
-                .size(FONT_SIZE)
-                .padding(10),
-            )
-            .into();
-        let username = Row::new()
-            .align_items(Align::Center)
-            .push(
-                Text::new("Uername")
-                    .size(FONT_SIZE)
-                    .width(Length::Units(100)),
-            )
-            .push(
-                TextInput::new(
-                    &mut self.username_ui,
-                    "",
-                    &self.username,
-                    UserInfomsg::UsernameChanged,
-                )
-                .size(FONT_SIZE)
-                .padding(10),
-            )
-            .into();
-        let password = Row::new()
-            .align_items(Align::Center)
-            .push(
-                Text::new("Password")
-                    .size(FONT_SIZE)
-                    .width(Length::Units(100)),
-            )
-            .push(
-                TextInput::new(
-                    &mut self.password_ui,
-                    "",
-                    &self.password,
-                    UserInfomsg::PasswordChanged,
-                )
-                .size(FONT_SIZE)
-                .password()
-                .padding(10),
-            )
-            .into();
-        let confirm = Row::new()
-            .align_items(Align::Center)
-            .push(
-                Text::new("confirm")
-                    .size(FONT_SIZE)
-                    .width(Length::Units(100)),
-            )
-            .push(
-                TextInput::new(
-                    &mut self.confirm_ui,
-                    "",
-                    &self.confirm,
-                    UserInfomsg::ConfirmChanged,
-                )
-                .size(FONT_SIZE)
-                .padding(10)
-                .password(),
-            )
-            .into();
+        let fullname = Self::apply_row(
+            "FullName",
+            &mut self.fullname_ui,
+            &self.fullname,
+            UserInfomsg::FullNameChanged,
+        );
+        let username = Self::apply_row(
+            "Username",
+            &mut self.username_ui,
+            &self.username,
+            UserInfomsg::UsernameChanged,
+        );
+        let password = Self::apply_row(
+            "Password",
+            &mut self.password_ui,
+            &self.password,
+            UserInfomsg::PasswordChanged,
+        );
+        let confirm = Self::apply_row(
+            "Confirm",
+            &mut self.confirm_ui,
+            &self.confirm,
+            UserInfomsg::ConfirmChanged,
+        );
         let control = Row::new()
             .spacing(10)
+            .align_items(Align::Center)
             .push(
                 Column::new()
                     .align_items(Align::Start)
@@ -522,25 +562,49 @@ impl UserForm {
                                 .size(FONT_SIZE)
                                 .horizontal_alignment(HorizontalAlignment::Center),
                         )
+                        .style(CustomButton::Cancel)
                         .width(Length::Units(100))
                         .padding(10)
                         .on_press(UserInfomsg::Back),
                     ),
             )
+            .push(Column::new().push(if self.password.eq(&self.confirm) {
+                Text::new("")
+            } else {
+                Text::new("The passwords do not match").size(16)
+            }))
             .push(
                 Column::new()
                     .align_items(Align::End)
                     .width(Length::Fill)
                     .push(
-                        Button::new(
-                            &mut self.cancel_btn,
-                            Text::new("Add")
-                                .size(FONT_SIZE)
-                                .horizontal_alignment(HorizontalAlignment::Center),
-                        )
-                        .width(Length::Units(100))
-                        .padding(10)
-                        .on_press(UserInfomsg::AddUser),
+                        if self.username.is_empty()
+                            || self.fullname.is_empty()
+                            || self.password.is_empty()
+                            || self.confirm.is_empty()
+                            || !self.password.eq(&self.confirm)
+                        {
+                            Button::new(
+                                &mut self.cancel_btn,
+                                Text::new("Add")
+                                    .size(FONT_SIZE)
+                                    .horizontal_alignment(HorizontalAlignment::Center),
+                            )
+                            .style(CustomButton::Apply)
+                            .width(Length::Units(100))
+                            .padding(10)
+                        } else {
+                            Button::new(
+                                &mut self.cancel_btn,
+                                Text::new("Add")
+                                    .size(FONT_SIZE)
+                                    .horizontal_alignment(HorizontalAlignment::Center),
+                            )
+                            .style(CustomButton::Apply)
+                            .width(Length::Units(100))
+                            .padding(10)
+                            .on_press(UserInfomsg::AddUser)
+                        },
                     ),
             )
             .into();
