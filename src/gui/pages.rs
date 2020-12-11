@@ -1,29 +1,31 @@
 #[macro_use]
 mod general_page;
-mod keyboard_page;
-mod sound_page;
+mod battery_page;
 mod bluetooth_page;
+mod display_page;
+mod keyboard_page;
+mod mouse_page;
 mod network_page;
 mod printer_page;
-mod touchpad_page;
-mod mouse_page;
-mod display_page;
-mod battery_page;
+mod sound_page;
 mod sys_info_page;
+mod touchpad_page;
 
+mod user_page;
+use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
+use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
-use network_page::{NetMessage, NetworkPage};
-use sound_page::{SoundMessage, SoundPage};
-use printer_page::{PrinterPage, PrinterMessage};
-use keyboard_page::{KeyboardPage, KeyboardMessage};
-use touchpad_page::{TouchpadPage, TouchpadMessage};
-use mouse_page::{MousePage, MouseMessage};
-use display_page::{DisplayPage, DisplayMessage};
-use battery_page::{BatteryPage, BatteryMessage};
-use sys_info_page::{InfoPage, InfoMessage};
 use iced::{Container, Element, Length, Space};
+use keyboard_page::{KeyboardMessage, KeyboardPage};
+use mouse_page::{MouseMessage, MousePage};
+use network_page::{NetMessage, NetworkPage};
+use printer_page::{PrinterMessage, PrinterPage};
+use sound_page::{SoundMessage, SoundPage};
+use sys_info_page::{InfoMessage, InfoPage};
+use touchpad_page::{TouchpadMessage, TouchpadPage};
 
+use user_page::{UserPage, UserPageMsg};
 pub struct Pages {
    pages: Vec<PageModel>,
    current: usize,
@@ -42,6 +44,7 @@ pub enum PagesMessage {
    DisplayMessage(DisplayMessage),
    BatteryMessage(BatteryMessage),
    InfoMessage(InfoMessage),
+   UserPageMsg(UserPageMsg),
 }
 
 #[derive(Debug, Clone)]
@@ -50,7 +53,7 @@ pub enum PageModel {
    GeneralPage { general_page: General },
    DateTimePage,
    LanguagePage,
-   UsersPage,
+   UsersPageModel { user_page: UserPage },
    AccessPage,
    AccountPage,
    NotiPage,
@@ -79,7 +82,9 @@ impl Pages {
             },
             DateTimePage,
             LanguagePage,
-            UsersPage,
+            UsersPageModel {
+               user_page: UserPage::new(),
+            },
             AccessPage,
             AccountPage,
             NotiPage,
@@ -104,16 +109,16 @@ impl Pages {
                touchpad_page: TouchpadPage::new(),
             },
             MousePageModel {
-               mouse_page: MousePage::new()
+               mouse_page: MousePage::new(),
             },
             DisplayPageModel {
-               display_page: DisplayPage::new()
+               display_page: DisplayPage::new(),
             },
             BatteryPageModel {
-               battery_page: BatteryPage::new()
+               battery_page: BatteryPage::new(),
             },
             InfoPageModel {
-               info_page: InfoPage::new()
+               info_page: InfoPage::new(),
             },
          ],
          current: 0,
@@ -197,6 +202,11 @@ impl PageModel {
                info_page.update(msg);
             }
          }
+         UserPageMsg(msg) => {
+            if let UsersPageModel { user_page } = self {
+               user_page.update(msg);
+            }
+         }
       }
    }
 
@@ -204,25 +214,49 @@ impl PageModel {
       use PageModel::*;
       match self {
          HomePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         GeneralPage { general_page } => general_page.view().map(move |msg| PagesMessage::GeneralMessage(msg)),
+         GeneralPage { general_page } => general_page
+            .view()
+            .map(move |msg| PagesMessage::GeneralMessage(msg)),
          DateTimePage => Container::new(Space::with_width(Length::Shrink)).into(),
          LanguagePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         UsersPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         UsersPageModel { user_page } => user_page
+            .view()
+            .map(move |msg| PagesMessage::UserPageMsg(msg)),
          AccessPage => Container::new(Space::with_width(Length::Shrink)).into(),
          AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
          NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
          UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
-         NetworkPageModel { network_page } => network_page.view().map(move |msg| PagesMessage::NetMessage(msg)),
-         BluetoothPageModel { bluetooth_page } => bluetooth_page.view().map(move |msg| PagesMessage::BluetoothMessage(msg)),
-         SoundPageModel { sound_page } => sound_page.view().map(move |msg| PagesMessage::SoundMessage(msg)),
-         PrinterPageModel { printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
-         KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
-         TouchpadPageModel { touchpad_page } => touchpad_page.view().map(move |msg| PagesMessage::TouchpadMessage(msg)),
-         MousePageModel { mouse_page } => mouse_page.view().map(move |msg| PagesMessage::MouseMessage(msg)),
-         DisplayPageModel { display_page } => display_page.view().map(move |msg| PagesMessage::DisplayMessage(msg)),
-         BatteryPageModel { battery_page } => battery_page.view().map(move |msg| PagesMessage::BatteryMessage(msg)),
-         InfoPageModel { info_page } => info_page.view().map(move |msg| PagesMessage::InfoMessage(msg)),
+         NetworkPageModel { network_page } => network_page
+            .view()
+            .map(move |msg| PagesMessage::NetMessage(msg)),
+         BluetoothPageModel { bluetooth_page } => bluetooth_page
+            .view()
+            .map(move |msg| PagesMessage::BluetoothMessage(msg)),
+         SoundPageModel { sound_page } => sound_page
+            .view()
+            .map(move |msg| PagesMessage::SoundMessage(msg)),
+         PrinterPageModel { printer_page } => printer_page
+            .view()
+            .map(move |msg| PagesMessage::PrinterMessage(msg)),
+         KeyboardPageModel { keyboard_page } => keyboard_page
+            .view()
+            .map(move |msg| PagesMessage::KeyboardMessage(msg)),
+         TouchpadPageModel { touchpad_page } => touchpad_page
+            .view()
+            .map(move |msg| PagesMessage::TouchpadMessage(msg)),
+         MousePageModel { mouse_page } => mouse_page
+            .view()
+            .map(move |msg| PagesMessage::MouseMessage(msg)),
+         DisplayPageModel { display_page } => display_page
+            .view()
+            .map(move |msg| PagesMessage::DisplayMessage(msg)),
+         BatteryPageModel { battery_page } => battery_page
+            .view()
+            .map(move |msg| PagesMessage::BatteryMessage(msg)),
+         InfoPageModel { info_page } => info_page
+            .view()
+            .map(move |msg| PagesMessage::InfoMessage(msg)),
       }
    }
 
@@ -233,7 +267,7 @@ impl PageModel {
          GeneralPage { .. } => "General",
          DateTimePage => "Date & Time",
          LanguagePage => "Language & Region",
-         UsersPage => "Users & Groups",
+         UsersPageModel { .. } => "Users & Groups",
          AccessPage => "Accessibility",
          AccountPage => "Accounts",
          NotiPage => "Notifications",

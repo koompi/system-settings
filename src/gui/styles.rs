@@ -2,11 +2,11 @@ use iced::{
    button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
-const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
-const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
-pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
-const ACTIVE: Color = Color::from_rgb(41.0/255.0, 98.0/255.0, 1.0);
-const HOVERED: Color = Color::from_rgb(189.0/255.0, 195.0/255.0, 199.0/255.0);
+const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
+const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
+const ACTIVE: Color = Color::from_rgb(41.0 / 255.0, 98.0 / 255.0, 1.0);
+const HOVERED: Color = Color::from_rgb(189.0 / 255.0, 195.0 / 255.0, 199.0 / 255.0);
 
 pub enum CustomButton {
    Default,
@@ -19,7 +19,12 @@ pub enum CustomButton {
    SelectedTab,
    Card,
    SelectedCard,
-   Primary
+   Primary,
+   Apply,
+   Delete,
+   Type,
+   SelectType,
+   Cancel,
 }
 
 impl button::StyleSheet for CustomButton {
@@ -29,6 +34,10 @@ impl button::StyleSheet for CustomButton {
             CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
             CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
             CustomButton::Primary => Color::WHITE,
+            CustomButton::Apply => Color::WHITE,
+            CustomButton::Delete => Color::WHITE,
+            CustomButton::SelectType => Color::BLACK,
+            CustomButton::Cancel => Color::WHITE,
             _ => Color::BLACK,
          },
          background: Some(Background::Color(match self {
@@ -38,19 +47,27 @@ impl button::StyleSheet for CustomButton {
             CustomButton::SelectedTab | CustomButton::Card => Color::WHITE,
             CustomButton::Text | CustomButton::Tab | CustomButton::Sidebar => Color::TRANSPARENT,
             CustomButton::Primary => ACCENT,
+            CustomButton::Apply => Color::from_rgb8(39, 174, 96),
+            CustomButton::Delete => Color::from_rgb8(255, 56, 56),
+            CustomButton::Type => Color::WHITE,
+            CustomButton::Cancel => Color::from_rgb8(119, 140, 163),
+            CustomButton::SelectType => Color::from_rgb8(209, 216, 224),
             _ => Color::WHITE,
          })),
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Tab | CustomButton::SelectedTab => 7.0,
+            CustomButton::Type | CustomButton::SelectType => 0.0,
             _ => 5.0,
          },
          border_color: match self {
             CustomButton::Default | CustomButton::Secondary => Color::BLACK,
+            CustomButton::SelectType => Color::from_rgb8(253, 150, 68),
             _ => Color::TRANSPARENT,
          },
          border_width: match self {
             CustomButton::Secondary | CustomButton::Tab | CustomButton::SelectedTab => 1.0,
+            CustomButton::SelectType => 2.0,
             _ => 0.0,
          },
          shadow_offset: match self {
@@ -70,6 +87,23 @@ impl button::StyleSheet for CustomButton {
                ..active
             }
          }
+         CustomButton::Apply => button::Style {
+            background: Some(Background::Color(Color::from_rgb8(46, 204, 113))),
+            ..active
+         },
+         CustomButton::Cancel => button::Style {
+            background: Some(Background::Color(Color::from_rgb8(165, 177, 194))),
+            ..active
+         },
+         CustomButton::Type => button::Style {
+            background: Some(Background::Color(Color::from_rgb8(209, 216, 224))),
+            ..active
+         },
+         CustomButton::SelectType => button::Style { ..active },
+         CustomButton::Delete => button::Style {
+            background: Some(Background::Color(Color::from_rgb8(255, 77, 77))),
+            ..active
+         },
          _ => active,
       }
    }
