@@ -231,8 +231,8 @@ impl UserPage {
                 ),
         );
         let main_layout = Row::new().push(list_control_container).push(user_view);
-        let main_column: Element<_> = Column::new().push(banner).push(main_layout).into();
-        Container::new(main_column.explain(iced::Color::BLACK))
+        let main_column = Column::new().push(banner).push(main_layout);
+        Container::new(main_column)
             .style(CustomContainer::ForegroundGray)
             .padding(10)
             .height(Length::Fill)
