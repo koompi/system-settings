@@ -2,11 +2,13 @@ use iced::{
    button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
-const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
-const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
-pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
-const ACTIVE: Color = Color::from_rgb(41.0 / 255.0, 98.0 / 255.0, 1.0);
-const HOVERED: Color = Color::from_rgb(189.0 / 255.0, 195.0 / 255.0, 199.0 / 255.0);
+pub const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
+pub const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
+pub const HOVERED: Color = Color::from_rgb(129.0/255.0, 129.0/255.0, 129.0/255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
+pub const SUCCESS: Color = Color::from_rgb(31.0/255.0, 139.0/255.0, 36.0/255.0);
+pub const WARNING: Color = Color::from_rgb(212.0/255.0, 176.0/255.0, 17.0/255.0);
+pub const ERROR: Color = Color::from_rgb(218.0/255.0, 16.0/255.0, 11.0/255.0);
 
 pub enum CustomButton {
    Default,
@@ -56,8 +58,9 @@ impl button::StyleSheet for CustomButton {
          })),
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
-            CustomButton::Tab | CustomButton::SelectedTab => 7.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
+            CustomButton::Tab | CustomButton::SelectedTab | 
+            CustomButton::Text | CustomButton::Selected => 7.0,
             _ => 5.0,
          },
          border_color: match self {
@@ -278,24 +281,23 @@ impl radio::StyleSheet for CustomRadio {
             border_color: Color::from_rgb8(9, 132, 227),
          },
          CustomRadio::Disactive => radio::Style {
-            background: HOVERED.into(),
-            dot_color: Color::WHITE,
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
+            background: Color::WHITE.into(),
+            dot_color: ACCENT,
+            border_width: 1.5,
+            border_color: HOVERED,
          },
          CustomRadio::Active => radio::Style {
-            background: ACTIVE.into(),
-            dot_color: Color::WHITE,
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
+            background: Color::WHITE.into(),
+            dot_color: ACCENT,
+            border_width: 1.5,
+            border_color: ACCENT,
          },
       }
    }
    fn hovered(&self) -> radio::Style {
       radio::Style {
          background: match self {
-            CustomRadio::Active => ACTIVE.into(),
-            CustomRadio::Disactive => HOVERED.into(),
+            CustomRadio::Active | CustomRadio::Disactive => self.active().background,
             _ => Background::Color(Color::from_rgb8(75, 101, 132)),
          },
          ..self.active()
@@ -383,11 +385,11 @@ pub enum CustomCheckbox {
 impl checkbox::StyleSheet for CustomCheckbox {
    fn active(&self, is_checked: bool) -> checkbox::Style {
       checkbox::Style {
-         background: if is_checked { ACCENT } else { HOVERED }.into(),
+         background: if is_checked { ACCENT } else { Color::WHITE }.into(),
          checkmark_color: Color::WHITE,
          border_radius: 5.0,
-         border_width: 0.0,
-         border_color: ACCENT,
+         border_width: 1.5,
+         border_color: if is_checked { ACCENT } else { HOVERED }.into(),
       }
    }
 

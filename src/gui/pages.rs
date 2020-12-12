@@ -10,22 +10,24 @@ mod printer_page;
 mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
-
 mod user_page;
+mod date_time_page;
+
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
-use iced::{Container, Element, Length, Space};
 use keyboard_page::{KeyboardMessage, KeyboardPage};
 use mouse_page::{MouseMessage, MousePage};
 use network_page::{NetMessage, NetworkPage};
 use printer_page::{PrinterMessage, PrinterPage};
 use sound_page::{SoundMessage, SoundPage};
-use sys_info_page::{InfoMessage, InfoPage};
-use touchpad_page::{TouchpadMessage, TouchpadPage};
-
+use touchpad_page::{TouchpadPage, TouchpadMessage};
+use sys_info_page::{InfoPage, InfoMessage};
 use user_page::{UserPage, UserPageMsg};
+use date_time_page::{DateTimePage, DateTimeMessage};
+use iced::{Container, Element, Length, Space, Subscription};
+
 pub struct Pages {
    pages: Vec<PageModel>,
    current: usize,
@@ -45,13 +47,14 @@ pub enum PagesMessage {
    BatteryMessage(BatteryMessage),
    InfoMessage(InfoMessage),
    UserPageMsg(UserPageMsg),
+   DateTimeMessage(DateTimeMessage),
 }
 
-#[derive(Debug, Clone)]
+// #[derive(Debug)]
 pub enum PageModel {
    HomePage,
    GeneralPage { general_page: General },
-   DateTimePage,
+   DateTimePageModel { datetime_page: DateTimePage },
    LanguagePage,
    UsersPageModel { user_page: UserPage },
    AccessPage,
@@ -80,7 +83,9 @@ impl Pages {
             GeneralPage {
                general_page: General::new(),
             },
-            DateTimePage,
+            DateTimePageModel {
+               datetime_page: DateTimePage::new()
+            },
             LanguagePage,
             UsersPageModel {
                user_page: UserPage::new(),
@@ -131,6 +136,10 @@ impl Pages {
 
    pub fn update(&mut self, msg: PagesMessage) {
       self.pages[self.current].update(msg);
+   }
+
+   pub fn subscription(&self) -> Subscription<PagesMessage> {
+      self.pages[self.current].subscription()
    }
 
    pub fn view(&mut self) -> Element<PagesMessage> {
@@ -207,6 +216,19 @@ impl PageModel {
                user_page.update(msg);
             }
          }
+         DateTimeMessage(msg) => {
+            if let DateTimePageModel { datetime_page } = self {
+               datetime_page.update(msg);
+            }
+         }
+      }
+   }
+
+   fn subscription(&self) -> Subscription<PagesMessage> {
+      use PageModel::*;
+      match self {
+         DateTimePageModel { datetime_page } => datetime_page.subscription().map(PagesMessage::DateTimeMessage),
+         _ => Subscription::none()
       }
    }
 
@@ -217,7 +239,7 @@ impl PageModel {
          GeneralPage { general_page } => general_page
             .view()
             .map(move |msg| PagesMessage::GeneralMessage(msg)),
-         DateTimePage => Container::new(Space::with_width(Length::Shrink)).into(),
+         DateTimePageModel { datetime_page } => datetime_page.view().map(move |msg| PagesMessage::DateTimeMessage(msg)),
          LanguagePage => Container::new(Space::with_width(Length::Shrink)).into(),
          UsersPageModel { user_page } => user_page
             .view()
@@ -265,7 +287,7 @@ impl PageModel {
       match self {
          HomePage => "System Setting",
          GeneralPage { .. } => "General",
-         DateTimePage => "Date & Time",
+         DateTimePageModel { .. } => "Date & Time",
          LanguagePage => "Language & Region",
          UsersPageModel { .. } => "Users & Groups",
          AccessPage => "Accessibility",

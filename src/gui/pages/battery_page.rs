@@ -266,8 +266,8 @@ impl BatteryPage {
             
             // ផ្នែកខាងក្រោម
             let btn_battery_health = Button::new(battery_health_state, Text::new("  Battery Health...  ")).on_press(BatteryMessage::BatteryHealthClicked).style(CustomButton::Default);
-            let btn_restore = Button::new(restore_defaults, Text::new("  Restore Defaults  ")).on_press(BatteryMessage::RestoreDefaultBatteryClicked).style(CustomButton::Default);
-            let bottom_row = Row::new().spacing(15).align_items(Align::Center).push(Text::new(if *is_battery_health_clicked {"Battery Condition: Normal"} else {""})).push(btn_battery_health).push(btn_restore);
+            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  ")).on_press(BatteryMessage::RestoreDefaultBatteryClicked).style(CustomButton::Default);
+            let bottom_row = Row::new().spacing(15).align_items(Align::Center).push(btn_restore).push(Space::with_width(Length::Fill)).push(Text::new(if *is_battery_health_clicked {"Battery Condition: Normal"} else {""})).push(btn_battery_health);
             let bottom_sec = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
             
             Container::new(
@@ -315,9 +315,9 @@ impl BatteryPage {
             ).height(Length::Fill);
             
             // ផ្នែកខាងក្រោម
-            let btn_restore = Button::new(restore_defaults, Text::new("  Restore Defaults  ")).on_press(BatteryMessage::RestoreDefaultPowerClicked).style(CustomButton::Default);
+            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  ")).on_press(BatteryMessage::RestoreDefaultPowerClicked).style(CustomButton::Default);
             let bottom_row = Row::new().spacing(15).align_items(Align::Center).push(btn_restore);
-            let bottom_sec = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
+            let bottom_sec = Container::new(bottom_row).width(Length::Fill);
             
             Container::new(
                Column::new()

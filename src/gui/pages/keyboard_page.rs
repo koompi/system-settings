@@ -19,7 +19,7 @@ pub enum KeyboardMessage {
    LeftTabSelected(usize),
    RightPaneSelectedToggled(bool),
    RightPaneSelectedChanged(usize),
-   RestoreDefaultClicked(bool),
+   RestoreDefaultClicked,
    KeyNavToggled(bool),
    InputSourceLeftTabSelected(usize),
    BtnAddClicked,
@@ -77,7 +77,7 @@ impl KeyboardPage {
             self.shortcuts.shortcuts_tab_map.get_mut(self.shortcuts.left_pane_selected).unwrap().get_mut(self.shortcuts.right_pane_selected).unwrap().0 = val;
          },
          KeyboardMessage::RightPaneSelectedChanged(idx) => self.shortcuts.right_pane_selected = idx,
-         KeyboardMessage::RestoreDefaultClicked(val) => self.shortcuts.is_restore_clicked = val,
+         KeyboardMessage::RestoreDefaultClicked => self.shortcuts = Shortcuts::new(),
          KeyboardMessage::KeyNavToggled(val) => self.shortcuts.use_keyboard_nav = val,
          KeyboardMessage::InputSourceLeftTabSelected(idx) => self.input_sources.input_sources_selected = Some(idx),
          KeyboardMessage::BtnAddClicked => self.input_sources.input_sources_tab.push(('\u{f1ab}', "Other".to_string(), button::State::new())),
@@ -177,7 +177,6 @@ impl KeyboardPage {
          1 => {
             let Shortcuts {
                btn_restore,
-               is_restore_clicked,
                shortcuts_tab,
                shortcuts_tab_map,
                left_pane_selected,
@@ -209,9 +208,9 @@ impl KeyboardPage {
             let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
-            let btn_restore = Button::new(btn_restore, Text::new("  Restore Defaults  ")).on_press(KeyboardMessage::RestoreDefaultClicked(!(*is_restore_clicked))).style(CustomButton::Default);
-            let restore_row = Row::new().spacing(20).align_items(Align::Center).push(Text::new(if *is_restore_clicked {"Processing restore to default settings"} else {""})).push(btn_restore);
-            let restore_section = Container::new(restore_row).width(Length::Fill).align_x(Align::End);
+            let btn_restore = Button::new(btn_restore, Text::new("  Defaults  ")).on_press(KeyboardMessage::RestoreDefaultClicked).style(CustomButton::Default);
+            let restore_row = Row::new().spacing(20).align_items(Align::Center).push(btn_restore);
+            let restore_section = Container::new(restore_row).width(Length::Fill);
             
             let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyboardMessage::KeyNavToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_hint = Text::new("Press the Tab key to move focus forward and Shift tab to move focus backward.");
@@ -468,7 +467,6 @@ impl Keyboard {
 #[derive(Debug, Clone, Default)]
 pub struct Shortcuts {
    btn_restore: button::State,
-   is_restore_clicked: bool,
    shortcuts_tab: Vec<(char, String, button::State)>,
    shortcuts_tab_map: Vec<Vec<(bool, String, String, button::State)>>,
    left_pane_selected: usize,
