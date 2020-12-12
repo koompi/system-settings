@@ -99,9 +99,9 @@ impl MousePage {
       ).width(Length::FillPortion(6));
 
       // ផ្នែកខាងក្រោម
-      let btn_restore_default = Button::new(btn_default_state, Text::new("  Restore Defaults  ")).on_press(MouseMessage::RestoreDefaultClicked).style(CustomButton::Default);
+      let btn_restore_default = Button::new(btn_default_state, Text::new("  Defaults  ")).on_press(MouseMessage::RestoreDefaultClicked).style(CustomButton::Default);
       let bottom = Row::new().spacing(15).align_items(Align::Center).push(btn_restore_default);
-      let bottom_section = Container::new(bottom).width(Length::Fill).padding(20).align_x(Align::End);
+      let bottom_section = Container::new(bottom).width(Length::Fill).padding(20);
 
       // មាតិកា   
       let content = Column::new().spacing(15).width(Length::Fill)

@@ -3,7 +3,7 @@ use super::styles::{CustomButton, CustomTextInput, CustomContainer};
 use super::pages::{Pages, PagesMessage};
 use iced_custom_widget::{Grid, Icon};
 use iced::{
-   executor, scrollable, text_input, button, window, Align, Application, Column, Command, 
+   executor, scrollable, text_input, button, window, Align, Application, Column, Command, Subscription,
    Container, Element, Length, Row, Scrollable, TextInput, Settings, Space, Text, Button
 };
 
@@ -37,7 +37,6 @@ impl Application for SystemSetting {
       let pref = |file_name: &str, name: &str, category: Category| {
          Pref::new(format!("{}/assets/images/{}.svg",env!("CARGO_MANIFEST_DIR"), file_name), String::from(name), category)
       };
-
       let prefs = vec![
          pref("window", "General", System),
          pref("time", "Date & Time", System),
@@ -57,7 +56,7 @@ impl Application for SystemSetting {
          pref("mouse", "Mouse", Hardware),
          pref("display", "Display", Hardware),
          pref("battery", "Battery", Hardware),
-         pref("sys-info", "System Information", Hardware),
+         pref("sys-info", "System Info", Hardware),
       ];
 
       (
@@ -110,6 +109,10 @@ impl Application for SystemSetting {
          }
       }
       Command::none()
+   }
+
+   fn subscription(&self) -> Subscription<Self::Message> {
+      self.pages.subscription().map(Self::Message::PagesMessage)
    }
 
    fn view(&mut self) -> Element<Self::Message> {

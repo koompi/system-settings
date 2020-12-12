@@ -98,6 +98,7 @@ impl SoundPage {
          mute,
          show_volumn,
       } = self;
+      
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {

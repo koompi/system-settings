@@ -7,14 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-iced = { version = "0.2", features = ["debug", "svg"] }
+iced = { version = "0.2", features = ["debug", "svg", "canvas", "tokio"] }
 iced_style = "0.2"
 iced_custom_widget = { git="https://github.com/leang27/iced_custom_widget", branch="master" }
 vedas_core = { git="https://github.com/koompi/vedas", branch="dev" }
 
 image = "0.23"
 chrono = "0.4"
-opener = "0.4.1"
+chrono-tz = { version = "0.5", features = ["serde"] }
+opener = "0.4"
 sys-info = "0.7"
 serde = { version = "1.0", features=['derive'] }
 serde_json = "1.0"
