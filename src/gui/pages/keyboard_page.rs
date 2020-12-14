@@ -261,8 +261,8 @@ impl KeyboardPage {
                   }
                )
             });
-            let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
-            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
+            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
+            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
             if input_sources_selected.is_some() && tab_len > 1 {
                btn_remove = btn_remove.on_press(KeyboardMessage::BtnRemoveClicked);
             }

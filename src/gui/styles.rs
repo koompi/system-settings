@@ -27,6 +27,7 @@ pub enum CustomButton {
    Type,
    SelectType,
    Cancel,
+   Hovered,
 }
 
 impl button::StyleSheet for CustomButton {
@@ -34,7 +35,7 @@ impl button::StyleSheet for CustomButton {
       button::Style {
          text_color: match self {
             CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
-            CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
+            CustomButton::Hovered => Color::WHITE,
             CustomButton::Primary => Color::WHITE,
             CustomButton::Apply => Color::WHITE,
             CustomButton::Delete => Color::WHITE,
@@ -54,12 +55,13 @@ impl button::StyleSheet for CustomButton {
             CustomButton::Type => Color::WHITE,
             CustomButton::Cancel => Color::from_rgb8(119, 140, 163),
             CustomButton::SelectType => Color::from_rgb8(209, 216, 224),
+            CustomButton::Hovered => HOVERED,
             _ => Color::WHITE,
          })),
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
-            CustomButton::Tab | CustomButton::SelectedTab | 
+            CustomButton::Tab | CustomButton::SelectedTab | CustomButton::Hovered |
             CustomButton::Text | CustomButton::Selected => 7.0,
             _ => 5.0,
          },

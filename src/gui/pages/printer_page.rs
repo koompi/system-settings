@@ -58,8 +58,8 @@ impl PrinterPage {
          default_paper_size,
       } = self;
       // ផ្ទាំងខាងឆ្វេង
-      let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Text);
-      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
+      let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Text);
+      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
       if selected_device.is_some() {
          btn_remove = btn_remove.on_press(PrinterMessage::BtnRemoveClicked);
       }
