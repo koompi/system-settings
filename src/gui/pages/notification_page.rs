@@ -19,6 +19,9 @@ pub enum NotifyMsg {
     HideTimeChanged(String),
     ApplicationChagned,
     PopupChanged(bool),
+    CustomViewChanged(CustomView),
+    BackHome,
+    CustomPosition,
 }
 #[derive(Default, Debug, Clone)]
 pub struct NotifyPage {
@@ -36,6 +39,20 @@ pub struct NotifyPage {
     app: button::State,
     is_poistion: bool,
     configure: button::State,
+    cusviews: CustomView,
+    back_home: button::State,
+    custom_pos: button::State,
+}
+#[derive(Debug, Clone)]
+pub enum CustomView {
+    Home,
+    Configure,
+    Position,
+}
+impl Default for CustomView {
+    fn default() -> Self {
+        CustomView::Home
+    }
 }
 
 impl NotifyPage {
@@ -63,8 +80,15 @@ impl NotifyPage {
             BadgesChanged(val) => self.notifybadges = val,
             HideTimeChanged(val) => self.hidetimevalue = val,
             ApplicationChagned => {
-                println!("app pressed");
+                self.cusviews = CustomView::Configure;
             }
+            CustomViewChanged(val) => {
+                self.cusviews = val;
+            }
+            CustomPosition => {
+                self.cusviews = CustomView::Position;
+            }
+            BackHome => self.cusviews = CustomView::Home,
         }
         self
     }
@@ -79,147 +103,185 @@ impl NotifyPage {
             )
             .spacing(4)
     }
+    fn column_cus<'a>() -> Column<'a, NotifyMsg> {
+        Column::new().align_items(Align::Start)
+    }
     fn checkbox_cus<'a, F>(state: bool, label: &str, f: F) -> Checkbox<NotifyMsg>
     where
         F: Fn(bool) -> NotifyMsg + 'static,
     {
         Checkbox::new(state, label, f).style(CustomCheckbox::Default)
     }
-    pub fn view(&mut self) -> Element<NotifyMsg> {
-        let main_settings = Column::new()
-            .push(
-                Self::row_template("Do Not Disturb mode:").push(
-                    Column::new()
-                        .align_items(Align::Start)
-                        .spacing(10)
-                        .push(Self::checkbox_cus(
-                            self.disturb1,
-                            "Enable when screens are mirrored",
-                            NotifyMsg::Disturb1Changed,
-                        ))
-                        .push(Self::checkbox_cus(
-                            self.disturb2,
-                            "Show critical Notificatons",
-                            NotifyMsg::Disturb2Changed,
-                        )),
-                ),
-            )
-            .push(Space::with_height(Length::Units(50)))
+    fn custom_space<'a>() -> Row<'a, NotifyMsg> {
+        Row::new()
             .push(Rule::horizontal(2))
-            .push(
-                Self::row_template("Critical notifications:").push(
-                    Column::new()
-                        .align_items(Align::Start)
-                        .push(Self::checkbox_cus(
+            .width(Length::Units(ROW_WIDTH))
+    }
+    pub fn view(&mut self) -> Element<NotifyMsg> {
+        match self.cusviews {
+            CustomView::Home => {
+                let main_settings = Column::new()
+                    .push(
+                        Self::row_template("Do Not Disturb mode:").push(
+                            Self::column_cus()
+                                .spacing(10)
+                                .push(Self::checkbox_cus(
+                                    self.disturb1,
+                                    "Enable when screens are mirrored",
+                                    NotifyMsg::Disturb1Changed,
+                                ))
+                                .push(Self::checkbox_cus(
+                                    self.disturb2,
+                                    "Show critical Notificatons",
+                                    NotifyMsg::Disturb2Changed,
+                                )),
+                        ),
+                    )
+                    .push(Space::with_height(Length::Units(50)))
+                    .push(Self::custom_space())
+                    .push(Self::row_template("Critical notifications:").push(
+                        Self::column_cus().push(Self::checkbox_cus(
                             self.critical,
                             "Always keep on top",
                             NotifyMsg::CriticalChanged,
                         )),
-                ),
-            )
-            .push(
-                Self::row_template("Low priority notificatoins:").push(
-                    Column::new()
-                        .spacing(10)
-                        .align_items(Align::Start)
-                        .push(Self::checkbox_cus(
-                            self.priority1,
-                            "Show popup",
-                            NotifyMsg::Priority1Changed,
-                        ))
-                        .push(Self::checkbox_cus(
-                            self.priority2,
-                            "Show in history",
-                            NotifyMsg::Priority2Changed,
-                        )),
-                ),
-            )
-            .push(
-                Self::row_template("Popup:").push(
-                    Column::new()
-                        .spacing(10)
-                        .align_items(Align::Start)
-                        .push(
-                            Radio::new(
-                                true,
-                                "Show near notification icon",
-                                Some(self.is_poistion),
-                                NotifyMsg::PopupChanged,
-                            )
-                            .size(18)
-                            .style(CustomRadio::Purple),
-                        )
-                        .push(
-                            Radio::new(
-                                false,
-                                "Show popup with positions",
-                                Some(self.is_poistion),
-                                NotifyMsg::PopupChanged,
-                            )
-                            .size(18)
-                            .style(CustomRadio::Purple),
-                        )
-                        .push(
-                            Row::new()
-                                .align_items(Align::Center)
-                                .push(Text::new("Hide after: "))
+                    ))
+                    .push(
+                        Self::row_template("Low priority notificatoins:").push(
+                            Self::column_cus()
+                                .spacing(10)
+                                .push(Self::checkbox_cus(
+                                    self.priority1,
+                                    "Show popup",
+                                    NotifyMsg::Priority1Changed,
+                                ))
+                                .push(Self::checkbox_cus(
+                                    self.priority2,
+                                    "Show in history",
+                                    NotifyMsg::Priority2Changed,
+                                )),
+                        ),
+                    )
+                    .push(
+                        Self::row_template("Popup:").push(
+                            Self::column_cus()
+                                .spacing(10)
                                 .push(
-                                    TextInput::new(
-                                        &mut self.hide_time,
-                                        "8 seconds",
-                                        &self.hidetimevalue,
-                                        NotifyMsg::HideTimeChanged,
+                                    Radio::new(
+                                        true,
+                                        "Show near notification icon",
+                                        Some(self.is_poistion),
+                                        NotifyMsg::PopupChanged,
                                     )
-                                    .width(Length::Units(100))
-                                    .padding(10),
+                                    .size(18)
+                                    .style(CustomRadio::Purple),
+                                )
+                                .push(
+                                    Radio::new(
+                                        false,
+                                        "Show popup with positions",
+                                        Some(self.is_poistion),
+                                        NotifyMsg::PopupChanged,
+                                    )
+                                    .size(18)
+                                    .style(CustomRadio::Purple),
+                                )
+                                .push(
+                                    Button::new(
+                                        &mut self.custom_pos,
+                                        Text::new("Custom Position ..."),
+                                    )
+                                    .style(CustomButton::Cancel)
+                                    .on_press(NotifyMsg::CustomPosition),
+                                )
+                                .push(
+                                    Row::new()
+                                        .align_items(Align::Center)
+                                        .push(Text::new("Hide after: "))
+                                        .push(
+                                            TextInput::new(
+                                                &mut self.hide_time,
+                                                "8 seconds",
+                                                &self.hidetimevalue,
+                                                NotifyMsg::HideTimeChanged,
+                                            )
+                                            .width(Length::Units(100))
+                                            .padding(10),
+                                        ),
                                 ),
                         ),
-                ),
-            )
-            .push(Rule::horizontal(2))
-            .push(
-                Self::row_template("Application progress:").push(
-                    Column::new()
-                        .spacing(10)
-                        .align_items(Align::Start)
-                        .push(Self::checkbox_cus(
-                            self.appprogress1,
+                    )
+                    .push(Self::custom_space())
+                    .push(
+                        Self::row_template("Application progress:").push(
+                            Self::column_cus()
+                                .spacing(10)
+                                .push(Self::checkbox_cus(
+                                    self.appprogress1,
+                                    "Show in task manager",
+                                    NotifyMsg::Progress1Changed,
+                                ))
+                                .push(Self::checkbox_cus(
+                                    self.appprogress2,
+                                    "Show in notificaitons",
+                                    NotifyMsg::Progress2Changed,
+                                ))
+                                .push(Self::checkbox_cus(
+                                    self.appprogress3,
+                                    "Keep popup open during progress",
+                                    NotifyMsg::Progress3Changed,
+                                )),
+                        ),
+                    )
+                    .push(
+                        Self::row_template("Notification Badges:").push(Self::checkbox_cus(
+                            self.notifybadges,
                             "Show in task manager",
-                            NotifyMsg::Progress1Changed,
-                        ))
-                        .push(Self::checkbox_cus(
-                            self.appprogress2,
-                            "Show in notificaitons",
-                            NotifyMsg::Progress2Changed,
-                        ))
-                        .push(Self::checkbox_cus(
-                            self.appprogress3,
-                            "Keep popup open during progress",
-                            NotifyMsg::Progress3Changed,
+                            NotifyMsg::BadgesChanged,
                         )),
-                ),
-            )
-            .push(
-                Self::row_template("Notification Badges:").push(Self::checkbox_cus(
-                    self.notifybadges,
-                    "Show in task manager",
-                    NotifyMsg::BadgesChanged,
-                )),
-            )
-            .push(Rule::horizontal(2))
-            .push(
-                Self::row_template("Applications:").push(
-                    Button::new(&mut self.configure, Text::new("Configure..."))
-                        .style(CustomButton::Cancel)
-                        .on_press(NotifyMsg::ApplicationChagned),
-                ),
-            )
-            .align_items(Align::Center)
-            .spacing(10);
-        Container::new(main_settings)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x()
-            .into()
+                    )
+                    .push(Self::custom_space())
+                    .push(
+                        Self::row_template("Applications:").push(
+                            Button::new(&mut self.configure, Text::new("Configure..."))
+                                .style(CustomButton::Cancel)
+                                .on_press(NotifyMsg::ApplicationChagned),
+                        ),
+                    )
+                    .align_items(Align::Center)
+                    .spacing(10);
+                Container::new(main_settings)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .center_x()
+                    .into()
+            }
+            CustomView::Configure => {
+                let content = Row::new()
+                    .push(
+                        Button::new(&mut self.back_home, Text::new("Home"))
+                            .on_press(NotifyMsg::BackHome)
+                            .style(CustomButton::Apply),
+                    )
+                    .push(Text::new("configuration page"));
+                content.into()
+            }
+            CustomView::Position => Button::new(&mut self.back_home, Text::new("Home"))
+                .on_press(NotifyMsg::BackHome)
+                .style(CustomButton::Apply)
+                .into(),
+        }
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum AppNotifyMsg {}
+
+#[derive(Default, Debug, Clone)]
+pub struct AppNotify {}
+
+#[derive(Default, Debug, Clone)]
+pub struct AppListItem {}
+
+#[derive(Default, Debug, Clone)]
+pub struct AppNotifSettings {}
