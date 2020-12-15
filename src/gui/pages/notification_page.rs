@@ -1,10 +1,11 @@
 const LABEL_WIDTH: u16 = 250;
 const ROW_WIDTH: u16 = 500;
-use super::super::styles::{CustomButton, CustomCheckbox, CustomRadio};
+use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomRadio};
 use iced::{
     button, text_input, Align, Button, Checkbox, Column, Container, Element, HorizontalAlignment,
-    Length, Radio, Row, Rule, Space, Text, TextInput,
+    Length, Radio, Row, Rule, Space, Svg, Text, TextInput,
 };
+
 #[derive(Debug, Clone)]
 pub enum NotifyMsg {
     Disturb1Changed(bool),
@@ -17,11 +18,12 @@ pub enum NotifyMsg {
     Progress3Changed(bool),
     BadgesChanged(bool),
     HideTimeChanged(String),
+    SwitchApp(usize),
     ApplicationChagned,
     PopupChanged(bool),
-    CustomViewChanged(CustomView),
     BackHome,
     CustomPosition,
+    OnSearch(String),
 }
 #[derive(Default, Debug, Clone)]
 pub struct NotifyPage {
@@ -42,6 +44,11 @@ pub struct NotifyPage {
     cusviews: CustomView,
     back_home: button::State,
     custom_pos: button::State,
+    current_idx: usize,
+    list_item: Vec<(AppListItem, button::State)>,
+    filter_list: Vec<(AppListItem, button::State)>,
+    search: text_input::State,
+    search_val: String,
 }
 #[derive(Debug, Clone)]
 pub enum CustomView {
@@ -57,7 +64,27 @@ impl Default for CustomView {
 
 impl NotifyPage {
     pub fn new() -> Self {
+        let data = |name: &str, icon: &str| -> (AppListItem, button::State) {
+            (
+                AppListItem::new().set_props(name, icon),
+                button::State::new(),
+            )
+        };
         Self {
+            list_item: vec![
+                data("Teams", "teams"),
+                data("Telegram", "telegram"),
+                data("Firefox", "firefox"),
+                data("Discord", "discord"),
+                data("Chrome", "chrome"),
+            ],
+            filter_list: vec![
+                data("Teams", "teams"),
+                data("Telegram", "telegram"),
+                data("Firefox", "firefox"),
+                data("Discord", "discord"),
+                data("Chrome", "chrome"),
+            ],
             ..Default::default()
         }
     }
@@ -82,13 +109,26 @@ impl NotifyPage {
             ApplicationChagned => {
                 self.cusviews = CustomView::Configure;
             }
-            CustomViewChanged(val) => {
-                self.cusviews = val;
-            }
             CustomPosition => {
                 self.cusviews = CustomView::Position;
             }
             BackHome => self.cusviews = CustomView::Home,
+            SwitchApp(idx) => {
+                self.current_idx = idx;
+            }
+            OnSearch(val) => {
+                self.search_val = val;
+                self.filter_list = self
+                    .list_item
+                    .iter()
+                    .filter(|(item, _)| {
+                        item.name
+                            .to_lowercase()
+                            .contains(&self.search_val.to_lowercase())
+                    })
+                    .cloned()
+                    .collect();
+            }
         }
         self
     }
@@ -257,14 +297,84 @@ impl NotifyPage {
                     .into()
             }
             CustomView::Configure => {
-                let content = Row::new()
+                let NotifyPage {
+                    current_idx,
+                    filter_list,
+                    ..
+                } = self;
+                let list_view: Element<_> = if filter_list.len() > 0 {
+                    filter_list
+                        .iter_mut()
+                        .enumerate()
+                        .fold(
+                            Column::new()
+                                .push(
+                                    Container::new(Text::new("Applications").size(18))
+                                        .padding(10)
+                                        .width(Length::Fill)
+                                        .style(CustomContainer::Background),
+                                )
+                                .align_items(Align::Center)
+                                .spacing(4)
+                                .width(Length::Fill)
+                                .height(Length::Fill),
+                            |column, (idx, (item, state))| {
+                                column.push(Rule::horizontal(2)).push(
+                                    Button::new(state, item.view())
+                                        .width(Length::Fill)
+                                        .on_press(NotifyMsg::SwitchApp(idx))
+                                        .style(if *current_idx == idx {
+                                            CustomButton::Selected
+                                        } else {
+                                            CustomButton::Sidebar
+                                        }),
+                                )
+                            },
+                        )
+                        .into()
+                } else {
+                    Container::new(Text::new("No applciations match your search").size(18))
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                        .center_y()
+                        .center_x()
+                        .into()
+                };
+                let column = Column::new()
+                    .padding(10)
+                    .spacing(10)
                     .push(
-                        Button::new(&mut self.back_home, Text::new("Home"))
-                            .on_press(NotifyMsg::BackHome)
-                            .style(CustomButton::Apply),
+                        TextInput::new(
+                            &mut self.search,
+                            "Search....",
+                            &self.search_val,
+                            NotifyMsg::OnSearch,
+                        )
+                        .width(Length::Fill)
+                        .padding(10),
                     )
-                    .push(Text::new("configuration page"));
-                content.into()
+                    .push(
+                        Container::new(list_view)
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .style(CustomContainer::ForegroundWhite),
+                    )
+                    .width(Length::FillPortion(3))
+                    .height(Length::Fill);
+                let content: Element<_> = Row::new()
+                    .push(column)
+                    .push(
+                        Column::new()
+                            .height(Length::Fill)
+                            .width(Length::FillPortion(6)),
+                    )
+                    .into();
+                Container::new(content)
+                    .style(CustomContainer::ForegroundGray)
+                    .center_x()
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
             }
             CustomView::Position => Button::new(&mut self.back_home, Text::new("Home"))
                 .on_press(NotifyMsg::BackHome)
@@ -274,14 +384,40 @@ impl NotifyPage {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum AppNotifyMsg {}
+#[derive(Default, Debug, Clone)]
+pub struct AppListItem {
+    name: String,
+    icon: String,
+}
+impl AppListItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn view(&mut self) -> Element<NotifyMsg> {
+        Row::new()
+            .width(Length::Fill)
+            .align_items(Align::Center)
+            .push(
+                Svg::from_path(format!(
+                    "{}/assets/images/{}.svg",
+                    env!("CARGO_MANIFEST_DIR"),
+                    self.icon
+                ))
+                .width(Length::Units(48))
+                .height(Length::Units(48)),
+            )
+            .spacing(4)
+            .push(Text::new(self.name.as_str()).size(18))
+            .into()
+    }
+    pub fn set_props(mut self, name: &str, icon: &str) -> Self {
+        self.name = name.to_string();
+        self.icon = icon.to_string();
+        self
+    }
+}
 
 #[derive(Default, Debug, Clone)]
-pub struct AppNotify {}
-
-#[derive(Default, Debug, Clone)]
-pub struct AppListItem {}
-
-#[derive(Default, Debug, Clone)]
-pub struct AppNotifSettings {}
+pub struct AppNotifSettings {
+    settings
+}
