@@ -3,7 +3,7 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, PickList, Slider,
 };
 use iced_custom_widget::{Icon, stepper, Stepper};
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 use chrono::prelude::*;
 
@@ -341,7 +341,7 @@ impl BatteryPage {
             } = schedule;
             
             let chb_startup = Checkbox::new(*startup, "Start up", BatteryMessage::StartUpToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_startup_repeat = PickList::new(startup_repeat_state, &RepeatDays::ALL[..], Some(*startup_repeat_val), BatteryMessage::StartUpRepeatChanged);
+            let pl_startup_repeat = PickList::new(startup_repeat_state, &RepeatDays::ALL[..], Some(*startup_repeat_val), BatteryMessage::StartUpRepeatChanged).style(CustomSelect::Primary);
             let sp_startup_hour = Stepper::new(startup_time_state.hour_val, &mut startup_time_state.dec_hour_state, &mut startup_time_state.inc_hour_state, BatteryMessage::StartUpHourChanged).max(24.0);
             let sp_startup_minute = Stepper::new(startup_time_state.minute_val, &mut startup_time_state.dec_minute_state, &mut startup_time_state.inc_minute_state, BatteryMessage::StartUpMinuteChanged).max(60.0);
             let txt_startup_hint = Text::new("Scheduled start up will only occur when a power adapter is connected to your computer.");
@@ -366,7 +366,7 @@ impl BatteryPage {
             );
 
             let chb_sleep = Checkbox::new(*sleep, "Sleep", BatteryMessage::SleepToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_sleep_repeat = PickList::new(sleep_repeat_state, &RepeatDays::ALL[..], Some(*sleep_repeat_val), BatteryMessage::SleepRepeatChanged);
+            let pl_sleep_repeat = PickList::new(sleep_repeat_state, &RepeatDays::ALL[..], Some(*sleep_repeat_val), BatteryMessage::SleepRepeatChanged).style(CustomSelect::Primary);
             let sp_sleep_hour = Stepper::new(sleep_time_state.hour_val, &mut sleep_time_state.dec_hour_state, &mut sleep_time_state.inc_hour_state, BatteryMessage::SleepHourChanged).max(24.0);
             let sp_sleep_minute = Stepper::new(sleep_time_state.minute_val, &mut sleep_time_state.dec_minute_state, &mut sleep_time_state.inc_minute_state, BatteryMessage::SleepMinuteChanged).max(60.0);
             let sleep_con = Container::new(

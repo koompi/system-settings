@@ -4,7 +4,7 @@ use iced::{
 };
 use iced_custom_widget::Icon;
 use vedas_core::svg;
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio, CustomSelect};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -157,7 +157,7 @@ impl KeyboardPage {
 
             let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", KeyboardMessage::AdjustBrightnessToggled).spacing(10).style(CustomCheckbox::Default);
             let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", KeyboardMessage::TurnBacklightOffToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged);
+            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged).style(CustomSelect::Primary);
             let lb_inactivity = Text::new("of inactivity");
             let keyboard_backligh_off_row = Row::new().spacing(15).align_items(Align::Center)
                .push(chk_turn_backlight_off)
@@ -347,13 +347,13 @@ impl KeyboardPage {
                .push(rd_dictaion_off);
 
             let lb_language = Text::new("Language:");
-            let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged);
+            let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged).style(CustomSelect::Primary);
             let language_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_language)
                .push(pl_language);
 
             let lb_shortcut = Text::new("Shortcut:");
-            let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged);
+            let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged).style(CustomSelect::Primary);
             let shortcut_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_shortcut)
                .push(pl_shortcut);

@@ -2,7 +2,7 @@ use iced::{
    pick_list, Container, PickList, button, Row, Length, Text, Button, Column, Align, Space, Element
 };
 use iced_custom_widget::Icon;
-use super::super::styles::{CustomButton, CustomContainer};
+use super::super::styles::{CustomButton, CustomContainer, CustomSelect};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -90,11 +90,11 @@ impl PrinterPage {
 
       // ផ្នែកខាងក្រោម
       let lb_printer = Text::new("Default printer:");
-      let pl_printer = PickList::new(pl_printer_state, &Printer::ALL[..], Some(*default_printer), PrinterMessage::PrinterChanged);
+      let pl_printer = PickList::new(pl_printer_state, &Printer::ALL[..], Some(*default_printer), PrinterMessage::PrinterChanged).style(CustomSelect::Primary);
       let printer_row = Row::new().spacing(10).align_items(Align::Center).push(lb_printer).push(pl_printer);
 
       let lb_paper_size = Text::new("Default paper size:");
-      let pl_paper_size = PickList::new(pl_paper_size_state, &PaperSize::ALL[..], Some(*default_paper_size), PrinterMessage::PaperSizeChanged);
+      let pl_paper_size = PickList::new(pl_paper_size_state, &PaperSize::ALL[..], Some(*default_paper_size), PrinterMessage::PaperSizeChanged).style(CustomSelect::Primary);
       let paper_size_row = Row::new().spacing(10).align_items(Align::Center).push(lb_paper_size).push(pl_paper_size).push(Space::with_width(Length::Units(167)));
 
       let bottom_col = Column::new().spacing(10).width(Length::Fill).align_items(Align::Center)

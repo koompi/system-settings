@@ -1,4 +1,4 @@
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use iced::{
    button, pick_list, scrollable, slider, Align, Button, Checkbox, Color, Column, Container, Element, Length, PickList, Row,
    Scrollable, Slider, Space, Text,
@@ -154,7 +154,7 @@ impl SoundPage {
             ).height(Length::Units(150)).style(CustomContainer::ForegroundWhite);
 
             let lb_sound_effect = Text::new("Play sound effects through:");
-            let pl_sound_effect = PickList::new(sound_effect_device, &SoundEffectDevice::ALL[..], Some(*selected_sound_effect_device), SoundMessage::SoundEffectDeviceChanged);
+            let pl_sound_effect = PickList::new(sound_effect_device, &SoundEffectDevice::ALL[..], Some(*selected_sound_effect_device), SoundMessage::SoundEffectDeviceChanged).style(CustomSelect::Primary);
             let sound_effect_device = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_sound_effect)
                .push(pl_sound_effect)

@@ -1,4 +1,4 @@
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio, CustomSelect};
 use iced::{
    button, pick_list, scrollable, slider, Align, Length, Element, Space, Svg,
    PickList, Row, Scrollable, Slider, Text, Button, Checkbox, Column, Container, Radio
@@ -295,7 +295,7 @@ impl DisplayPage {
             let txt_hint = Text::new("Night Shift automatically shifts the colors of display to warmer end of the color spectrum after dark. This may help you get a better night's sleep.");
 
             let lb_schedule = Text::new("Schedule:");
-            let pl_schedule = PickList::new(schedule_state, &Schedule::ALL[..], Some(*selected_schedule), DisplayMessage::ScheduleChanged);
+            let pl_schedule = PickList::new(schedule_state, &Schedule::ALL[..], Some(*selected_schedule), DisplayMessage::ScheduleChanged).style(CustomSelect::Primary);
             let schedule_row = Row::new().spacing(15).align_items(Align::Center).push(lb_schedule).push(pl_schedule);
 
             let lb_manual = Text::new("Manual:");
