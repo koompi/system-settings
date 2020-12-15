@@ -3,7 +3,7 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, PickList, Slider,
 };
 use iced_custom_widget::{Icon, stepper, Stepper};
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 use chrono::prelude::*;
 
@@ -231,7 +231,11 @@ impl BatteryPage {
             let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffBatteryChanged).width(Length::FillPortion(4)).style(CustomSlider::Default);
             let turn_display_off_sec = Column::new().spacing(4)
                .push(lb_turn_display_off)
-               .push(Row::new().push(slider_turn_display_off).push(Space::with_width(Length::FillPortion(1))));
+               .push(
+                  Column::new()
+                  .push(slider_turn_display_off)
+                  .push(Row::new().width(Length::Fill).push(Text::new("1 min").size(12)).push(Space::with_width(Length::FillPortion(4))).push(Text::new("15 min").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("1 hr").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("3 hrs").size(12)).push(Space::with_width(Length::FillPortion(1))).push(Text::new("never").size(12)))
+               );
             
             let chb_slightly_dim = Checkbox::new(*slightly_dim_display, "Slightly dim the display while on battery power", BatteryMessage::SlightlyDimDisplayToggled).spacing(10).style(CustomCheckbox::Default);
             let chb_power_nap = Checkbox::new(*enable_power_nap, "Enable Power Nap while on battery power", BatteryMessage::PowerNapWhileBatteryToggled).spacing(10).style(CustomCheckbox::Default);
@@ -291,7 +295,11 @@ impl BatteryPage {
             let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffPowerChanged).width(Length::FillPortion(4)).style(CustomSlider::Default);
             let turn_display_off_sec = Column::new().spacing(4)
                .push(lb_turn_display_off)
-               .push(Row::new().push(slider_turn_display_off).push(Space::with_width(Length::FillPortion(1))));
+               .push(
+                  Column::new()
+                  .push(slider_turn_display_off)
+                  .push(Row::new().width(Length::Fill).push(Text::new("1 min").size(12)).push(Space::with_width(Length::FillPortion(4))).push(Text::new("15 min").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("1 hr").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("3 hrs").size(12)).push(Space::with_width(Length::FillPortion(1))).push(Text::new("never").size(12)))
+               );
             
             let chb_prevent_from_sleep = Checkbox::new(*prevent_from_sleep, "Prevent computer from sleeping automatically when the display is off", BatteryMessage::PreventFromSleepToggled).spacing(10).style(CustomCheckbox::Default);
             let chb_wake_network_access = Checkbox::new(*wake_network_access, "Wake for network access", BatteryMessage::WakeNetworkAccessToggled).spacing(10).style(CustomCheckbox::Default);
@@ -341,7 +349,7 @@ impl BatteryPage {
             } = schedule;
             
             let chb_startup = Checkbox::new(*startup, "Start up", BatteryMessage::StartUpToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_startup_repeat = PickList::new(startup_repeat_state, &RepeatDays::ALL[..], Some(*startup_repeat_val), BatteryMessage::StartUpRepeatChanged);
+            let pl_startup_repeat = PickList::new(startup_repeat_state, &RepeatDays::ALL[..], Some(*startup_repeat_val), BatteryMessage::StartUpRepeatChanged).style(CustomSelect::Primary);
             let sp_startup_hour = Stepper::new(startup_time_state.hour_val, &mut startup_time_state.dec_hour_state, &mut startup_time_state.inc_hour_state, BatteryMessage::StartUpHourChanged).max(24.0);
             let sp_startup_minute = Stepper::new(startup_time_state.minute_val, &mut startup_time_state.dec_minute_state, &mut startup_time_state.inc_minute_state, BatteryMessage::StartUpMinuteChanged).max(60.0);
             let txt_startup_hint = Text::new("Scheduled start up will only occur when a power adapter is connected to your computer.");
@@ -366,7 +374,7 @@ impl BatteryPage {
             );
 
             let chb_sleep = Checkbox::new(*sleep, "Sleep", BatteryMessage::SleepToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_sleep_repeat = PickList::new(sleep_repeat_state, &RepeatDays::ALL[..], Some(*sleep_repeat_val), BatteryMessage::SleepRepeatChanged);
+            let pl_sleep_repeat = PickList::new(sleep_repeat_state, &RepeatDays::ALL[..], Some(*sleep_repeat_val), BatteryMessage::SleepRepeatChanged).style(CustomSelect::Primary);
             let sp_sleep_hour = Stepper::new(sleep_time_state.hour_val, &mut sleep_time_state.dec_hour_state, &mut sleep_time_state.inc_hour_state, BatteryMessage::SleepHourChanged).max(24.0);
             let sp_sleep_minute = Stepper::new(sleep_time_state.minute_val, &mut sleep_time_state.dec_minute_state, &mut sleep_time_state.inc_minute_state, BatteryMessage::SleepMinuteChanged).max(60.0);
             let sleep_con = Container::new(

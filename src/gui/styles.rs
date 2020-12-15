@@ -1,5 +1,5 @@
 use iced::{
-   button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
+   button, checkbox, container, progress_bar, slider, text_input, pick_list, Background, Color, Vector,
 };
 
 pub const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
@@ -27,6 +27,7 @@ pub enum CustomButton {
    Type,
    SelectType,
    Cancel,
+   Hovered,
 }
 
 impl button::StyleSheet for CustomButton {
@@ -34,7 +35,7 @@ impl button::StyleSheet for CustomButton {
       button::Style {
          text_color: match self {
             CustomButton::SelectedCard | CustomButton::SelectedSidebar => ACCENT,
-            CustomButton::Sidebar => Color::from_rgb8(97, 97, 97),
+            CustomButton::Hovered => Color::WHITE,
             CustomButton::Primary => Color::WHITE,
             CustomButton::Apply => Color::WHITE,
             CustomButton::Delete => Color::WHITE,
@@ -54,12 +55,13 @@ impl button::StyleSheet for CustomButton {
             CustomButton::Type => Color::WHITE,
             CustomButton::Cancel => Color::from_rgb8(119, 140, 163),
             CustomButton::SelectType => Color::from_rgb8(209, 216, 224),
+            CustomButton::Hovered => HOVERED,
             _ => Color::WHITE,
          })),
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
-            CustomButton::Tab | CustomButton::SelectedTab | 
+            CustomButton::Tab | CustomButton::SelectedTab | CustomButton::Hovered |
             CustomButton::Text | CustomButton::Selected => 7.0,
             _ => 5.0,
          },
@@ -305,15 +307,21 @@ impl radio::StyleSheet for CustomRadio {
    }
 }
 
-use iced::pick_list;
 pub enum CustomSelect {
    Default,
+   Primary,
 }
+
 use iced_style::menu;
 impl pick_list::StyleSheet for CustomSelect {
    fn menu(&self) -> menu::Style {
+      let default: menu::Style = Default::default();
       menu::Style {
-         ..Default::default()
+         selected_background: match self {
+            CustomSelect::Primary => ACCENT.into(),
+            _ => default.selected_background
+         },
+         ..default
       }
    }
    fn active(&self) -> pick_list::Style {
@@ -326,12 +334,25 @@ impl pick_list::StyleSheet for CustomSelect {
             border_color: Color::from_rgb8(119, 140, 163),
             background: Background::Color(Color::from_rgb8(165, 177, 194)),
          },
+         CustomSelect::Primary => pick_list::Style {
+            text_color: Color::BLACK,
+            background: Color {a: 0.3, ..ACCENT}.into(),
+            icon_size: 0.5,
+            border_color: ACCENT,
+            border_radius: 5.0,
+            border_width: 0.0,
+         }
       }
    }
    fn hovered(&self) -> pick_list::Style {
+      let active = self.active();
+
       pick_list::Style {
-         background: Background::Color(Color::from_rgb8(75, 101, 132)),
-         ..self.active()
+         background: match self {
+            CustomSelect::Default => Background::Color(Color::from_rgb8(75, 101, 132)),
+            _ => active.background
+         },
+         ..active
       }
    }
 }

@@ -12,6 +12,7 @@ mod sys_info_page;
 mod touchpad_page;
 mod user_page;
 mod date_time_page;
+mod lang_region_page;
 
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
@@ -26,6 +27,7 @@ use touchpad_page::{TouchpadPage, TouchpadMessage};
 use sys_info_page::{InfoPage, InfoMessage};
 use user_page::{UserPage, UserPageMsg};
 use date_time_page::{DateTimePage, DateTimeMessage};
+use lang_region_page::{LangRegionPage, LangRegionMessage};
 use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
@@ -48,6 +50,7 @@ pub enum PagesMessage {
    InfoMessage(InfoMessage),
    UserPageMsg(UserPageMsg),
    DateTimeMessage(DateTimeMessage),
+   LangRegionMessage(LangRegionMessage),
 }
 
 // #[derive(Debug)]
@@ -55,7 +58,7 @@ pub enum PageModel {
    HomePage,
    GeneralPage { general_page: General },
    DateTimePageModel { datetime_page: DateTimePage },
-   LanguagePage,
+   LanguagePageModel { lang_region_page: LangRegionPage },
    UsersPageModel { user_page: UserPage },
    AccessPage,
    AccountPage,
@@ -86,7 +89,9 @@ impl Pages {
             DateTimePageModel {
                datetime_page: DateTimePage::new()
             },
-            LanguagePage,
+            LanguagePageModel {
+               lang_region_page: LangRegionPage::new()
+            },
             UsersPageModel {
                user_page: UserPage::new(),
             },
@@ -221,6 +226,11 @@ impl PageModel {
                datetime_page.update(msg);
             }
          }
+         LangRegionMessage(msg) => {
+            if let LanguagePageModel { lang_region_page } = self {
+               lang_region_page.update(msg);
+            }
+         }
       }
    }
 
@@ -228,6 +238,7 @@ impl PageModel {
       use PageModel::*;
       match self {
          DateTimePageModel { datetime_page } => datetime_page.subscription().map(PagesMessage::DateTimeMessage),
+         LanguagePageModel { lang_region_page } => lang_region_page.subscription().map(PagesMessage::LangRegionMessage),
          _ => Subscription::none()
       }
    }
@@ -240,7 +251,7 @@ impl PageModel {
             .view()
             .map(move |msg| PagesMessage::GeneralMessage(msg)),
          DateTimePageModel { datetime_page } => datetime_page.view().map(move |msg| PagesMessage::DateTimeMessage(msg)),
-         LanguagePage => Container::new(Space::with_width(Length::Shrink)).into(),
+         LanguagePageModel { lang_region_page } => lang_region_page.view().map(move |msg| PagesMessage::LangRegionMessage(msg)),
          UsersPageModel { user_page } => user_page
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
@@ -288,7 +299,7 @@ impl PageModel {
          HomePage => "System Setting",
          GeneralPage { .. } => "General",
          DateTimePageModel { .. } => "Date & Time",
-         LanguagePage => "Language & Region",
+         LanguagePageModel { .. } => "Language & Region",
          UsersPageModel { .. } => "Users & Groups",
          AccessPage => "Accessibility",
          AccountPage => "Accounts",

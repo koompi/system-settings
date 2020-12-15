@@ -25,7 +25,7 @@ pub struct DateTimePage {
    datetime_tab: DateTimeTab,
    timezone_tab: TimeZoneTab,
    current_tz: chrono_tz::Tz,
-   selected_tz_idx: Option<usize>,
+   selected_tz: Option<chrono_tz::Tz>,
    defaults_state: button::State,
    appply_state: button::State,
    is_changed: bool,
@@ -43,7 +43,7 @@ impl DateTimePage {
          datetime_tab: DateTimeTab::new(),
          timezone_tab: TimeZoneTab::new(),
          current_tz,
-         selected_tz_idx: chrono_tz::TZ_VARIANTS.iter().position(|tz| *tz == current_tz),
+         selected_tz: None,
          defaults_state: button::State::new(),
          appply_state: button::State::new(),
          is_changed: false,
@@ -66,9 +66,10 @@ impl DateTimePage {
             self.current_tab_idx = current_tab;
          },
          DateTimeMessage::ApplyClicked => {
-            if let Some(selected_idx) = self.selected_tz_idx {
-               self.current_tz = self.timezone_tab.filtered_tz_ls[selected_idx].0;
+            if let Some(selected_tz) = self.selected_tz {
+               self.current_tz = selected_tz;
             }
+            self.selected_tz = None;
             self.is_changed = false;
          },
          DateTimeMessage::AutoTZToggled(is_checked) => {
@@ -83,7 +84,7 @@ impl DateTimePage {
             .collect();
          },
          DateTimeMessage::TZSelected(idx) => {
-            self.selected_tz_idx = Some(idx);
+            self.selected_tz = Some(self.timezone_tab.filtered_tz_ls[idx].0);
             self.is_changed = true;
          },
       }
@@ -104,10 +105,10 @@ impl DateTimePage {
          datetime_tab,
          timezone_tab,
          current_tz,
+         selected_tz,
          defaults_state,
          appply_state,
          is_changed,
-         ..
       } = self;
 
       // របារផ្ទាំង
@@ -174,12 +175,19 @@ impl DateTimePage {
             } = timezone_tab;
 
             let chb_auto_tz = Checkbox::new(*auto_tz, "Set time zone automatically using current location", DateTimeMessage::AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
-            let txt_tz_hint = Text::new("To change the local time zone, select your area from the list below.");
+            let txt_tz_hint = Text::new("To change the local time zone, select your area from the list below then click Apply.");
             let txt_current_tz = Text::new(format!("Current local time zone: {}", current_tz.name()));
 
             let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, DateTimeMessage::SearchTZChanged).padding(10).style(CustomTextInput::Default);
             let scroll_tz = filtered_tz_ls.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).padding(7).spacing(4), |scrollable, (idx, (tz, state))| {
-               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.name()))).width(Length::Fill).style(if current_tz == tz {CustomButton::SelectedSidebar} else {CustomButton::Sidebar});
+               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.name()))).width(Length::Fill).style(
+                  if current_tz == tz {CustomButton::Selected} 
+                  else if let Some(selected_tz) = selected_tz {
+                     if selected_tz == tz {CustomButton::Hovered}
+                     else {CustomButton::Text}
+                  }
+                  else {CustomButton::Text}
+               );
                if !(*auto_tz) {
                   btn = btn.on_press(DateTimeMessage::TZSelected(idx));
                }

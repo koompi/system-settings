@@ -2,7 +2,7 @@ use iced::{
    pick_list, Container, PickList, button, Row, Length, Text, Button, Column, Align, Space, Element
 };
 use iced_custom_widget::Icon;
-use super::super::styles::{CustomButton, CustomContainer};
+use super::super::styles::{CustomButton, CustomContainer, CustomSelect};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -58,8 +58,8 @@ impl PrinterPage {
          default_paper_size,
       } = self;
       // ផ្ទាំងខាងឆ្វេង
-      let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Text);
-      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
+      let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(PrinterMessage::BtnAddClicked).style(CustomButton::Text);
+      let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
       if selected_device.is_some() {
          btn_remove = btn_remove.on_press(PrinterMessage::BtnRemoveClicked);
       }
@@ -90,11 +90,11 @@ impl PrinterPage {
 
       // ផ្នែកខាងក្រោម
       let lb_printer = Text::new("Default printer:");
-      let pl_printer = PickList::new(pl_printer_state, &Printer::ALL[..], Some(*default_printer), PrinterMessage::PrinterChanged);
+      let pl_printer = PickList::new(pl_printer_state, &Printer::ALL[..], Some(*default_printer), PrinterMessage::PrinterChanged).style(CustomSelect::Primary);
       let printer_row = Row::new().spacing(10).align_items(Align::Center).push(lb_printer).push(pl_printer);
 
       let lb_paper_size = Text::new("Default paper size:");
-      let pl_paper_size = PickList::new(pl_paper_size_state, &PaperSize::ALL[..], Some(*default_paper_size), PrinterMessage::PaperSizeChanged);
+      let pl_paper_size = PickList::new(pl_paper_size_state, &PaperSize::ALL[..], Some(*default_paper_size), PrinterMessage::PaperSizeChanged).style(CustomSelect::Primary);
       let paper_size_row = Row::new().spacing(10).align_items(Align::Center).push(lb_paper_size).push(pl_paper_size).push(Space::with_width(Length::Units(167)));
 
       let bottom_col = Column::new().spacing(10).width(Length::Fill).align_items(Align::Center)
