@@ -132,18 +132,18 @@ impl SoundPage {
             let mut device_pane_col = Scrollable::new(alert_sound_scroll).width(Length::Fill);
 
             device_pane_col = AlertSound::ALL.iter().enumerate().fold(device_pane_col, |col, (idx, alert_sound)| {
-                  let mut alert_con = Container::new(
-                     Row::new().padding(3).align_items(Align::Center)
-                        .push(Space::with_width(Length::Units(7)))
-                        .push(Text::new(alert_sound.to_string())),
-                  )
-                  .width(Length::Fill);
+               let mut alert_con = Container::new(
+                  Row::new().padding(3).align_items(Align::Center)
+                     .push(Space::with_width(Length::Units(7)))
+                     .push(Text::new(alert_sound.to_string())),
+               )
+               .width(Length::Fill);
 
-                  if *alert_idx == idx {
-                     alert_con = alert_con.style(CustomContainer::Background);
-                  }
-                  col.push(alert_con)
-               });
+               if *alert_idx == idx {
+                  alert_con = alert_con.style(CustomContainer::Background);
+               }
+               col.push(alert_con)
+            });
 
             let device_pane = Container::new(
                Column::new()
@@ -211,11 +211,16 @@ impl SoundPage {
 
             let lb_selected_device = Text::new("Settings for the selected device:");
             let lb_balance = Text::new("Balance:");
-            let slider_balance = Slider::new(balance_output_state, 0..=100, *balance_output_value, SoundMessage::OutputBalanceChanged).width(Length::Units(150)).style(CustomSlider::Default);
-            let balance_row = Row::new().spacing(20).align_items(Align::Center)
+            let slider_balance = Slider::new(balance_output_state, 0..=100, *balance_output_value, SoundMessage::OutputBalanceChanged).width(Length::Units(175)).style(CustomSlider::Default);
+            let balance_section = Container::new(
+               Row::new().spacing(20).align_items(Align::Center)
                .push(lb_balance)
-               .push(slider_balance);
-            let balance_section = Container::new(balance_row).width(Length::Fill);
+               .push(
+                  Column::new()
+                  .push(slider_balance)
+                  .push(Row::new().width(Length::Units(175)).push(Text::new("left").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("right").size(12)))
+               )
+            ).width(Length::Fill);
 
             Container::new(
                Column::new().spacing(20)

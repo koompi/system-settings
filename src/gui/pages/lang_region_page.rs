@@ -3,8 +3,8 @@ use num_format::{SystemLocale, Locale};
 use num_format::{Buffer, CustomFormat, Grouping};
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, HOVERED};
 use iced::{
-   button, scrollable, pick_list, Align, Length, Space, Svg, HorizontalAlignment,
-   Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, 
+   button, scrollable, pick_list, time, Align, Length, Space, Subscription,
+   Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, 
 };
 use iced_custom_widget::{Icon, IconBrand};
 use smart_default::SmartDefault;
@@ -18,7 +18,7 @@ pub enum LangRegionMessage {
    BtnUpClicked,
    BtnDownClicked,
    LangSelected(usize),
-   RegionChanged(SystemLocale),
+   RegionChanged(&'static str),
    FirstDayChanged(Weekdays),
    TimeFormatToggled(bool),
    TempChanged(Temperature),
@@ -37,6 +37,7 @@ pub enum LangRegionMessage {
    DefaultsClicked,
    ApplyClicked,
    CancelClicked,
+   Tick(DateTime<Local>),
 }
 
 #[derive(Debug)]
@@ -144,8 +145,26 @@ impl LangRegionPage {
             self.long_time_format = self.formats_tab.selected_long_time_format;
             self.is_changed = false;
          },
-         CancelClicked => self.is_changed = false,
+         CancelClicked => {
+            match self.current_tab_idx {
+               0 => self.general_tab = GeneralTab::new(),
+               1 => self.formats_tab = FormatsTab::new(),
+               2 => self.apps_tab = AppsTab::new(),
+               _ => {},
+            }
+            self.is_changed = false;
+         },
+         Tick(now) => {
+            if now != self.general_tab.now {
+               self.general_tab.now = now;
+               self.formats_tab.now = now;
+            }
+         }
       }
+   }
+
+   pub fn subscription(&self) -> Subscription<LangRegionMessage> {
+      time::every(std::time::Duration::from_millis(500)).map(|_| LangRegionMessage::Tick(Local::now()))
    }
 
    pub fn view(&mut self) -> Element<LangRegionMessage> {
@@ -167,7 +186,7 @@ impl LangRegionPage {
 
       // ផ្នែកក្បាល
       let icon = Svg::from_path("assets/images/language.svg").width(Length::Units(75)).height(Length::Units(75));
-      let txt_lang = Text::new("Language & Region preferences control the language you see in menus and dialogs, formats of dates, times and numbers.");
+      let txt_lang = Text::new("Language & Region preferences control the language you see in menus and dialogs, formats of dates, times, numbers and currency.");
       let header_sec = Container::new(
          Row::new().spacing(20).align_items(Align::Center)
          .push(icon)
@@ -261,7 +280,6 @@ impl LangRegionPage {
                Row::new().spacing(10).align_items(Align::Center)
                .push(
                   Column::new().spacing(10)
-                  .push(lb_prefered_lang)
                   .push(
                      Container::new(
                         Column::new()
@@ -275,15 +293,15 @@ impl LangRegionPage {
 
             // ផ្ទាំងខាងស្ដាំ
                // ផ្នែកស្លាក
-            // let lb_region = Text::new("Region:");
+            let lb_region = Text::new("Region:");
             let lb_first_day = Text::new("First day of week:");
             let lb_time_format = Text::new("Time Format:");
             let lb_temp = Text::new("Temperature:");
-            let lb_num_sep = Text::new("Number Seperators:");
+            let lb_num_sep = Text::new("Number:");
             let lb_currency_sep = Text::new("Currency:");
             let label_sec = Container::new(
                Column::new().spacing(20).align_items(Align::End)
-               // .push(lb_region)
+               .push(lb_region)
                .push(lb_first_day)
                .push(lb_time_format)
                .push(lb_temp)
@@ -292,14 +310,14 @@ impl LangRegionPage {
             ).width(Length::FillPortion(3)).align_x(Align::End);
 
                // ផ្នែកព័ត៌មាន
-            // let pl_region = PickList::new(region_state, &SystemLocale::available_names(), Some(*selected_region), LangRegionMessage::RegionChanged);
+            let pl_region = PickList::new(region_state, &Locale::available_names()[..], Some(*selected_region), LangRegionMessage::RegionChanged).style(CustomSelect::Primary);
             let pl_first_day = PickList::new(firstday_state, &Weekdays::ALL[..], Some(*selected_firstday), LangRegionMessage::FirstDayChanged).style(CustomSelect::Primary);
             let chb_time_format = Checkbox::new(*is_24_hours_format, "24-Hours Format", LangRegionMessage::TimeFormatToggled).spacing(10).style(CustomCheckbox::Default);
             let pl_temp = PickList::new(temp_state, &Temperature::ALL[..], Some(*selected_temp), LangRegionMessage::TempChanged).style(CustomSelect::Primary);
             let lb_num_sep_grouping = Text::new("Grouping:");
             let pl_num_sep_grouping = PickList::new(num_sep_grouping, &GroupSeperator::ALL[..], Some(*selected_num_sep_grouping), LangRegionMessage::NumSepGroupingChanged).style(CustomSelect::Primary);
             let lb_num_sep_decimal = Text::new("Decimal:");
-            let pl_num_sep_decimal = PickList::new(num_sep_decimal, &DecimalSeperator::ALL[..], Some(*selected_num_sep_decimal), LangRegionMessage::NumSepDecimalChanged).width(Length::Units(65)).style(CustomSelect::Primary);
+            let pl_num_sep_decimal = PickList::new(num_sep_decimal, &DecimalSeperator::ALL[..], Some(*selected_num_sep_decimal), LangRegionMessage::NumSepDecimalChanged).width(Length::Units(55)).style(CustomSelect::Primary);
             let num_sep_row = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_num_sep_grouping)
                .push(pl_num_sep_grouping)
@@ -308,7 +326,7 @@ impl LangRegionPage {
             let lb_currency_sep_grouping = Text::new("Grouping:");
             let pl_currency_sep_grouping = PickList::new(currency_sep_grouping, &GroupSeperator::ALL[..], Some(*selected_currency_sep_grouping), LangRegionMessage::CurrencySepGroupingChanged).style(CustomSelect::Primary);
             let lb_currency_sep_decimal = Text::new("Decimal:");
-            let pl_currency_sep_decimal = PickList::new(currency_sep_decimal, &DecimalSeperator::ALL[..], Some(*selected_currency_sep_decimal), LangRegionMessage::CurrencySepDecimalChanged).width(Length::Units(65)).style(CustomSelect::Primary);
+            let pl_currency_sep_decimal = PickList::new(currency_sep_decimal, &DecimalSeperator::ALL[..], Some(*selected_currency_sep_decimal), LangRegionMessage::CurrencySepDecimalChanged).width(Length::Units(55)).style(CustomSelect::Primary);
             let currency_sep_row = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_currency_sep_grouping)
                .push(pl_currency_sep_grouping)
@@ -316,7 +334,7 @@ impl LangRegionPage {
                .push(pl_currency_sep_decimal);
             let info_sec = Container::new(
                Column::new().spacing(12)
-               // .push(pl_region)
+               .push(pl_region)
                .push(pl_first_day)
                .push(chb_time_format)
                .push(pl_temp)
@@ -352,16 +370,20 @@ impl LangRegionPage {
                .push(
                   Container::new(
                      Column::new().spacing(10)
-                     .push(Text::new(format!("{} at {}", now.format(long_date_format.as_str()), now.format(long_time_format.as_str()))).horizontal_alignment(HorizontalAlignment::Center))
-                     .push(Text::new(format!("{}, {}  {}  {}$", now.format(short_date_format.as_str()), now.format(short_time_format.as_str()), buf_number_formatted.as_str(), buf_currency_formatted.as_str())).horizontal_alignment(HorizontalAlignment::Center))
+                     .push(Text::new(format!("{} at {}", now.format(long_date_format.as_str()), now.format(long_time_format.as_str()))).size(14))
+                     .push(Text::new(format!("{}, {}  {}  {}$", now.format(short_date_format.as_str()), now.format(short_time_format.as_str()), buf_number_formatted.as_str(), buf_currency_formatted.as_str())).size(14))
                   ).height(Length::Fill).center_y()
                )
             ).width(Length::FillPortion(7));
 
             Container::new(
-               Row::new().spacing(20)
-               .push(left_pane)
-               .push(right_pane)
+               Column::new().spacing(10)
+               .push(lb_prefered_lang)
+               .push(
+                  Row::new().spacing(20)
+                  .push(left_pane)
+                  .push(right_pane)
+               )
             ).width(Length::Fill).height(Length::Fill)
          }
          1 => {
@@ -537,8 +559,8 @@ struct GeneralTab {
    remove_state: button::State, 
    up_state: button::State,
    down_state: button::State,
-   region_state: pick_list::State<SystemLocale>,
-   selected_region: SystemLocale,
+   region_state: pick_list::State<&'static str>,
+   selected_region: &'static str,
    firstday_state: pick_list::State<Weekdays>,
    selected_firstday: Weekdays,
    is_24_hours_format: bool,
@@ -662,7 +684,7 @@ impl GeneralTab {
          up_state: button::State::new(),
          down_state: button::State::new(), 
          region_state: pick_list::State::default(),
-         selected_region: SystemLocale::default().unwrap(),
+         selected_region: "km",
          firstday_state: pick_list::State::default(),
          selected_firstday: Weekdays::default(),
          is_24_hours_format: false,
@@ -861,12 +883,12 @@ impl Display for TimeFormat {
    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
       use TimeFormat::*;
       write!(f, "{}", match self {
-         _hma => "h:m A",
+         _hma => "h:m AM/PM",
          _Hm => "H:m",
-         _hmsa => "h:m:s A",
+         _hmsa => "h:m:s AM/PM",
          _Hms => "H:m:s",
-         _hmsaz => "h:m:s A Z",
-         _Hmsz => "H:m:s Z",
+         _hmsaz => "h:m:s AM/PM #",
+         _Hmsz => "H:m:s #",
       })
    }
 }

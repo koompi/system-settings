@@ -231,7 +231,11 @@ impl BatteryPage {
             let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffBatteryChanged).width(Length::FillPortion(4)).style(CustomSlider::Default);
             let turn_display_off_sec = Column::new().spacing(4)
                .push(lb_turn_display_off)
-               .push(Row::new().push(slider_turn_display_off).push(Space::with_width(Length::FillPortion(1))));
+               .push(
+                  Column::new()
+                  .push(slider_turn_display_off)
+                  .push(Row::new().width(Length::Fill).push(Text::new("1 min").size(12)).push(Space::with_width(Length::FillPortion(4))).push(Text::new("15 min").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("1 hr").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("3 hrs").size(12)).push(Space::with_width(Length::FillPortion(1))).push(Text::new("never").size(12)))
+               );
             
             let chb_slightly_dim = Checkbox::new(*slightly_dim_display, "Slightly dim the display while on battery power", BatteryMessage::SlightlyDimDisplayToggled).spacing(10).style(CustomCheckbox::Default);
             let chb_power_nap = Checkbox::new(*enable_power_nap, "Enable Power Nap while on battery power", BatteryMessage::PowerNapWhileBatteryToggled).spacing(10).style(CustomCheckbox::Default);
@@ -291,7 +295,11 @@ impl BatteryPage {
             let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffPowerChanged).width(Length::FillPortion(4)).style(CustomSlider::Default);
             let turn_display_off_sec = Column::new().spacing(4)
                .push(lb_turn_display_off)
-               .push(Row::new().push(slider_turn_display_off).push(Space::with_width(Length::FillPortion(1))));
+               .push(
+                  Column::new()
+                  .push(slider_turn_display_off)
+                  .push(Row::new().width(Length::Fill).push(Text::new("1 min").size(12)).push(Space::with_width(Length::FillPortion(4))).push(Text::new("15 min").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("1 hr").size(12)).push(Space::with_width(Length::FillPortion(5))).push(Text::new("3 hrs").size(12)).push(Space::with_width(Length::FillPortion(1))).push(Text::new("never").size(12)))
+               );
             
             let chb_prevent_from_sleep = Checkbox::new(*prevent_from_sleep, "Prevent computer from sleeping automatically when the display is off", BatteryMessage::PreventFromSleepToggled).spacing(10).style(CustomCheckbox::Default);
             let chb_wake_network_access = Checkbox::new(*wake_network_access, "Wake for network access", BatteryMessage::WakeNetworkAccessToggled).spacing(10).style(CustomCheckbox::Default);

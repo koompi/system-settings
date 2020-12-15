@@ -139,19 +139,27 @@ impl KeyboardPage {
             } = keyboard;
 
             let lb_key_repeat = Text::new("Key Repeat").size(14);
-            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
+            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let lb_delay_repeat = Text::new("Delay Until Repeat").size(14);
-            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
+            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let key_repeat_row = Row::new().width(Length::Fill).padding(20).spacing(50).align_items(Align::Center)
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
                   .push(lb_key_repeat)
-                  .push(slider_key_repeat)
+                  .push(
+                     Column::new()
+                     .push(slider_key_repeat)
+                     .push(Row::new().width(Length::Units(175)).spacing(7).push(Text::new("off").size(12)).push(Text::new("slow").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("fast").size(12)))
+                  )
                )
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
                   .push(lb_delay_repeat)
-                  .push(slider_delay_repeat)
+                  .push(
+                     Column::new()
+                     .push(slider_delay_repeat)
+                     .push(Row::new().width(Length::Units(175)).push(Text::new("long").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("short").size(12)))
+                  )
                );
             let key_repeat_con = Container::new(key_repeat_row).center_x();
 
@@ -333,8 +341,8 @@ impl KeyboardPage {
             } = dictation;
 
             // ផ្ទាំងខាងឆ្វេង
-            let mic_image = svg!("assets/images/mic.svg").height(Length::Units(150));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).center_x();
+            let mic_image = svg!("assets/images/mic.svg").height(Length::Units(127));
+            let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).center_x();
 
             // ផ្ទាំងខាងស្ដាំ
             let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
@@ -367,7 +375,7 @@ impl KeyboardPage {
                   .push(language_section)
                   .push(shortcut_section)
                )
-            ).width(Length::FillPortion(6)).height(Length::Fill);
+            ).width(Length::FillPortion(7)).height(Length::Fill);
          
             Container::new(
                Column::new().spacing(10)

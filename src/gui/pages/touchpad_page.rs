@@ -145,16 +145,24 @@ impl TouchpadPage {
             let slider_click = Slider::new(click_state, 1..=3, *click_val, TouchpadMessage::ClickChanged).width(Length::Units(127)).style(CustomSlider::Default);
             let lb_speed = Text::new("Tracking Speed").size(14);
             let slider_speed = Slider::new(speed_state, 1..=10, *speed_val, TouchpadMessage::SpeedChanged).width(Length::Units(127)).style(CustomSlider::Default);
-            let key_repeat_row = Row::new().width(Length::Shrink).spacing(50).align_items(Align::Center)
+            let key_repeat_row = Row::new().width(Length::Shrink).spacing(30).align_items(Align::Center)
                .push(
                   Column::new().spacing(10).align_items(Align::Center)
                   .push(lb_click)
-                  .push(slider_click)
+                  .push(
+                     Column::new()
+                     .push(slider_click)
+                     .push(Row::new().width(Length::Units(127)).push(Text::new("light").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("medium").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("firm").size(12)))
+                  )
                )
                .push(
                   Column::new().spacing(10).align_items(Align::Center)
                   .push(lb_speed)
-                  .push(slider_speed)
+                  .push(
+                     Column::new()
+                     .push(slider_speed)
+                     .push(Row::new().width(Length::Units(127)).spacing(10).push(Text::new("slow").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("fast").size(12)))
+                  )
                );
             let key_repeat_con = Container::new(key_repeat_row).width(Length::Fill).center_x();
 

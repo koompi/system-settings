@@ -304,7 +304,13 @@ impl DisplayPage {
 
             let lb_color_temp = Text::new("Color Temperature:");
             let slider_color_temp = Slider::new(color_temp_state, 0..=100, *color_temp_val, DisplayMessage::ColorTempChanged).width(Length::Units(250)).style(CustomSlider::Default);
-            let color_temp_row = Row::new().spacing(15).align_items(Align::Center).push(lb_color_temp).push(slider_color_temp);
+            let color_temp_row = Row::new().spacing(15)
+               .push(lb_color_temp)
+               .push(
+                  Column::new()
+                  .push(slider_color_temp)
+                  .push(Row::new().width(Length::Units(250)).push(Text::new("less warm").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("more warm").size(12)))
+               );
          
             Container::new(
                Row::new()
@@ -314,10 +320,10 @@ impl DisplayPage {
                      Column::new().spacing(30)
                      .push(txt_hint)
                      .push(
-                        Column::new().spacing(10).align_items(Align::Center)
+                        Column::new().spacing(10)
                         .push(schedule_row)
-                        .push(Row::new().push(Space::with_width(Length::Units(40))).push(manual_row))
-                        .push(Row::new().push(Space::with_width(Length::Units(80))).push(color_temp_row))
+                        .push(manual_row)
+                        .push(color_temp_row)
                      )
                   ).width(Length::FillPortion(6))
                )

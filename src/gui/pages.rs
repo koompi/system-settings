@@ -238,6 +238,7 @@ impl PageModel {
       use PageModel::*;
       match self {
          DateTimePageModel { datetime_page } => datetime_page.subscription().map(PagesMessage::DateTimeMessage),
+         LanguagePageModel { lang_region_page } => lang_region_page.subscription().map(PagesMessage::LangRegionMessage),
          _ => Subscription::none()
       }
    }
