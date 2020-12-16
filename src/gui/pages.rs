@@ -2,33 +2,35 @@
 mod general_page;
 mod battery_page;
 mod bluetooth_page;
+mod date_time_page;
 mod display_page;
 mod keyboard_page;
+mod lang_region_page;
 mod mouse_page;
 mod network_page;
+mod notification_page;
 mod printer_page;
 mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
 mod user_page;
-mod date_time_page;
-mod lang_region_page;
 
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
+use date_time_page::{DateTimeMessage, DateTimePage};
 use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
+use iced::{Container, Element, Length, Space, Subscription};
 use keyboard_page::{KeyboardMessage, KeyboardPage};
+use lang_region_page::{LangRegionMessage, LangRegionPage};
 use mouse_page::{MouseMessage, MousePage};
 use network_page::{NetMessage, NetworkPage};
+use notification_page::{NotifyMsg, NotifyPage};
 use printer_page::{PrinterMessage, PrinterPage};
 use sound_page::{SoundMessage, SoundPage};
-use touchpad_page::{TouchpadPage, TouchpadMessage};
-use sys_info_page::{InfoPage, InfoMessage};
+use sys_info_page::{InfoMessage, InfoPage};
+use touchpad_page::{TouchpadMessage, TouchpadPage};
 use user_page::{UserPage, UserPageMsg};
-use date_time_page::{DateTimePage, DateTimeMessage};
-use lang_region_page::{LangRegionPage, LangRegionMessage};
-use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -51,6 +53,7 @@ pub enum PagesMessage {
    UserPageMsg(UserPageMsg),
    DateTimeMessage(DateTimeMessage),
    LangRegionMessage(LangRegionMessage),
+   NotifyMsg(NotifyMsg),
 }
 
 // #[derive(Debug)]
@@ -62,7 +65,7 @@ pub enum PageModel {
    UsersPageModel { user_page: UserPage },
    AccessPage,
    AccountPage,
-   NotiPage,
+   NotificationsModel { noti_page: NotifyPage },
    SecurityPage,
    UpdatePage,
    NetworkPageModel { network_page: NetworkPage },
@@ -87,17 +90,19 @@ impl Pages {
                general_page: General::new(),
             },
             DateTimePageModel {
-               datetime_page: DateTimePage::new()
+               datetime_page: DateTimePage::new(),
             },
             LanguagePageModel {
-               lang_region_page: LangRegionPage::new()
+               lang_region_page: LangRegionPage::new(),
             },
             UsersPageModel {
                user_page: UserPage::new(),
             },
             AccessPage,
             AccountPage,
-            NotiPage,
+            NotificationsModel {
+               noti_page: NotifyPage::new(),
+            },
             SecurityPage,
             UpdatePage,
             NetworkPageModel {
@@ -231,15 +236,24 @@ impl PageModel {
                lang_region_page.update(msg);
             }
          }
+         NotifyMsg(msg) => {
+            if let NotificationsModel { noti_page } = self {
+               noti_page.update(msg);
+            }
+         }
       }
    }
 
    fn subscription(&self) -> Subscription<PagesMessage> {
       use PageModel::*;
       match self {
-         DateTimePageModel { datetime_page } => datetime_page.subscription().map(PagesMessage::DateTimeMessage),
-         LanguagePageModel { lang_region_page } => lang_region_page.subscription().map(PagesMessage::LangRegionMessage),
-         _ => Subscription::none()
+         DateTimePageModel { datetime_page } => datetime_page
+            .subscription()
+            .map(PagesMessage::DateTimeMessage),
+         LanguagePageModel { lang_region_page } => lang_region_page
+            .subscription()
+            .map(PagesMessage::LangRegionMessage),
+         _ => Subscription::none(),
       }
    }
 
@@ -250,14 +264,20 @@ impl PageModel {
          GeneralPage { general_page } => general_page
             .view()
             .map(move |msg| PagesMessage::GeneralMessage(msg)),
-         DateTimePageModel { datetime_page } => datetime_page.view().map(move |msg| PagesMessage::DateTimeMessage(msg)),
-         LanguagePageModel { lang_region_page } => lang_region_page.view().map(move |msg| PagesMessage::LangRegionMessage(msg)),
+         DateTimePageModel { datetime_page } => datetime_page
+            .view()
+            .map(move |msg| PagesMessage::DateTimeMessage(msg)),
+         LanguagePageModel { lang_region_page } => lang_region_page
+            .view()
+            .map(move |msg| PagesMessage::LangRegionMessage(msg)),
          UsersPageModel { user_page } => user_page
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
          AccessPage => Container::new(Space::with_width(Length::Shrink)).into(),
          AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         NotificationsModel { noti_page } => noti_page
+            .view()
+            .map(move |msg| PagesMessage::NotifyMsg(msg)),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
          UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
          NetworkPageModel { network_page } => network_page
@@ -303,7 +323,7 @@ impl PageModel {
          UsersPageModel { .. } => "Users & Groups",
          AccessPage => "Accessibility",
          AccountPage => "Accounts",
-         NotiPage => "Notifications",
+         NotificationsModel { .. } => "Notifications",
          SecurityPage => "Security & Privacy",
          UpdatePage => "Software Update",
          NetworkPageModel { .. } => "Network",

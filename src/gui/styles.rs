@@ -1,14 +1,15 @@
 use iced::{
-   button, checkbox, container, progress_bar, slider, text_input, pick_list, Background, Color, Vector,
+   button, checkbox, container, pick_list, progress_bar, slider, text_input, Background, Color,
+   Vector,
 };
 
-pub const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
-pub const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
-pub const HOVERED: Color = Color::from_rgb(129.0/255.0, 129.0/255.0, 129.0/255.0);
-pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
-pub const SUCCESS: Color = Color::from_rgb(31.0/255.0, 139.0/255.0, 36.0/255.0);
-pub const WARNING: Color = Color::from_rgb(212.0/255.0, 176.0/255.0, 17.0/255.0);
-pub const ERROR: Color = Color::from_rgb(218.0/255.0, 16.0/255.0, 11.0/255.0);
+pub const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
+pub const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
+pub const HOVERED: Color = Color::from_rgb(129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
+pub const SUCCESS: Color = Color::from_rgb(31.0 / 255.0, 139.0 / 255.0, 36.0 / 255.0);
+pub const WARNING: Color = Color::from_rgb(212.0 / 255.0, 176.0 / 255.0, 17.0 / 255.0);
+pub const ERROR: Color = Color::from_rgb(218.0 / 255.0, 16.0 / 255.0, 11.0 / 255.0);
 
 pub enum CustomButton {
    Default,
@@ -61,8 +62,11 @@ impl button::StyleSheet for CustomButton {
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
-            CustomButton::Tab | CustomButton::SelectedTab | CustomButton::Hovered |
-            CustomButton::Text | CustomButton::Selected => 7.0,
+            CustomButton::Tab
+            | CustomButton::SelectedTab
+            | CustomButton::Hovered
+            | CustomButton::Text
+            | CustomButton::Selected => 7.0,
             _ => 5.0,
          },
          border_color: match self {
@@ -319,7 +323,7 @@ impl pick_list::StyleSheet for CustomSelect {
       menu::Style {
          selected_background: match self {
             CustomSelect::Primary => ACCENT.into(),
-            _ => default.selected_background
+            _ => default.selected_background,
          },
          ..default
       }
@@ -336,12 +340,12 @@ impl pick_list::StyleSheet for CustomSelect {
          },
          CustomSelect::Primary => pick_list::Style {
             text_color: Color::BLACK,
-            background: Color {a: 0.3, ..ACCENT}.into(),
+            background: Color { a: 0.3, ..ACCENT }.into(),
             icon_size: 0.5,
             border_color: ACCENT,
             border_radius: 5.0,
             border_width: 0.0,
-         }
+         },
       }
    }
    fn hovered(&self) -> pick_list::Style {
@@ -350,7 +354,7 @@ impl pick_list::StyleSheet for CustomSelect {
       pick_list::Style {
          background: match self {
             CustomSelect::Default => Background::Color(Color::from_rgb8(75, 101, 132)),
-            _ => active.background
+            _ => active.background,
          },
          ..active
       }
