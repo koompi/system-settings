@@ -1,10 +1,13 @@
 const LABEL_WIDTH: u16 = 250;
 const ROW_WIDTH: u16 = 500;
-use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomRadio};
-use iced::{
-    button, text_input, Align, Button, Checkbox, Column, Container, Element, HorizontalAlignment,
-    Length, Radio, Row, Rule, Space, Svg, Text, TextInput,
+use super::super::styles::{
+    CustomButton, CustomCheckbox, CustomContainer, CustomRadio, CustomSelect,
 };
+use iced::{
+    button, pick_list, text_input, Align, Button, Checkbox, Column, Container, Element,
+    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput,
+};
+use vedas_core::macros::select;
 
 #[derive(Debug, Clone)]
 pub enum NotifyMsg {
@@ -24,6 +27,10 @@ pub enum NotifyMsg {
     BackHome,
     CustomPosition,
     OnSearch(String),
+    AppNotifSettingsMsg(AppNotifSettingsMsg),
+    ApplyChanged,
+    ApplyPosition,
+    PositionChanged(Position),
 }
 #[derive(Default, Debug, Clone)]
 pub struct NotifyPage {
@@ -49,6 +56,11 @@ pub struct NotifyPage {
     filter_list: Vec<(AppListItem, button::State)>,
     search: text_input::State,
     search_val: String,
+    applistsetting: Vec<AppNotifSettings>,
+    apply: button::State,
+    apply_position: button::State,
+    select_positon: Position,
+    select_state: pick_list::State<Position>,
 }
 #[derive(Debug, Clone)]
 pub enum CustomView {
@@ -85,6 +97,7 @@ impl NotifyPage {
                 data("Discord", "discord"),
                 data("Chrome", "chrome"),
             ],
+            applistsetting: vec![AppNotifSettings::new(); 5],
             ..Default::default()
         }
     }
@@ -116,6 +129,27 @@ impl NotifyPage {
             SwitchApp(idx) => {
                 self.current_idx = idx;
             }
+            PositionChanged(pos) => {
+                self.select_positon = pos;
+            }
+            AppNotifSettingsMsg(msg) => match self.current_idx {
+                0 => {
+                    self.applistsetting[0].update(msg);
+                }
+                1 => {
+                    self.applistsetting[1].update(msg);
+                }
+                2 => {
+                    self.applistsetting[2].update(msg);
+                }
+                3 => {
+                    self.applistsetting[3].update(msg);
+                }
+                4 => {
+                    self.applistsetting[4].update(msg);
+                }
+                _ => {}
+            },
             OnSearch(val) => {
                 self.search_val = val;
                 self.filter_list = self
@@ -129,6 +163,10 @@ impl NotifyPage {
                     .cloned()
                     .collect();
             }
+            ApplyPosition => {
+
+            }
+            ApplyChanged => {}
         }
         self
     }
@@ -365,8 +403,54 @@ impl NotifyPage {
                     .push(column)
                     .push(
                         Column::new()
-                            .height(Length::Fill)
-                            .width(Length::FillPortion(6)),
+                            .padding(10)
+                            .align_items(Align::End)
+                            .width(Length::FillPortion(6))
+                            .push(match *current_idx {
+                                0 => self.applistsetting[0]
+                                    .view(&self.list_item.get(*current_idx).unwrap().0)
+                                    .map(move |msg| NotifyMsg::AppNotifSettingsMsg(msg)),
+                                1 => self.applistsetting[1]
+                                    .view(&self.list_item.get(*current_idx).unwrap().0)
+                                    .map(move |msg| NotifyMsg::AppNotifSettingsMsg(msg)),
+                                2 => self.applistsetting[2]
+                                    .view(&self.list_item.get(*current_idx).unwrap().0)
+                                    .map(move |msg| NotifyMsg::AppNotifSettingsMsg(msg)),
+                                3 => self.applistsetting[3]
+                                    .view(&self.list_item.get(*current_idx).unwrap().0)
+                                    .map(move |msg| NotifyMsg::AppNotifSettingsMsg(msg)),
+                                4 => self.applistsetting[4]
+                                    .view(&self.list_item.get(*current_idx).unwrap().0)
+                                    .map(move |msg| NotifyMsg::AppNotifSettingsMsg(msg)),
+                                _ => Container::new(Text::new("Please Select item in the list"))
+                                    .into(),
+                            })
+                            .push(
+                                Row::new()
+                                    .push(
+                                        Button::new(
+                                            &mut self.back_home,
+                                            Text::new("Back")
+                                                .horizontal_alignment(HorizontalAlignment::Center),
+                                        )
+                                        .style(CustomButton::Cancel)
+                                        .on_press(NotifyMsg::BackHome)
+                                        .padding(10)
+                                        .width(Length::Units(100)),
+                                    )
+                                    .spacing(10)
+                                    .push(
+                                        Button::new(
+                                            &mut self.apply,
+                                            Text::new("Apply")
+                                                .horizontal_alignment(HorizontalAlignment::Center),
+                                        )
+                                        .padding(10)
+                                        .on_press(NotifyMsg::ApplyChanged)
+                                        .width(Length::Units(100))
+                                        .style(CustomButton::Apply),
+                                    ),
+                            ),
                     )
                     .into();
                 Container::new(content)
@@ -376,14 +460,110 @@ impl NotifyPage {
                     .height(Length::Fill)
                     .into()
             }
-            CustomView::Position => Button::new(&mut self.back_home, Text::new("Home"))
-                .on_press(NotifyMsg::BackHome)
-                .style(CustomButton::Apply)
-                .into(),
+            CustomView::Position => {
+                let NotifyPage {
+                    select_state,
+                    select_positon,
+                    ..
+                } = self;
+                let data = Column::new()
+                    .align_items(Align::Center)
+                    .align_items(Align::End)
+                    .push(
+                        Column::new()
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .align_items(Align::Center)
+                            .push(
+                                Svg::from_path(format!(
+                                    "{}/assets/images/desktop.svg",
+                                    env!("CARGO_MANIFEST_DIR")
+                                ))
+                                .width(Length::Units(256))
+                                .height(Length::Units(256)),
+                            )
+                            .push(Text::new(
+                                "Select option belows for showing on screen position",
+                            ))
+                            .push(
+                                PickList::new(
+                                    select_state,
+                                    &Position::ALL[..],
+                                    Some(*select_positon),
+                                    NotifyMsg::PositionChanged,
+                                )
+                                .padding(10)
+                                .style(CustomSelect::Default),
+                            ),
+                    )
+                    .push(
+                        Row::new()
+                            .push(
+                                Button::new(
+                                    &mut self.back_home,
+                                    Text::new("Back")
+                                        .horizontal_alignment(HorizontalAlignment::Center),
+                                )
+                                .style(CustomButton::Cancel)
+                                .on_press(NotifyMsg::BackHome)
+                                .padding(10)
+                                .width(Length::Units(100)),
+                            )
+                            .spacing(10)
+                            .push(
+                                Button::new(
+                                    &mut self.apply_position,
+                                    Text::new("Apply")
+                                        .horizontal_alignment(HorizontalAlignment::Center),
+                                )
+                                .padding(10)
+                                .on_press(NotifyMsg::ApplyPosition)
+                                .width(Length::Units(100))
+                                .style(CustomButton::Apply),
+
+                            ),
+                    );
+                Container::new(data)
+                    .padding(10)
+                    .center_x()
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
+            }
         }
     }
 }
-
+impl Default for Position {
+    fn default() -> Self {
+        Position::BottomLeft
+    }
+}
+impl Position {
+    const ALL: [Position; 6] = [
+        Position::TopLeft,
+        Position::TopRight,
+        Position::BottomLeft,
+        Position::BottomRight,
+        Position::MiddleBottom,
+        Position::MiddleTop,
+    ];
+}
+select_display!(Position, 
+Position::TopLeft => "Top Left", 
+Position::TopRight => "Top Right", 
+Position::BottomLeft => "Bottom Left",
+Position::BottomRight => "Bottom Right", 
+Position::MiddleBottom => "Middle Bottom",
+Position::MiddleTop => "Middle Top");
+#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
+pub enum Position {
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+    MiddleTop,
+    MiddleBottom,
+}
 #[derive(Default, Debug, Clone)]
 pub struct AppListItem {
     name: String,
@@ -403,8 +583,8 @@ impl AppListItem {
                     env!("CARGO_MANIFEST_DIR"),
                     self.icon
                 ))
-                .width(Length::Units(48))
-                .height(Length::Units(48)),
+                .width(Length::Units(32))
+                .height(Length::Units(32)),
             )
             .spacing(4)
             .push(Text::new(self.name.as_str()).size(18))
@@ -416,8 +596,80 @@ impl AppListItem {
         self
     }
 }
-
+#[derive(Debug, Clone)]
+pub enum AppNotifSettingsMsg {
+    OnShowPopup(bool),
+    OnNoDisturb(bool),
+    OnShowHistory(bool),
+    OnNotifyBadgets(bool),
+}
 #[derive(Default, Debug, Clone)]
 pub struct AppNotifSettings {
-    settings
+    popup: bool,
+    nodisturb: bool,
+    history: bool,
+    notifybadges: bool,
+}
+
+impl AppNotifSettings {
+    pub fn new() -> Self {
+        Self {
+            ..Default::default()
+        }
+    }
+    pub fn update(&mut self, msg: AppNotifSettingsMsg) -> &mut Self {
+        use AppNotifSettingsMsg::*;
+        match msg {
+            OnShowPopup(val) => self.popup = val,
+            OnNoDisturb(val) => self.nodisturb = val,
+            OnShowHistory(val) => self.history = val,
+            OnNotifyBadgets(val) => self.notifybadges = val,
+        }
+        self
+    }
+    pub fn view(&mut self, item: &AppListItem) -> Element<AppNotifSettingsMsg> {
+        Container::new(
+            Column::new()
+                .spacing(10)
+                .push(
+                    Row::new()
+                        .align_items(Align::Center)
+                        .spacing(10)
+                        .push(
+                            Svg::from_path(format!(
+                                "{}/assets/images/{}.svg",
+                                env!("CARGO_MANIFEST_DIR"),
+                                item.icon
+                            ))
+                            .width(Length::Units(48))
+                            .height(Length::Units(48)),
+                        )
+                        .push(Text::new(item.name.as_str()).size(18)),
+                )
+                .push(Checkbox::new(
+                    self.popup,
+                    "Show popups",
+                    AppNotifSettingsMsg::OnShowPopup,
+                ))
+                .push(Checkbox::new(
+                    self.nodisturb,
+                    "Show in Do not disturb mode",
+                    AppNotifSettingsMsg::OnNoDisturb,
+                ))
+                .push(Checkbox::new(
+                    self.history,
+                    "Show in history",
+                    AppNotifSettingsMsg::OnShowHistory,
+                ))
+                .push(Checkbox::new(
+                    self.notifybadges,
+                    "Show notificatons badges",
+                    AppNotifSettingsMsg::OnNotifyBadgets,
+                )),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x()
+        .into()
+    }
 }
