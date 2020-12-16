@@ -13,6 +13,7 @@ mod touchpad_page;
 mod user_page;
 mod date_time_page;
 mod lang_region_page;
+mod access_page;
 
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
@@ -28,6 +29,7 @@ use sys_info_page::{InfoPage, InfoMessage};
 use user_page::{UserPage, UserPageMsg};
 use date_time_page::{DateTimePage, DateTimeMessage};
 use lang_region_page::{LangRegionPage, LangRegionMessage};
+use access_page::{AccessPage, AccessMessage};
 use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
@@ -51,6 +53,7 @@ pub enum PagesMessage {
    UserPageMsg(UserPageMsg),
    DateTimeMessage(DateTimeMessage),
    LangRegionMessage(LangRegionMessage),
+   AccessMessage(AccessMessage),
 }
 
 // #[derive(Debug)]
@@ -60,7 +63,7 @@ pub enum PageModel {
    DateTimePageModel { datetime_page: DateTimePage },
    LanguagePageModel { lang_region_page: LangRegionPage },
    UsersPageModel { user_page: UserPage },
-   AccessPage,
+   AccessPageModel { access_page: AccessPage },
    AccountPage,
    NotiPage,
    SecurityPage,
@@ -95,7 +98,9 @@ impl Pages {
             UsersPageModel {
                user_page: UserPage::new(),
             },
-            AccessPage,
+            AccessPageModel {
+               access_page: AccessPage::new()
+            },
             AccountPage,
             NotiPage,
             SecurityPage,
@@ -231,6 +236,11 @@ impl PageModel {
                lang_region_page.update(msg);
             }
          }
+         AccessMessage(msg) => {
+            if let AccessPageModel { access_page } = self {
+               access_page.update(msg);
+            }
+         }
       }
    }
 
@@ -255,7 +265,7 @@ impl PageModel {
          UsersPageModel { user_page } => user_page
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
-         AccessPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         AccessPageModel { access_page } => access_page.view().map(move |msg| PagesMessage::AccessMessage(msg)),
          AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
          NotiPage => Container::new(Space::with_width(Length::Shrink)).into(),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
@@ -301,7 +311,7 @@ impl PageModel {
          DateTimePageModel { .. } => "Date & Time",
          LanguagePageModel { .. } => "Language & Region",
          UsersPageModel { .. } => "Users & Groups",
-         AccessPage => "Accessibility",
+         AccessPageModel { .. } => "Accessibility",
          AccountPage => "Accounts",
          NotiPage => "Notifications",
          SecurityPage => "Security & Privacy",
