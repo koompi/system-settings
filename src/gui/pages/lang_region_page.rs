@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use num_format::{SystemLocale, Locale};
+use num_format::Locale;
 use num_format::{Buffer, CustomFormat, Grouping};
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, HOVERED};
 use iced::{
