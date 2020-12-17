@@ -2,13 +2,13 @@ use iced::{
    button, checkbox, container, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
-pub const BACKGROUND: Color = Color::from_rgb(238.0/255.0, 238.0/255.0, 238.0/255.0);
-pub const FOREGROUND: Color = Color::from_rgb(224.0/255.0, 224.0/255.0, 224.0/255.0);
-pub const HOVERED: Color = Color::from_rgb(129.0/255.0, 129.0/255.0, 129.0/255.0);
-pub const ACCENT: Color = Color::from_rgb(15.0/255.0, 86.0/255.0, 179.0/255.0);
-pub const SUCCESS: Color = Color::from_rgb(31.0/255.0, 139.0/255.0, 36.0/255.0);
-pub const WARNING: Color = Color::from_rgb(212.0/255.0, 176.0/255.0, 17.0/255.0);
-pub const ERROR: Color = Color::from_rgb(218.0/255.0, 16.0/255.0, 11.0/255.0);
+pub const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
+pub const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
+pub const HOVERED: Color = Color::from_rgb(129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
+pub const SUCCESS: Color = Color::from_rgb(31.0 / 255.0, 139.0 / 255.0, 36.0 / 255.0);
+pub const WARNING: Color = Color::from_rgb(212.0 / 255.0, 176.0 / 255.0, 17.0 / 255.0);
+pub const ERROR: Color = Color::from_rgb(218.0 / 255.0, 16.0 / 255.0, 11.0 / 255.0);
 
 pub enum CustomButton {
    Default,
@@ -59,8 +59,10 @@ impl button::StyleSheet for CustomButton {
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
-            CustomButton::Tab | CustomButton::SelectedTab | 
-            CustomButton::Text | CustomButton::Selected => 7.0,
+            CustomButton::Tab
+            | CustomButton::SelectedTab
+            | CustomButton::Text
+            | CustomButton::Selected => 7.0,
             _ => 5.0,
          },
          border_color: match self {
@@ -366,14 +368,22 @@ impl slider::StyleSheet for CustomSlider {
 
 pub enum CustomProgressBar {
    Default,
+   ForegroundGrey,
 }
 
 impl progress_bar::StyleSheet for CustomProgressBar {
    fn style(&self) -> progress_bar::Style {
-      progress_bar::Style {
-         background: FOREGROUND.into(),
-         bar: ACCENT.into(),
-         border_radius: 7.0,
+      match self {
+         CustomProgressBar::Default => progress_bar::Style {
+            background: FOREGROUND.into(),
+            bar: ACCENT.into(),
+            border_radius: 7.0,
+         },
+         CustomProgressBar::ForegroundGrey => progress_bar::Style {
+            background: Background::Color(Color::from_rgb8(178, 190, 195)),
+            bar: ACCENT.into(),
+            border_radius: 7.0,
+         },
       }
    }
 }

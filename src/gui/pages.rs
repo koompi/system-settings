@@ -12,6 +12,7 @@ mod printer_page;
 mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
+mod update_page;
 mod user_page;
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
@@ -27,6 +28,7 @@ use printer_page::{PrinterMessage, PrinterPage};
 use sound_page::{SoundMessage, SoundPage};
 use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
+use update_page::{SoftUpdateMsg, SoftwareUpdate};
 use user_page::{UserPage, UserPageMsg};
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -49,6 +51,7 @@ pub enum PagesMessage {
    UserPageMsg(UserPageMsg),
    DateTimeMessage(DateTimeMessage),
    NotifyMsg(NotifyMsg),
+   SoftUpdateMsg(SoftUpdateMsg),
 }
 
 // #[derive(Debug)]
@@ -62,7 +65,7 @@ pub enum PageModel {
    AccountPage,
    NotificationsModel { noti_page: NotifyPage },
    SecurityPage,
-   UpdatePage,
+   UpdatePageModel { update_page: SoftwareUpdate },
    NetworkPageModel { network_page: NetworkPage },
    BluetoothPageModel { bluetooth_page: BluetoothPage },
    SoundPageModel { sound_page: SoundPage },
@@ -97,7 +100,9 @@ impl Pages {
                noti_page: NotifyPage::new(),
             },
             SecurityPage,
-            UpdatePage,
+            UpdatePageModel {
+               update_page: SoftwareUpdate::new(),
+            },
             NetworkPageModel {
                network_page: NetworkPage::new(),
             },
@@ -229,6 +234,11 @@ impl PageModel {
                noti_page.update(msg);
             }
          }
+         SoftUpdateMsg(msg) => {
+            if let UpdatePageModel { update_page } = self {
+               update_page.update(msg);
+            }
+         }
       }
    }
 
@@ -238,6 +248,9 @@ impl PageModel {
          DateTimePageModel { datetime_page } => datetime_page
             .subscription()
             .map(PagesMessage::DateTimeMessage),
+         UpdatePageModel { update_page } => {
+            update_page.subscription().map(PagesMessage::SoftUpdateMsg)
+         }
          _ => Subscription::none(),
       }
    }
@@ -262,7 +275,9 @@ impl PageModel {
             .view()
             .map(move |msg| PagesMessage::NotifyMsg(msg)),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
+         UpdatePageModel { update_page } => update_page
+            .view()
+            .map(move |msg| PagesMessage::SoftUpdateMsg(msg)),
          NetworkPageModel { network_page } => network_page
             .view()
             .map(move |msg| PagesMessage::NetMessage(msg)),
@@ -308,7 +323,7 @@ impl PageModel {
          AccountPage => "Accounts",
          NotificationsModel { .. } => "Notifications",
          SecurityPage => "Security & Privacy",
-         UpdatePage => "Software Update",
+         UpdatePageModel { .. } => "Software Update",
          NetworkPageModel { .. } => "Network",
          BluetoothPageModel { .. } => "Bluetooth",
          SoundPageModel { .. } => "Sound",
