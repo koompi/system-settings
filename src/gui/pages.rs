@@ -1,5 +1,6 @@
 #[macro_use]
 mod general_page;
+mod access_page;
 mod battery_page;
 mod bluetooth_page;
 mod date_time_page;
@@ -13,14 +14,16 @@ mod printer_page;
 mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
+mod update_page;
 mod user_page;
-mod access_page;
 
+use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use date_time_page::{DateTimeMessage, DateTimePage};
 use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
+use iced::{Container, Element, Length, Space, Subscription};
 use keyboard_page::{KeyboardMessage, KeyboardPage};
 use lang_region_page::{LangRegionMessage, LangRegionPage};
 use mouse_page::{MouseMessage, MousePage};
@@ -30,9 +33,8 @@ use printer_page::{PrinterMessage, PrinterPage};
 use sound_page::{SoundMessage, SoundPage};
 use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
+use update_page::{SoftUpdateMsg, SoftwareUpdate};
 use user_page::{UserPage, UserPageMsg};
-use access_page::{AccessPage, AccessMessage};
-use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -57,6 +59,7 @@ pub enum PagesMessage {
    LangRegionMessage(LangRegionMessage),
    NotifyMsg(NotifyMsg),
    AccessMessage(AccessMessage),
+   SoftUpdateMsg(SoftUpdateMsg),
 }
 
 // #[derive(Debug)]
@@ -70,7 +73,7 @@ pub enum PageModel {
    AccountPage,
    NotificationsModel { noti_page: NotifyPage },
    SecurityPage,
-   UpdatePage,
+   UpdatePageModel { update_page: SoftwareUpdate },
    NetworkPageModel { network_page: NetworkPage },
    BluetoothPageModel { bluetooth_page: BluetoothPage },
    SoundPageModel { sound_page: SoundPage },
@@ -102,14 +105,16 @@ impl Pages {
                user_page: UserPage::new(),
             },
             AccessPageModel {
-               access_page: AccessPage::new()
+               access_page: AccessPage::new(),
             },
             AccountPage,
             NotificationsModel {
                noti_page: NotifyPage::new(),
             },
             SecurityPage,
-            UpdatePage,
+            UpdatePageModel {
+               update_page: SoftwareUpdate::new(),
+            },
             NetworkPageModel {
                network_page: NetworkPage::new(),
             },
@@ -251,6 +256,11 @@ impl PageModel {
                access_page.update(msg);
             }
          }
+         SoftUpdateMsg(msg) => {
+            if let UpdatePageModel { update_page } = self {
+               update_page.update(msg);
+            }
+         }
       }
    }
 
@@ -263,6 +273,9 @@ impl PageModel {
          LanguagePageModel { lang_region_page } => lang_region_page
             .subscription()
             .map(PagesMessage::LangRegionMessage),
+         UpdatePageModel { update_page } => {
+            update_page.subscription().map(PagesMessage::SoftUpdateMsg)
+         }
          _ => Subscription::none(),
       }
    }
@@ -283,13 +296,17 @@ impl PageModel {
          UsersPageModel { user_page } => user_page
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
-         AccessPageModel { access_page } => access_page.view().map(move |msg| PagesMessage::AccessMessage(msg)),
+         AccessPageModel { access_page } => access_page
+            .view()
+            .map(move |msg| PagesMessage::AccessMessage(msg)),
          AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
          NotificationsModel { noti_page } => noti_page
             .view()
             .map(move |msg| PagesMessage::NotifyMsg(msg)),
          SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
+         UpdatePageModel { update_page } => update_page
+            .view()
+            .map(move |msg| PagesMessage::SoftUpdateMsg(msg)),
          NetworkPageModel { network_page } => network_page
             .view()
             .map(move |msg| PagesMessage::NetMessage(msg)),
@@ -335,7 +352,7 @@ impl PageModel {
          AccountPage => "Accounts",
          NotificationsModel { .. } => "Notifications",
          SecurityPage => "Security & Privacy",
-         UpdatePage => "Software Update",
+         UpdatePageModel { .. } => "Software Update",
          NetworkPageModel { .. } => "Network",
          BluetoothPageModel { .. } => "Bluetooth",
          SoundPageModel { .. } => "Sound",

@@ -391,14 +391,22 @@ impl slider::StyleSheet for CustomSlider {
 
 pub enum CustomProgressBar {
    Default,
+   ForegroundGrey,
 }
 
 impl progress_bar::StyleSheet for CustomProgressBar {
    fn style(&self) -> progress_bar::Style {
-      progress_bar::Style {
-         background: FOREGROUND.into(),
-         bar: ACCENT.into(),
-         border_radius: 7.0,
+      match self {
+         CustomProgressBar::Default => progress_bar::Style {
+            background: FOREGROUND.into(),
+            bar: ACCENT.into(),
+            border_radius: 7.0,
+         },
+         CustomProgressBar::ForegroundGrey => progress_bar::Style {
+            background: Background::Color(Color::from_rgb8(178, 190, 195)),
+            bar: ACCENT.into(),
+            border_radius: 7.0,
+         },
       }
    }
 }
