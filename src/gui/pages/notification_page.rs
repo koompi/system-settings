@@ -3,6 +3,7 @@ const ROW_WIDTH: u16 = 500;
 use super::super::styles::{
     CustomButton, CustomCheckbox, CustomContainer, CustomRadio, CustomSelect,
 };
+use crate::helpers::ROOT_PATH;
 use iced::{
     button, pick_list, text_input, Align, Button, Checkbox, Column, Container, Element,
     HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput,
@@ -477,7 +478,7 @@ impl NotifyPage {
                             .push(
                                 Svg::from_path(format!(
                                     "{}/assets/images/desktop.svg",
-                                    env!("CARGO_MANIFEST_DIR")
+                                    ROOT_PATH()
                                 ))
                                 .width(Length::Units(256))
                                 .height(Length::Units(256)),
@@ -580,7 +581,7 @@ impl AppListItem {
             .push(
                 Svg::from_path(format!(
                     "{}/assets/images/{}.svg",
-                    env!("CARGO_MANIFEST_DIR"),
+                    ROOT_PATH(),
                     self.icon
                 ))
                 .width(Length::Units(32))
@@ -638,7 +639,7 @@ impl AppNotifSettings {
                         .push(
                             Svg::from_path(format!(
                                 "{}/assets/images/{}.svg",
-                                env!("CARGO_MANIFEST_DIR"),
+                                ROOT_PATH(),
                                 item.icon
                             ))
                             .width(Length::Units(48))

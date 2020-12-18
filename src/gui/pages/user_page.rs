@@ -9,6 +9,7 @@
 /// 4 UserForm which is used to present as field to capture the data and put them to the list of user
 const FONT_SIZE: u16 = 16;
 use super::super::styles::{CustomButton, CustomContainer};
+use crate::helpers::ROOT_PATH;
 use iced::{
     button, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
     HorizontalAlignment, Length, Row, Scrollable, Svg, Text, TextInput,
@@ -280,13 +281,9 @@ impl AccountItem {
             .spacing(10)
             .push(
                 Column::new().push(
-                    Svg::from_path(format!(
-                        "{}/assets/images/{}",
-                        env!("CARGO_MANIFEST_DIR"),
-                        icon
-                    ))
-                    .width(Length::Units(48))
-                    .height(Length::Units(48)),
+                    Svg::from_path(format!("{}/assets/images/{}", ROOT_PATH(), icon))
+                        .width(Length::Units(48))
+                        .height(Length::Units(48)),
                 ),
             )
             .push(
@@ -373,7 +370,7 @@ impl AccountView {
                     .push(Button::new(avatar_btn,
                         Svg::from_path(format!(
                             "{}/assets/images/{}",
-                            env!("CARGO_MANIFEST_DIR"),
+                            ROOT_PATH(),
                             avatar
                         )).width(Length::Units(100)).height(Length::Units(100))).on_press(AccountViewMsg::AvatarChanged)
                     )

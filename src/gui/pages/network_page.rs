@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::super::styles::{CustomButton, CustomContainer};
-
+use crate::helpers::ROOT_PATH;
 use iced::{
     button, pick_list, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
     HorizontalAlignment, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
@@ -1451,7 +1451,7 @@ impl ListCon {
             .spacing(5)
             .push(Svg::from_path(format!(
                 "{}/assets/images/{}.svg",
-                env!("CARGO_MANIFEST_DIR"),
+                ROOT_PATH(),
                 icon
             )))
             .push(

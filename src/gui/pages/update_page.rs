@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use iced::{
     button, time, Align, Button, Checkbox, Column, Command, Container, Element, Length, ProgressBar, Row, Space, Subscription, Svg, Text,
 };
+use crate::helpers::ROOT_PATH;
 use std::time::{Duration, Instant};
 #[derive(Debug, Clone)]
 pub enum SoftUpdateMsg {
@@ -118,7 +119,7 @@ impl SoftwareUpdate {
                     .push(
                         Svg::from_path(format!(
                             "{}/assets/images/settings.svg",
-                            env!("CARGO_MANIFEST_DIR")
+                            ROOT_PATH()
                         ))
                         .width(Length::Units(128))
                         .height(Length::Units(128)),
@@ -132,7 +133,7 @@ impl SoftwareUpdate {
                                             Row::new().align_items(Align::Center).width(Length::Fill)
                                             .push(Svg::from_path(format!(
                                                 "{}/assets/images/update.svg",
-                                                env!("CARGO_MANIFEST_DIR")
+                                                ROOT_PATH()
                                             )).width(Length::Units(64)).height(Length::Units(64)))
                                             .push(
                                                 Column::new().align_items(Align::Center).spacing(4)
@@ -180,7 +181,7 @@ impl SoftwareUpdate {
                 Status::Finished => {
                     Container::new(Column::new().spacing(10).push(Row::new().push(Row::new().align_items(Align::Center).push(
                         Text::new("You computer is up to date (KOOMPI OS 0.2.5)").size(20)
-                    ).push(Svg::from_path(format!("{}/assets/images/updated.svg",env!("CARGO_MANIFEST_DIR")))))).push(
+                    ).push(Svg::from_path(format!("{}/assets/images/updated.svg",ROOT_PATH()))))).push(
                         Text::new(format!("Last Check: {}", Local::now().date().to_string()))
                     )
                     .push(Space::with_height(Length::Units(10)))
