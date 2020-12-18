@@ -17,8 +17,7 @@ pub enum KeyboardMessage {
    BacklightOffDurationChanged(TurnBacklightOff),
    SetUpBluetoothKeyboard(bool),
    LeftTabSelected(usize),
-   RightPaneSelectedToggled(bool),
-   RightPaneSelectedChanged(usize),
+   RightPaneSelectedToggled(usize, bool),
    RestoreDefaultClicked,
    KeyNavToggled(bool),
    InputSourceLeftTabSelected(usize),
@@ -29,12 +28,12 @@ pub enum KeyboardMessage {
    DictationToggled(bool),
    LanguageChanged(Language),
    ShortcutChanged(ShortcutDict),
-   AboutClicked
+   AboutClicked,
 }
 
 #[derive(Debug, Clone)]
 pub struct KeyboardPage {
-   tabbar_state: Vec<(String, button::State)>,
+   tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    keyboard: Keyboard,
    shortcuts: Shortcuts,
@@ -48,10 +47,10 @@ impl KeyboardPage {
    pub fn new() -> Self {
       Self {
          tabbar_state: vec![
-            ("  Keyboard  ".to_string(), button::State::new()),
-            ("  Shortcuts  ".to_string(), button::State::new()),
-            ("  Input Sources  ".to_string(), button::State::new()),
-            ("  Dictation  ".to_string(), button::State::new()),
+            ("  Keyboard  ", button::State::new()),
+            ("  Shortcuts  ", button::State::new()),
+            ("  Input Sources  ", button::State::new()),
+            ("  Dictation  ", button::State::new()),
          ],
          current_tab_idx: 0,
          keyboard: Keyboard::new(),
@@ -73,10 +72,10 @@ impl KeyboardPage {
          KeyboardMessage::BacklightOffDurationChanged(duration) => self.keyboard.turn_backlight_off_after_val = duration,
          KeyboardMessage::SetUpBluetoothKeyboard(val) => self.is_setup_bt_keyboard = val, 
          KeyboardMessage::LeftTabSelected(idx) => self.shortcuts.left_pane_selected = idx,
-         KeyboardMessage::RightPaneSelectedToggled(val) => {
-            self.shortcuts.shortcuts_tab_map.get_mut(self.shortcuts.left_pane_selected).unwrap().get_mut(self.shortcuts.right_pane_selected).unwrap().0 = val;
+         KeyboardMessage::RightPaneSelectedToggled(idx, is_checked) => {
+            self.shortcuts.right_pane_selected = idx;
+            self.shortcuts.shortcuts_tab_map.get_mut(self.shortcuts.left_pane_selected).unwrap().get_mut(idx).unwrap().0 = is_checked;
          },
-         KeyboardMessage::RightPaneSelectedChanged(idx) => self.shortcuts.right_pane_selected = idx,
          KeyboardMessage::RestoreDefaultClicked => self.shortcuts = Shortcuts::new(),
          KeyboardMessage::KeyNavToggled(val) => self.shortcuts.use_keyboard_nav = val,
          KeyboardMessage::InputSourceLeftTabSelected(idx) => self.input_sources.input_sources_selected = Some(idx),
@@ -113,7 +112,7 @@ impl KeyboardPage {
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(KeyboardMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(KeyboardMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -199,18 +198,20 @@ impl KeyboardPage {
             // ផ្ទាំងខាងឆ្វេង
             let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
                col.push(
-                  Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
+                  Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(*title))).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                )
             });
             
             let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
-            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut, state))| {
-               let row = Row::new().align_items(Align::Center).push(Checkbox::new(*is_checked, title.as_str(), KeyboardMessage::RightPaneSelectedToggled).spacing(10).style(CustomCheckbox::Default)).push(Space::with_width(Length::Fill)).push(Text::new(shortcut.as_str())).push(Space::with_width(Length::Units(15)));
-               col.push(
-                  Button::new(state, row).width(Length::Fill).on_press(KeyboardMessage::RightPaneSelectedChanged(idx)).style(if *right_pane_selected == idx {CustomButton::Selected} else {CustomButton::Text})
-               )
+            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut))| {
+               let row = Row::new().align_items(Align::Center).padding(4)
+                  .push(Checkbox::new(*is_checked, *title, move |is| KeyboardMessage::RightPaneSelectedToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Space::with_width(Length::Fill)).push(Text::new(*shortcut))
+                  .push(Space::with_width(Length::Units(15)));
+
+               col.push(Container::new(row).width(Length::Fill).style(if *right_pane_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundWhite}))
             });
 
             let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
@@ -239,11 +240,7 @@ impl KeyboardPage {
                      .push(right_pane)
                   ).height(Length::FillPortion(11))
                )
-               .push(
-                  Container::new(
-                     bottom_col
-                  ).height(Length::FillPortion(5))
-               )
+               .push(Container::new(bottom_col).height(Length::FillPortion(5)))
             ).width(Length::Fill).height(Length::Fill)
          },
          2 => {
@@ -475,8 +472,8 @@ impl Keyboard {
 #[derive(Debug, Clone, Default)]
 pub struct Shortcuts {
    btn_restore: button::State,
-   shortcuts_tab: Vec<(char, String, button::State)>,
-   shortcuts_tab_map: Vec<Vec<(bool, String, String, button::State)>>,
+   shortcuts_tab: Vec<(char, &'static str, button::State)>,
+   shortcuts_tab_map: Vec<Vec<(bool, &'static str, &'static str)>>,
    left_pane_selected: usize,
    right_pane_selected: usize,
    use_keyboard_nav: bool,
@@ -488,60 +485,60 @@ impl Shortcuts {
    pub fn new() -> Self {
       Self {
          shortcuts_tab: vec![
-            ('\u{f86d}', "Menu & Dock".to_string(), button::State::new()), 
-            ('\u{f86d}', "Workspaces".to_string(), button::State::new()),
-            ('\u{f11c}', "Keyboard".to_string(), button::State::new()), 
-            ('\u{f11c}', "Input Sources".to_string(), button::State::new()), 
-            ('\u{f083}', "Screenshots".to_string(), button::State::new()), 
-            ('\u{f552}', "Services".to_string(), button::State::new()), 
-            ('\u{f002}', "Spotlight".to_string(), button::State::new()), 
+            ('\u{f86d}', "Menu & Dock", button::State::new()), 
+            ('\u{f86d}', "Workspaces", button::State::new()),
+            ('\u{f11c}', "Keyboard", button::State::new()), 
+            ('\u{f11c}', "Input Sources", button::State::new()), 
+            ('\u{f083}', "Screenshots", button::State::new()), 
+            ('\u{f552}', "Services", button::State::new()), 
+            ('\u{f002}', "Spotlight", button::State::new()), 
          ],
          shortcuts_tab_map: vec![
             vec![
-               (true, "Turn Dock Hiding On/Off".to_string(), "shift+ctrl+D".to_string(), button::State::new()),
-               (false, "Show Menu".to_string(), String::new(), button::State::new()),
+               (true, "Turn Dock Hiding On/Off", "shift+ctrl+D"),
+               (false, "Show Menu", ""),
             ],
             vec![
-               (true, "Workspaces".to_string(), "shift+UP".to_string(), button::State::new()),
-               (false, "Show Notification Center".to_string(), String::new(), button::State::new()),
-               (true, "Turn Do Not Disturb On/Off".to_string(), String::new(), button::State::new()),
-               (true, "Application Windows".to_string(), "shift+DOWN".to_string(), button::State::new()),
-               (true, "Show Desktop".to_string(), "F11".to_string(), button::State::new()),
+               (true, "Workspaces", "shift+UP"),
+               (false, "Show Notification Center", ""),
+               (true, "Turn Do Not Disturb On/Off", ""),
+               (true, "Application Windows", "shift+DOWN"),
+               (true, "Show Desktop", "F11"),
             ],
             vec![
-               (true, "Change the way Tab moves focus".to_string(), "shift+F7".to_string(), button::State::new()),
-               (true, "Turn keyboard access On/Off".to_string(), "shift+F1".to_string(), button::State::new()),
-               (true, "Move focus to menu bar".to_string(), "shift+F2".to_string(), button::State::new()),
-               (true, "Move focus to Dock".to_string(), "shift+F3".to_string(), button::State::new()),
-               (true, "Move focus to Window toolbar".to_string(), "shift+F4".to_string(), button::State::new()),
-               (true, "Move focus to next Window".to_string(), "ctrl+`".to_string(), button::State::new()),
-               (true, "Move focus to window drawer".to_string(), "ctrl+shift+`".to_string(), button::State::new()),
-               (true, "Move focus to status menus".to_string(), "shift+F5".to_string(), button::State::new()),
+               (true, "Change the way Tab moves focus", "shift+F7"),
+               (true, "Turn keyboard access On/Off", "shift+F1"),
+               (true, "Move focus to menu bar", "shift+F2"),
+               (true, "Move focus to Dock", "shift+F3"),
+               (true, "Move focus to Window toolbar", "shift+F4"),
+               (true, "Move focus to next Window", "ctrl+`"),
+               (true, "Move focus to window drawer", "ctrl+shift+`"),
+               (true, "Move focus to status menus", "shift+F5"),
             ],
             vec![
-               (false, "Select the previous source".to_string(), "shift+Space".to_string(), button::State::new()),
-               (false, "Select next source in Input menu".to_string(), "ctrl+shift+Space".to_string(), button::State::new()),
+               (false, "Select the previous source", "shift+Space"),
+               (false, "Select next source in Input menu", "ctrl+shift+Space"),
             ],
             vec![
-               (true, "Workspaces".to_string(), "shift+UP".to_string(), button::State::new()),
-               (false, "Show Notification Center".to_string(), String::new(), button::State::new()),
-               (true, "Turn Do Not Disturb On/Off".to_string(), String::new(), button::State::new()),
-               (true, "Application Windows".to_string(), "shift+DOWN".to_string(), button::State::new()),
-               (true, "Show Desktop".to_string(), "F11".to_string(), button::State::new()),
+               (true, "Workspaces", "shift+UP"),
+               (false, "Show Notification Center", ""),
+               (true, "Turn Do Not Disturb On/Off", ""),
+               (true, "Application Windows", "shift+DOWN"),
+               (true, "Show Desktop", "F11"),
             ],
             vec![
-               (true, "Change the way Tab moves focus".to_string(), "shift+F7".to_string(), button::State::new()),
-               (true, "Turn keyboard access On/Off".to_string(), "shift+F1".to_string(), button::State::new()),
-               (true, "Move focus to menu bar".to_string(), "shift+F2".to_string(), button::State::new()),
-               (true, "Move focus to Dock".to_string(), "shift+F3".to_string(), button::State::new()),
-               (true, "Move focus to Window toolbar".to_string(), "shift+F4".to_string(), button::State::new()),
-               (true, "Move focus to next Window".to_string(), "ctrl+`".to_string(), button::State::new()),
-               (true, "Move focus to window drawer".to_string(), "ctrl+shift+`".to_string(), button::State::new()),
-               (true, "Move focus to status menus".to_string(), "shift+F5".to_string(), button::State::new()),
+               (true, "Change the way Tab moves focus", "shift+F7"),
+               (true, "Turn keyboard access On/Off", "shift+F1"),
+               (true, "Move focus to menu bar", "shift+F2"),
+               (true, "Move focus to Dock", "shift+F3"),
+               (true, "Move focus to Window toolbar", "shift+F4"),
+               (true, "Move focus to next Window", "ctrl+`"),
+               (true, "Move focus to window drawer", "ctrl+shift+`"),
+               (true, "Move focus to status menus", "shift+F5"),
             ],
             vec![
-               (false, "Select the previous source".to_string(), "shift+Space".to_string(), button::State::new()),
-               (false, "Select next source in Input menu".to_string(), "ctrl+shift+Space".to_string(), button::State::new()),
+               (false, "Select the previous source", "shift+Space"),
+               (false, "Select next source in Input menu", "ctrl+shift+Space"),
             ],
          ],
          ..Default::default()

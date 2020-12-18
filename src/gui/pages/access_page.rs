@@ -3,7 +3,6 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, PickList, Slider, Scrollable,
 };
 use iced_custom_widget::{Icon};
-use vedas_core::space;
 use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 use std::{fmt::{Display, Formatter, Result}, vec};
@@ -144,7 +143,7 @@ impl AccessPage {
          );
 
          scroll.push(
-            Button::new(state, content).width(Length::Fill).on_press(AccessMessage::SidebarChanged(idx)).style(if *current_sidebar_tab_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
+            Button::new(state, content).width(Length::Fill).on_press(AccessMessage::SidebarChanged(idx)).style(if *current_sidebar_tab_idx == idx {CustomButton::Selected} else {CustomButton::Text})
          )
       });
       let sidebar = Container::new(sidebar_tabs).padding(7).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
@@ -625,11 +624,14 @@ impl container::StyleSheet for CapStyle {
    fn style(&self) -> container::Style {
       use CapStyle::*;
       container::Style {
-         text_color: Some(Color::WHITE),
+         text_color: Some(match self {
+            Outline => Color::BLACK,
+            _ => Color::WHITE,
+         }),
          background: match self {
             Trans => Color {a: 0.3, ..Color::BLACK}.into(),
             Classic => Color::BLACK.into(),
-            Outline => Color {a: 0.5, ..Color::BLACK}.into()
+            Outline => Color::TRANSPARENT.into(),
          },
          border_color: Color::TRANSPARENT,
          border_radius: match self {

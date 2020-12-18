@@ -15,6 +15,8 @@ mod sys_info_page;
 mod touchpad_page;
 mod user_page;
 mod access_page;
+mod privacy_page;
+mod desktop_page;
 
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
@@ -32,6 +34,8 @@ use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
 use user_page::{UserPage, UserPageMsg};
 use access_page::{AccessPage, AccessMessage};
+use privacy_page::{PrivacyPage, PrivacyMessage};
+use desktop_page::{DesktopPage, DesktopMessage};
 use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
@@ -57,9 +61,10 @@ pub enum PagesMessage {
    LangRegionMessage(LangRegionMessage),
    NotifyMsg(NotifyMsg),
    AccessMessage(AccessMessage),
+   PrivacyMessage(PrivacyMessage),
+   DesktopMessage(DesktopMessage),
 }
 
-// #[derive(Debug)]
 pub enum PageModel {
    HomePage,
    GeneralPage { general_page: General },
@@ -67,9 +72,9 @@ pub enum PageModel {
    LanguagePageModel { lang_region_page: LangRegionPage },
    UsersPageModel { user_page: UserPage },
    AccessPageModel { access_page: AccessPage },
-   AccountPage,
+   DesktopPageModel { desktop_page: DesktopPage },
    NotificationsModel { noti_page: NotifyPage },
-   SecurityPage,
+   PrivacyPageModel { privacy_page: PrivacyPage },
    UpdatePage,
    NetworkPageModel { network_page: NetworkPage },
    BluetoothPageModel { bluetooth_page: BluetoothPage },
@@ -104,11 +109,15 @@ impl Pages {
             AccessPageModel {
                access_page: AccessPage::new()
             },
-            AccountPage,
+            DesktopPageModel {
+               desktop_page: DesktopPage::new()
+            },
             NotificationsModel {
                noti_page: NotifyPage::new(),
             },
-            SecurityPage,
+            PrivacyPageModel {
+               privacy_page: PrivacyPage::new(),
+            },
             UpdatePage,
             NetworkPageModel {
                network_page: NetworkPage::new(),
@@ -251,6 +260,16 @@ impl PageModel {
                access_page.update(msg);
             }
          }
+         PrivacyMessage(msg) => {
+            if let PrivacyPageModel { privacy_page } = self {
+               privacy_page.update(msg);
+            }
+         }
+         DesktopMessage(msg) => {
+            if let DesktopPageModel { desktop_page } = self {
+               desktop_page.update(msg);
+            }
+         }
       }
    }
 
@@ -284,11 +303,11 @@ impl PageModel {
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
          AccessPageModel { access_page } => access_page.view().map(move |msg| PagesMessage::AccessMessage(msg)),
-         AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         DesktopPageModel { desktop_page } => desktop_page.view().map(move |msg| PagesMessage::DesktopMessage(msg)),
          NotificationsModel { noti_page } => noti_page
             .view()
             .map(move |msg| PagesMessage::NotifyMsg(msg)),
-         SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
+         PrivacyPageModel { privacy_page } => privacy_page.view().map(move |msg| PagesMessage::PrivacyMessage(msg)),
          UpdatePage => Container::new(Space::with_width(Length::Shrink)).into(),
          NetworkPageModel { network_page } => network_page
             .view()
@@ -332,9 +351,9 @@ impl PageModel {
          LanguagePageModel { .. } => "Language & Region",
          UsersPageModel { .. } => "Users & Groups",
          AccessPageModel { .. } => "Accessibility",
-         AccountPage => "Accounts",
+         DesktopPageModel { .. } => "Desktop & Screeen Saver",
          NotificationsModel { .. } => "Notifications",
-         SecurityPage => "Security & Privacy",
+         PrivacyPageModel { .. } => "Security & Privacy",
          UpdatePage => "Software Update",
          NetworkPageModel { .. } => "Network",
          BluetoothPageModel { .. } => "Bluetooth",

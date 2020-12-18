@@ -2,7 +2,6 @@ use iced::{
    slider, button,  Element, Align, Space, Length, Svg, Rule, Color,
    Container, Checkbox, Row, Text, Button, Column, Slider,
 };
-use iced_custom_widget::Icon;
 use vedas_core::svg;
 use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox};
 
@@ -11,18 +10,15 @@ pub enum TouchpadMessage {
    TabChanged(usize),
    ClickChanged(u8),
    SpeedChanged(u8),
-   LeftTabPointClickSelected(usize),
-   PointClickTabChanged(bool),
-   LeftTabScrollZoomSelected(usize),
-   ScrollZoomTabChanged(bool),
-   LeftTabMoreGesturesSelected(usize),
-   MoreGesturesTabChanged(bool),
+   PointClickTabChanged(usize, bool),
+   ScrollZoomTabChanged(usize, bool),
+   MoreGesturesTabChanged(usize, bool),
    SetUpBluetoothTouchpad(bool),
 }
 
 #[derive(Debug, Clone)]
 pub struct TouchpadPage {
-   tabbar_state: Vec<(String, button::State)>,
+   tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    point_click: PointClick,
    scroll_zoom: ScrollZoom,
@@ -35,9 +31,9 @@ impl TouchpadPage {
    pub fn new() -> Self {
       Self {
          tabbar_state: vec![
-            ("  Point & Click  ".to_string(), button::State::new()),
-            ("  Scroll & Zoom  ".to_string(), button::State::new()),
-            ("  More Gestures  ".to_string(), button::State::new()),
+            ("  Point & Click  ", button::State::new()),
+            ("  Scroll & Zoom  ", button::State::new()),
+            ("  More Gestures  ", button::State::new()),
          ],
          current_tab_idx: 0,
          point_click: PointClick::new(),
@@ -53,17 +49,17 @@ impl TouchpadPage {
          TouchpadMessage::TabChanged(idx) => self.current_tab_idx = idx,
          TouchpadMessage::ClickChanged(val) => self.point_click.click_val = val,
          TouchpadMessage::SpeedChanged(val) => self.point_click.speed_val = val,
-         TouchpadMessage::LeftTabPointClickSelected(idx) => self.point_click.tab_selected = idx,
-         TouchpadMessage::PointClickTabChanged(is_checked) => {
-            self.point_click.point_click_tab.get_mut(self.point_click.tab_selected).unwrap().0 = is_checked;
+         TouchpadMessage::PointClickTabChanged(idx, is_checked) => {
+            self.point_click.tab_selected = idx;
+            self.point_click.point_click_tab.get_mut(idx).unwrap().0 = is_checked
          },
-         TouchpadMessage::LeftTabScrollZoomSelected(idx) => self.scroll_zoom.tab_selected = idx,
-         TouchpadMessage::ScrollZoomTabChanged(is_checked) => {
-            self.scroll_zoom.scroll_zoom_tab.get_mut(self.scroll_zoom.tab_selected).unwrap().0 = is_checked;
+         TouchpadMessage::ScrollZoomTabChanged(idx, is_checked) => {
+            self.scroll_zoom.tab_selected = idx;
+            self.scroll_zoom.scroll_zoom_tab.get_mut(idx).unwrap().0 = is_checked;
          },
-         TouchpadMessage::LeftTabMoreGesturesSelected(idx) => self.more_gestures.tab_selected = idx,
-         TouchpadMessage::MoreGesturesTabChanged(is_checked) => {
-            self.more_gestures.more_gestures_tab.get_mut(self.more_gestures.tab_selected).unwrap().0 = is_checked;
+         TouchpadMessage::MoreGesturesTabChanged(idx, is_checked) => {
+            self.more_gestures.tab_selected = idx;
+            self.more_gestures.more_gestures_tab.get_mut(idx).unwrap().0 = is_checked;
          },
          TouchpadMessage::SetUpBluetoothTouchpad(is_clicked) => self.is_setup_bt_touchpad = is_clicked,
       }
@@ -83,7 +79,7 @@ impl TouchpadPage {
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(TouchpadMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(TouchpadMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -106,17 +102,12 @@ impl TouchpadPage {
                speed_val,
             } = point_click;
 
-            let left_tabs = point_click_tab.iter_mut().enumerate().fold(Column::new().spacing(4), |col, (idx, (is_checked, title, tip, state))| {
-               let content = Row::new()
-                  .push(
-                     Column::new().spacing(3).width(Length::Fill)
-                     .push(Checkbox::new(*is_checked, title.as_str(), TouchpadMessage::PointClickTabChanged).spacing(10).style(CustomCheckbox::Default))
-                     .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(tip.as_str()).size(12).color(Color::from_rgb8(97, 97, 97))))
-                  )
-                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).on_press(TouchpadMessage::LeftTabPointClickSelected(idx)).style(CustomButton::Text));
-               col.push(
-                  Container::new(content).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray})
-               )
+            let left_tabs = point_click_tab.iter_mut().enumerate().fold(Column::new().spacing(4), |col, (idx, (is_checked, title, tip))| {
+               let content = Column::new().spacing(3)
+                  .push(Checkbox::new(*is_checked, *title, move |is| TouchpadMessage::PointClickTabChanged(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(*tip).size(12).color(Color::from_rgb8(97, 97, 97))));
+
+               col.push(Container::new(content).width(Length::Fill).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray}))
             });
 
             let right_view = match tab_selected {
@@ -187,17 +178,12 @@ impl TouchpadPage {
                tab_selected,
             } = scroll_zoom;
 
-            let left_tabs = scroll_zoom_tab.iter_mut().enumerate().fold(Column::new().height(Length::Fill).spacing(4), |col, (idx, (is_checked, title, tip, state))| {
-               let content = Row::new()
-                  .push(
-                     Column::new().spacing(3).width(Length::Fill)
-                     .push(Checkbox::new(*is_checked, title.as_str(), TouchpadMessage::ScrollZoomTabChanged).spacing(10).style(CustomCheckbox::Default))
-                     .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(tip.as_str()).size(12).color(Color::from_rgb8(97, 97, 97))))
-                  )
-                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).on_press(TouchpadMessage::LeftTabScrollZoomSelected(idx)).style(CustomButton::Text));
-               col.push(
-                  Container::new(content).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray})
-               )
+            let left_tabs = scroll_zoom_tab.iter_mut().enumerate().fold(Column::new().height(Length::Fill).spacing(4), |col, (idx, (is_checked, title, tip))| {
+               let content = Column::new().spacing(3)
+                  .push(Checkbox::new(*is_checked, *title, move |is| TouchpadMessage::ScrollZoomTabChanged(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(*tip).size(12).color(Color::from_rgb8(97, 97, 97))));
+
+               col.push(Container::new(content).width(Length::Fill).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray}))
             });
 
             let right_view = match tab_selected {
@@ -250,17 +236,12 @@ impl TouchpadPage {
                tab_selected,
             } = more_gestures;
 
-            let left_tabs = more_gestures_tab.iter_mut().enumerate().fold(Column::new().height(Length::Fill).spacing(4), |col, (idx, (is_checked, title, tip, state))| {
-               let content = Row::new()
-                  .push(
-                     Column::new().spacing(3).width(Length::Fill)
-                     .push(Checkbox::new(*is_checked, title.as_str(), TouchpadMessage::MoreGesturesTabChanged).spacing(10).style(CustomCheckbox::Default))
-                     .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(tip.as_str()).size(12).color(Color::from_rgb8(97, 97, 97))))
-                  )
-                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).on_press(TouchpadMessage::LeftTabMoreGesturesSelected(idx)).style(CustomButton::Text));
-               col.push(
-                  Container::new(content).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray})
-               )
+            let left_tabs = more_gestures_tab.iter_mut().enumerate().fold(Column::new().height(Length::Fill).spacing(4), |col, (idx, (is_checked, title, tip))| {
+               let content = Column::new().spacing(3)
+                  .push(Checkbox::new(*is_checked, *title, move |is| TouchpadMessage::MoreGesturesTabChanged(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Row::new().push(Space::with_width(Length::Units(30))).push(Text::new(*tip).size(12).color(Color::from_rgb8(97, 97, 97))));
+
+               col.push(Container::new(content).width(Length::Fill).padding(10).style(if *tab_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundGray}))
             });
 
             let right_view = match tab_selected {
@@ -381,7 +362,7 @@ impl TouchpadPage {
 
 #[derive(Debug, Clone, Default)]
 pub struct PointClick {
-   point_click_tab: Vec<(bool, String, String, button::State)>,
+   point_click_tab: Vec<(bool, &'static str, &'static str)>,
    tab_selected: usize,
    click_state: slider::State,
    click_val: u8,
@@ -393,9 +374,9 @@ impl PointClick {
    pub fn new() -> Self {
       Self {
          point_click_tab: vec![
-            (true, "Look up & data detectors".to_string(), "Force Click with one finger".to_string(), button::State::new()),
-            (true, "Secondary click".to_string(), "Click or tap with two fingers".to_string(), button::State::new()),
-            (true, "Tap to click".to_string(), "Tap with one finger".to_string(), button::State::new()),
+            (true, "Look up & data detectors", "Force Click with one finger"),
+            (true, "Secondary click", "Click or tap with two fingers"),
+            (true, "Tap to click", "Tap with one finger"),
          ],
          tab_selected: 0,
          click_val: 2,
@@ -407,7 +388,7 @@ impl PointClick {
 
 #[derive(Debug, Clone, Default)]
 pub struct ScrollZoom {
-   scroll_zoom_tab: Vec<(bool, String, String, button::State)>,
+   scroll_zoom_tab: Vec<(bool, &'static str, &'static str)>,
    tab_selected: usize,
 }
 
@@ -415,10 +396,10 @@ impl ScrollZoom {
    pub fn new() -> Self {
       Self {
          scroll_zoom_tab: vec![
-            (true, "Scroll direction: Natural".to_string(), "Content tracks finger movement".to_string(), button::State::new()),
-            (true, "Zoom in or out".to_string(), "Pinch with two fingers".to_string(), button::State::new()),
-            (true, "Smart Zoom".to_string(), "Double-tap with two fingers".to_string(), button::State::new()),
-            (true, "Rotate".to_string(), "Rotate with two fingers".to_string(), button::State::new()),
+            (true, "Scroll direction: Natural", "Content tracks finger movement"),
+            (true, "Zoom in or out", "Pinch with two fingers"),
+            (true, "Smart Zoom", "Double-tap with two fingers"),
+            (true, "Rotate", "Rotate with two fingers"),
          ],
          ..Default::default()
       }
@@ -427,7 +408,7 @@ impl ScrollZoom {
 
 #[derive(Debug, Clone, Default)]
 pub struct MoreGestures {
-   more_gestures_tab: Vec<(bool, String, String, button::State)>,
+   more_gestures_tab: Vec<(bool, &'static str, &'static str)>,
    tab_selected: usize,
 }
 
@@ -435,12 +416,12 @@ impl MoreGestures {
    pub fn new() -> Self {
       Self {
          more_gestures_tab: vec![
-            (true, "Swipe between pages".to_string(), "Scroll left or right with two fingers".to_string(), button::State::new()),
-            (false, "Swipe between full-screen apps".to_string(), "Swipe left or right with three fingers".to_string(), button::State::new()),
-            (true, "Notification Center".to_string(), "Swipe left from the right edge with two fingers".to_string(), button::State::new()),
-            (true, "Workspaces".to_string(), "Swipe up with three fingers".to_string(), button::State::new()),
-            (true, "Menu".to_string(), "Pinch with thumb and three fingers".to_string(), button::State::new()),
-            (true, "Desktop".to_string(), "Spread with thumb and three fingers".to_string(), button::State::new()),
+            (true, "Swipe between pages", "Scroll left or right with two fingers"),
+            (false, "Swipe between full-screen apps", "Swipe left or right with three fingers"),
+            (true, "Notification Center", "Swipe left from the right edge with two fingers"),
+            (true, "Workspaces", "Swipe up with three fingers"),
+            (true, "Menu", "Pinch with thumb and three fingers"),
+            (true, "Desktop", "Spread with thumb and three fingers"),
          ],
          ..Default::default()
       }
