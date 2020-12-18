@@ -47,7 +47,7 @@ impl Application for SystemSetting {
          pref("language", "Language & Region", System),
          pref("users", "Users & Groups", System),
          pref("accessibility", "Accessibility", System),
-         pref("account", "Accounts", System),
+         pref("screen-saver", "Desktop & Screen Saver", System),
          pref("notification", "Notifications", System),
          pref("privacy", "Security & Privacy", System),
          pref("update", "Software Update", System),

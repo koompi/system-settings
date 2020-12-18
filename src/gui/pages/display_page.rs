@@ -7,7 +7,7 @@ use iced::{
    Length, PickList, Radio, Row, Scrollable, Slider, Space, Svg, Text,
 };
 use smart_default::SmartDefault;
-use crate::helpers::ROOT_PATH;
+use crate::{gui::styles::CustomSelect, helpers::ROOT_PATH};
 #[derive(Debug, Clone)]
 pub enum DisplayMessage {
    TabChanged(usize),
@@ -426,15 +426,8 @@ impl DisplayPage {
 
             let lb_schedule = Text::new("Schedule:");
 
-            let pl_schedule = PickList::new(
-               schedule_state,
-               &Schedule::ALL[..],
-               Some(*selected_schedule),
-               DisplayMessage::ScheduleChanged,
-            );
-            let schedule_row = Row::new()
-               .spacing(15)
-               .align_items(Align::Center)
+            let pl_schedule = PickList::new(schedule_state, &Schedule::ALL[..], Some(*selected_schedule), DisplayMessage::ScheduleChanged).style(CustomSelect::Primary);
+            let schedule_row = Row::new().spacing(15).align_items(Align::Center)
                .push(lb_schedule)
                .push(pl_schedule);
 

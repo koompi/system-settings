@@ -16,6 +16,8 @@ mod sys_info_page;
 mod touchpad_page;
 mod update_page;
 mod user_page;
+mod privacy_page;
+mod desktop_page;
 
 use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
@@ -23,7 +25,6 @@ use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use date_time_page::{DateTimeMessage, DateTimePage};
 use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
-use iced::{Container, Element, Length, Space, Subscription};
 use keyboard_page::{KeyboardMessage, KeyboardPage};
 use lang_region_page::{LangRegionMessage, LangRegionPage};
 use mouse_page::{MouseMessage, MousePage};
@@ -35,6 +36,9 @@ use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
 use update_page::{SoftUpdateMsg, SoftwareUpdate};
 use user_page::{UserPage, UserPageMsg};
+use privacy_page::{PrivacyPage, PrivacyMessage};
+use desktop_page::{DesktopPage, DesktopMessage};
+use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -60,9 +64,10 @@ pub enum PagesMessage {
    NotifyMsg(NotifyMsg),
    AccessMessage(AccessMessage),
    SoftUpdateMsg(SoftUpdateMsg),
+   PrivacyMessage(PrivacyMessage),
+   DesktopMessage(DesktopMessage),
 }
 
-// #[derive(Debug)]
 pub enum PageModel {
    HomePage,
    GeneralPage { general_page: General },
@@ -70,10 +75,10 @@ pub enum PageModel {
    LanguagePageModel { lang_region_page: LangRegionPage },
    UsersPageModel { user_page: UserPage },
    AccessPageModel { access_page: AccessPage },
-   AccountPage,
+   DesktopPageModel { desktop_page: DesktopPage },
    NotificationsModel { noti_page: NotifyPage },
-   SecurityPage,
    UpdatePageModel { update_page: SoftwareUpdate },
+   PrivacyPageModel { privacy_page: PrivacyPage },
    NetworkPageModel { network_page: NetworkPage },
    BluetoothPageModel { bluetooth_page: BluetoothPage },
    SoundPageModel { sound_page: SoundPage },
@@ -107,11 +112,15 @@ impl Pages {
             AccessPageModel {
                access_page: AccessPage::new(),
             },
-            AccountPage,
+            DesktopPageModel {
+               desktop_page: DesktopPage::new()
+            },
             NotificationsModel {
                noti_page: NotifyPage::new(),
             },
-            SecurityPage,
+            PrivacyPageModel {
+               privacy_page: PrivacyPage::new(),
+            },
             UpdatePageModel {
                update_page: SoftwareUpdate::new(),
             },
@@ -261,6 +270,16 @@ impl PageModel {
                update_page.update(msg);
             }
          }
+         PrivacyMessage(msg) => {
+            if let PrivacyPageModel { privacy_page } = self {
+               privacy_page.update(msg);
+            }
+         }
+         DesktopMessage(msg) => {
+            if let DesktopPageModel { desktop_page } = self {
+               desktop_page.update(msg);
+            }
+         }
       }
    }
 
@@ -296,17 +315,15 @@ impl PageModel {
          UsersPageModel { user_page } => user_page
             .view()
             .map(move |msg| PagesMessage::UserPageMsg(msg)),
-         AccessPageModel { access_page } => access_page
-            .view()
-            .map(move |msg| PagesMessage::AccessMessage(msg)),
-         AccountPage => Container::new(Space::with_width(Length::Shrink)).into(),
-         NotificationsModel { noti_page } => noti_page
-            .view()
-            .map(move |msg| PagesMessage::NotifyMsg(msg)),
-         SecurityPage => Container::new(Space::with_width(Length::Shrink)).into(),
          UpdatePageModel { update_page } => update_page
             .view()
             .map(move |msg| PagesMessage::SoftUpdateMsg(msg)),
+         AccessPageModel { access_page } => access_page.view().map(move |msg| PagesMessage::AccessMessage(msg)),
+         DesktopPageModel { desktop_page } => desktop_page.view().map(move |msg| PagesMessage::DesktopMessage(msg)),
+         NotificationsModel { noti_page } => noti_page
+            .view()
+            .map(move |msg| PagesMessage::NotifyMsg(msg)),
+         PrivacyPageModel { privacy_page } => privacy_page.view().map(move |msg| PagesMessage::PrivacyMessage(msg)),
          NetworkPageModel { network_page } => network_page
             .view()
             .map(move |msg| PagesMessage::NetMessage(msg)),
@@ -349,10 +366,10 @@ impl PageModel {
          LanguagePageModel { .. } => "Language & Region",
          UsersPageModel { .. } => "Users & Groups",
          AccessPageModel { .. } => "Accessibility",
-         AccountPage => "Accounts",
+         DesktopPageModel { .. } => "Desktop & Screeen Saver",
          NotificationsModel { .. } => "Notifications",
-         SecurityPage => "Security & Privacy",
          UpdatePageModel { .. } => "Software Update",
+         PrivacyPageModel { .. } => "Security & Privacy",
          NetworkPageModel { .. } => "Network",
          BluetoothPageModel { .. } => "Bluetooth",
          SoundPageModel { .. } => "Sound",

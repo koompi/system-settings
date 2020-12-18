@@ -1,6 +1,8 @@
 use iced::{
    Container, button, Row, Svg, Length, Text, Button, Column, Align, Element, Space,
 };
+use crate::helpers::ROOT_PATH;
+
 use super::super::styles::{CustomButton, CustomContainer, ACCENT};
 
 #[derive(Debug, Clone)]
@@ -117,7 +119,7 @@ impl InfoPage {
       } = self;
       
       // ផ្នែកក្បាល
-      let logo = Svg::from_path("assets/images/koompi-logo.svg").width(Length::Units(100)).height(Length::Units(100));
+      let logo = Svg::from_path(format!("{}/assets/images/koompi-logo.svg", ROOT_PATH())).width(Length::Units(100)).height(Length::Units(100));
       let txt_os_name = Text::new(os_pretty_name.as_str()).size(20);
       let btn_os_url = Button::new(os_url_state, Text::new(os_url.as_str()).color(ACCENT)).on_press(InfoMessage::OpenUrl).style(CustomButton::Text);
       let header_sec = Container::new(

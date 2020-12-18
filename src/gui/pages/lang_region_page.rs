@@ -1,6 +1,8 @@
 use chrono::prelude::*;
 use num_format::Locale;
 use num_format::{Buffer, CustomFormat, Grouping};
+use crate::helpers::ROOT_PATH;
+
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, HOVERED};
 use iced::{
    button, scrollable, pick_list, time, Align, Length, Space, Subscription,
@@ -185,7 +187,7 @@ impl LangRegionPage {
       } = self;
 
       // ផ្នែកក្បាល
-      let icon = Svg::from_path("assets/images/language.svg").width(Length::Units(75)).height(Length::Units(75));
+      let icon = Svg::from_path(format!("{}/assets/images/language.svg", ROOT_PATH())).width(Length::Units(75)).height(Length::Units(75));
       let txt_lang = Text::new("Language & Region preferences control the language you see in menus and dialogs, formats of dates, times, numbers and currency.");
       let header_sec = Container::new(
          Row::new().spacing(20).align_items(Align::Center)

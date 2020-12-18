@@ -62,11 +62,9 @@ impl button::StyleSheet for CustomButton {
          border_radius: match self {
             CustomButton::Card | CustomButton::SelectedCard => 12.0,
             CustomButton::Type | CustomButton::SelectType => 0.0,
-            CustomButton::Tab
-            | CustomButton::SelectedTab
-            | CustomButton::Hovered
-            | CustomButton::Text
-            | CustomButton::Selected => 7.0,
+            CustomButton::Tab | CustomButton::SelectedTab | CustomButton::Hovered
+            | CustomButton::Text | CustomButton::Selected
+            | CustomButton::Sidebar | CustomButton::SelectedSidebar => 7.0,
             _ => 5.0,
          },
          border_color: match self {
@@ -127,6 +125,8 @@ pub enum CustomContainer {
    FadedBrightForeground,
    Hovered,
    Primary,
+   Success,
+   Warning,
 }
 
 impl container::StyleSheet for CustomContainer {
@@ -145,11 +145,14 @@ impl container::StyleSheet for CustomContainer {
                ..FOREGROUND
             },
             CustomContainer::Primary => Color { a: 0.7, ..ACCENT },
+            CustomContainer::Success => SUCCESS,
+            CustomContainer::Warning => WARNING,
          })),
          border_radius: match self {
             CustomContainer::Segment => 10.0,
             CustomContainer::ForegroundGray | CustomContainer::Hovered => 7.0,
             CustomContainer::FadedBrightForeground => 4.0,
+            CustomContainer::Success | CustomContainer::Warning | CustomContainer::Primary => 5.0,
             _ => 0.0,
          },
          border_width: match self {

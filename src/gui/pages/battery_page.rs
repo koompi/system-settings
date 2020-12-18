@@ -3,6 +3,8 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, PickList, Slider,
 };
 use iced_custom_widget::{Icon, stepper, Stepper};
+use crate::helpers::ROOT_PATH;
+
 use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 use chrono::prelude::*;
@@ -115,7 +117,7 @@ impl BatteryPage {
       } = self;
 
       // របារចំហៀង
-      let icon = Svg::from_path("assets/images/battery.svg").height(Length::Units(127));
+      let icon = Svg::from_path(format!("{}/assets/images/battery.svg", ROOT_PATH())).height(Length::Units(127));
       let icon_con = Container::new(icon).padding(27).width(Length::Fill).center_x();
       let battery_level = Text::new(format!("Current Level: {}%", current_battery)).size(15);
       let last_charged = Text::new("Last charged to 100%").size(12);
@@ -160,7 +162,7 @@ impl BatteryPage {
             let inner_tabview = match current_tab_idx {
                0 => {
                   let lb_battery_level = Text::new("Battery Level");
-                  let line_chart_1 = Svg::from_path("assets/images/line-chart.svg").height(Length::Fill);
+                  let line_chart_1 = Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH())).height(Length::Fill);
                   let battery_level_sec = Container::new(
                      Column::new().spacing(10)
                      .push(lb_battery_level)
@@ -168,7 +170,7 @@ impl BatteryPage {
                   ).height(Length::FillPortion(5));
 
                   let lb_screen_on = Text::new("Screen On Usage");
-                  let line_chart_2 = Svg::from_path("assets/images/line-chart.svg").height(Length::Fill);
+                  let line_chart_2 = Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH())).height(Length::Fill);
                   let screen_on_sec = Container::new(
                      Column::new().spacing(10)
                      .push(lb_screen_on)
@@ -183,7 +185,7 @@ impl BatteryPage {
                }
                1 => {
                   let lb_enery_usage = Text::new("Energy Usage");
-                  let bar_chart_1 = Svg::from_path("assets/images/bar-chart.svg").height(Length::Fill);
+                  let bar_chart_1 = Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH())).height(Length::Fill);
                   let energy_usage_sec = Container::new(
                      Column::new().spacing(10)
                      .push(lb_enery_usage)
@@ -191,7 +193,7 @@ impl BatteryPage {
                   ).height(Length::FillPortion(5));
 
                   let lb_screen_on = Text::new("Screen On Usage");
-                  let bar_chart_2 = Svg::from_path("assets/images/bar-chart.svg").height(Length::Fill);
+                  let bar_chart_2 = Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH())).height(Length::Fill);
                   let screen_on_sec = Container::new(
                      Column::new().spacing(10)
                      .push(lb_screen_on)

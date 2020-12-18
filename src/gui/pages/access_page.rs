@@ -3,7 +3,8 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, PickList, Slider, Scrollable,
 };
 use iced_custom_widget::{Icon};
-use vedas_core::space;
+use crate::helpers::ROOT_PATH;
+
 use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 use std::{fmt::{Display, Formatter, Result}, vec};
@@ -139,12 +140,12 @@ impl AccessPage {
       let sidebar_tabs = sidebar_state.iter_mut().enumerate().fold(Scrollable::new(sidebar_scroll).spacing(4).padding(7), |scroll, (idx, (filename, title, state))| {
          let content = Container::new(
             Row::new().spacing(7).padding(4).align_items(Align::Center)
-            .push(Svg::from_path(format!("assets/images/access/{}.svg", filename)).height(Length::Units(35)))
+            .push(Svg::from_path(format!("{}/assets/images/access/{}.svg", ROOT_PATH(), filename)).height(Length::Units(35)))
             .push(Text::new(*title))
          );
 
          scroll.push(
-            Button::new(state, content).width(Length::Fill).on_press(AccessMessage::SidebarChanged(idx)).style(if *current_sidebar_tab_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
+            Button::new(state, content).width(Length::Fill).on_press(AccessMessage::SidebarChanged(idx)).style(if *current_sidebar_tab_idx == idx {CustomButton::Selected} else {CustomButton::Text})
          )
       });
       let sidebar = Container::new(sidebar_tabs).padding(7).width(Length::FillPortion(3)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
@@ -152,7 +153,7 @@ impl AccessPage {
       // ទិដ្ឋភាពទូទៅ
       let tabview = match current_sidebar_tab_idx {
          0 => {
-            let icon = Svg::from_path("assets/images/access/overview.svg").height(Length::Units(75));
+            let icon = Svg::from_path(format!("{}/assets/images/access/overview.svg", ROOT_PATH())).height(Length::Units(75));
             let txt_title = Text::new("Accessibility features adapt your computer to your individual needs.").size(15);
             let txt_desc = Text::new("Your computer can be customized to support your vision, hearing and more.");
 
@@ -625,11 +626,14 @@ impl container::StyleSheet for CapStyle {
    fn style(&self) -> container::Style {
       use CapStyle::*;
       container::Style {
-         text_color: Some(Color::WHITE),
+         text_color: Some(match self {
+            Outline => Color::BLACK,
+            _ => Color::WHITE,
+         }),
          background: match self {
             Trans => Color {a: 0.3, ..Color::BLACK}.into(),
             Classic => Color::BLACK.into(),
-            Outline => Color {a: 0.5, ..Color::BLACK}.into()
+            Outline => Color::TRANSPARENT.into(),
          },
          border_color: Color::TRANSPARENT,
          border_radius: match self {
