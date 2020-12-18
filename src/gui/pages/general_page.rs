@@ -3,6 +3,7 @@ use iced::{
     button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Length,
     PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
 };
+use crate::helpers::ROOT_PATH;
 #[macro_export]
 macro_rules! select_display {
     ($name:ident, $($key:path => $value:expr),+ ) => {
@@ -154,7 +155,7 @@ impl General {
                                     light_btn,
                                     Svg::from_path(format!(
                                         "{}/assets/images/light.svg",
-                                        env!("CARGO_MANIFEST_DIR")
+                                        ROOT_PATH()
                                     ))
                                     .width(Length::Units(64))
                                     .height(Length::Units(64)),
@@ -175,7 +176,7 @@ impl General {
                                     dark_btn,
                                     Svg::from_path(format!(
                                         "{}/assets/images/dark.svg",
-                                        env!("CARGO_MANIFEST_DIR")
+                                        ROOT_PATH()
                                     ))
                                     .width(Length::Units(64))
                                     .height(Length::Units(64)),
