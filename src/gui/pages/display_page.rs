@@ -1,6 +1,7 @@
 use super::super::styles::{
    CustomButton, CustomCheckbox, CustomContainer, CustomRadio, CustomSlider,
 };
+
 use iced::{
    button, pick_list, scrollable, slider, Align, Button, Checkbox, Column, Container, Element,
    Length, PickList, Radio, Row, Scrollable, Slider, Space, Svg, Text,
@@ -424,6 +425,7 @@ impl DisplayPage {
             let txt_hint = Text::new("Night Shift automatically shifts the colors of display to warmer end of the color spectrum after dark. This may help you get a better night's sleep.");
 
             let lb_schedule = Text::new("Schedule:");
+
             let pl_schedule = PickList::new(
                schedule_state,
                &Schedule::ALL[..],
@@ -435,6 +437,7 @@ impl DisplayPage {
                .align_items(Align::Center)
                .push(lb_schedule)
                .push(pl_schedule);
+
 
             let lb_manual = Text::new("Manual:");
             let chb_manual = Checkbox::new(
@@ -450,6 +453,7 @@ impl DisplayPage {
                .push(chb_manual);
 
             let lb_color_temp = Text::new("Color Temperature:");
+
             let slider_color_temp = Slider::new(
                color_temp_state,
                0..=100,
@@ -484,6 +488,7 @@ impl DisplayPage {
                                     .push(color_temp_row),
                               ),
                         ),
+
                      )
                      .width(Length::FillPortion(6)),
                   )

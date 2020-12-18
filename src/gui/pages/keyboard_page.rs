@@ -4,7 +4,7 @@ use iced::{
 };
 use iced_custom_widget::Icon;
 use vedas_core::svg;
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio};
+use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio, CustomSelect};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -139,25 +139,33 @@ impl KeyboardPage {
             } = keyboard;
 
             let lb_key_repeat = Text::new("Key Repeat").size(14);
-            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
+            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let lb_delay_repeat = Text::new("Delay Until Repeat").size(14);
-            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(150)).style(CustomSlider::Default);
+            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let key_repeat_row = Row::new().width(Length::Fill).padding(20).spacing(50).align_items(Align::Center)
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
                   .push(lb_key_repeat)
-                  .push(slider_key_repeat)
+                  .push(
+                     Column::new()
+                     .push(slider_key_repeat)
+                     .push(Row::new().width(Length::Units(175)).spacing(7).push(Text::new("off").size(12)).push(Text::new("slow").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("fast").size(12)))
+                  )
                )
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
                   .push(lb_delay_repeat)
-                  .push(slider_delay_repeat)
+                  .push(
+                     Column::new()
+                     .push(slider_delay_repeat)
+                     .push(Row::new().width(Length::Units(175)).push(Text::new("long").size(12)).push(Space::with_width(Length::Fill)).push(Text::new("short").size(12)))
+                  )
                );
             let key_repeat_con = Container::new(key_repeat_row).center_x();
 
             let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", KeyboardMessage::AdjustBrightnessToggled).spacing(10).style(CustomCheckbox::Default);
             let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", KeyboardMessage::TurnBacklightOffToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged);
+            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged).style(CustomSelect::Primary);
             let lb_inactivity = Text::new("of inactivity");
             let keyboard_backligh_off_row = Row::new().spacing(15).align_items(Align::Center)
                .push(chk_turn_backlight_off)
@@ -261,8 +269,8 @@ impl KeyboardPage {
                   }
                )
             });
-            let btn_add = Button::new(btn_add_state, Icon::new('\u{f0fe}').size(27)).padding(0).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
-            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f146}').size(27)).padding(0).style(CustomButton::Text);
+            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
+            let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
             if input_sources_selected.is_some() && tab_len > 1 {
                btn_remove = btn_remove.on_press(KeyboardMessage::BtnRemoveClicked);
             }
@@ -333,8 +341,8 @@ impl KeyboardPage {
             } = dictation;
 
             // ផ្ទាំងខាងឆ្វេង
-            let mic_image = svg!("assets/images/mic.svg").height(Length::Units(150));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(4)).center_x();
+            let mic_image = svg!("assets/images/mic.svg").height(Length::Units(127));
+            let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).center_x();
 
             // ផ្ទាំងខាងស្ដាំ
             let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
@@ -347,13 +355,13 @@ impl KeyboardPage {
                .push(rd_dictaion_off);
 
             let lb_language = Text::new("Language:");
-            let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged);
+            let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged).style(CustomSelect::Primary);
             let language_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_language)
                .push(pl_language);
 
             let lb_shortcut = Text::new("Shortcut:");
-            let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged);
+            let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged).style(CustomSelect::Primary);
             let shortcut_section = Row::new().spacing(10).align_items(Align::Center)
                .push(lb_shortcut)
                .push(pl_shortcut);
@@ -367,7 +375,7 @@ impl KeyboardPage {
                   .push(language_section)
                   .push(shortcut_section)
                )
-            ).width(Length::FillPortion(6)).height(Length::Fill);
+            ).width(Length::FillPortion(7)).height(Length::Fill);
          
             Container::new(
                Column::new().spacing(10)

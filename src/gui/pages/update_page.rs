@@ -108,9 +108,6 @@ impl SoftwareUpdate {
         }
     }
     pub fn view(&mut self) -> Element<SoftUpdateMsg> {
-        let seconds = self.duration.as_secs();
-        println!("{}", seconds);
-        println!("{}", self.progress_val);
         let row : Element<_> = Row::new().width(Length::Units(700)).padding(10)
             .push(
                 Container::new(
