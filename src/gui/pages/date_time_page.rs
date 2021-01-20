@@ -1,12 +1,12 @@
 use chrono::prelude::*;
-use chrono::NaiveDateTime;
-use std::process::Command;
+use chrono::{DateTime, Local};
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomTextInput, HOVERED, ERROR};
 use iced::{
    canvas::{self, Cache, Canvas, Cursor, Geometry, LineCap, Path, Stroke},
    button, scrollable, text_input, time, Align, Length, Space, Point, Rectangle, Subscription, Vector, 
    Button, Checkbox, Color, Column, Container, Element, Row, TextInput, Scrollable, Text,
 };
+use libkoompi::system_settings::DateTimeManager;
 
 #[derive(Debug, Clone)]
 pub enum DateTimeMessage {
@@ -21,13 +21,13 @@ pub enum DateTimeMessage {
    TZSelected(usize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DateTimePage {
+   datetime_manager: DateTimeManager,
    tabbar_state: Vec<(String, button::State)>,
    current_tab_idx: usize,
    datetime_tab: DateTimeTab,
    timezone_tab: TimeZoneTab,
-   current_tz: String,
    selected_tz: Option<String>,
    defaults_state: button::State,
    appply_state: button::State,
@@ -36,24 +36,46 @@ pub struct DateTimePage {
 
 impl DateTimePage {
    pub fn new() -> Self {
-      let mut date_time_page = Self {
-         tabbar_state: vec![
-            ("  Date & Time  ".to_string(), button::State::new()),
-            ("  Time Zone  ".to_string(), button::State::new()),
-         ],
-         current_tab_idx: 0,
-         datetime_tab: DateTimeTab::new(),
-         timezone_tab: TimeZoneTab::new(),
-         current_tz: String::new(),
-         selected_tz: None,
-         defaults_state: button::State::new(),
-         appply_state: button::State::new(),
-         is_changed: false,
-      };
-      if let Err(err) = date_time_page.load_config() {
-         println!("{}", err);
+      let tabs = vec![
+         ("  Date & Time  ".to_string(), button::State::new()),
+         ("  Time Zone  ".to_string(), button::State::new()),
+      ];
+
+      match DateTimeManager::new() {
+         Ok(dt_mn) => {
+            let timeval = match DateTime::parse_from_str(dt_mn.time_usec(), "%a %F %T %z") {
+               Ok(datetime) => datetime.format("%r").to_string(),
+               Err(err) => {
+                  eprintln!("{}", err);
+                  String::new()
+               }
+            };
+            let ls_tz = dt_mn.list_timezones().iter().map(|tz| (tz.to_string(), button::State::new())).collect::<Vec<(String, button::State)>>();
+
+            Self {
+               tabbar_state: tabs,
+               selected_tz: Some(dt_mn.timezone().to_string()),
+               datetime_tab: DateTimeTab {
+                  auto_datetime: *dt_mn.ntp(),
+                  time_val: timeval,
+                  ..DateTimeTab::new()
+               },
+               timezone_tab: TimeZoneTab {
+                  tz_ls: ls_tz.clone(),
+                  filtered_tz_ls: ls_tz,
+                  ..TimeZoneTab::new()
+               },
+               datetime_manager: dt_mn,
+               ..Self::default()
+            }
+         },
+         Err(err) => {
+            Self {
+               tabbar_state: tabs,
+               ..Self::default()
+            }
+         }
       }
-      date_time_page
    }
 
    pub fn update(&mut self, msg: DateTimeMessage) {
@@ -79,56 +101,48 @@ impl DateTimePage {
          },
          ApplyClicked => {
             if let Some(selected_tz) = &self.selected_tz {
-               self.current_tz = selected_tz.clone();
+               match self.datetime_manager.set_timezone(selected_tz) {
+                  Ok(res) => {
+                     if res {
+                        println!("Set timezone success");
+                     } else {
+                        eprintln!("Fail to set timezone");
+                     }
+                  },
+                  Err(err) => eprintln!("{}", err)
+               }
             }
 
-            match Command::new("timedatectl").arg("set-ntp").arg(format!("{}", self.datetime_tab.auto_datetime)).output() {
-               Ok(output) => {
-                  if output.status.success() {
+            match self.datetime_manager.set_ntp(self.datetime_tab.auto_datetime) {
+               Ok(res) => {
+                  if res {
                      println!("Set NTP success");
-                     self.selected_tz = None;
                   } else {
-                     if let Ok(stderr) = String::from_utf8(output.stderr) {
-                        eprintln!("{}", stderr);
-                     }
+                     eprintln!("Fail to set NTP");
                   }
                },
-               Err(err) => println!("{}", err)
-            }
-
-            match Command::new("timedatectl").arg("set-timezone").arg(self.current_tz.as_str()).output() {
-               Ok(output) => {
-                  if output.status.success() {
-                     println!("Set timezone success");
-                  } else {
-                     if let Ok(stderr) = String::from_utf8(output.stderr) {
-                        eprintln!("{}", stderr);
-                     }
-                  }
-               },
-               Err(err) => println!("{}", err)
+               Err(err) => eprintln!("{}", err)
             }
             let date = self.datetime_tab.clock.now.date().format("%v").to_string();
             let timezone = self.datetime_tab.clock.now.format("%z").to_string();
             let datetime = format!("{} {} {}", date, self.datetime_tab.time_val, timezone);
-            // println!("{}", datetime);
             match DateTime::parse_from_str(datetime.as_str(), "%v %r %z") {
                Ok(now) => {
                   println!("now: {}", now);
                   self.datetime_tab.clock.now = now.into();
                   
-                  match Command::new("timedatectl").arg("set-time").arg(self.datetime_tab.clock.now.to_string()).output() {
-                     Ok(output) => {
-                        if output.status.success() {
+                  match self.datetime_manager.set_datetime(&self.datetime_tab.clock.now.to_rfc3339()) {
+                     Ok(res) => {
+                        if res {
                            println!("Set Datetime success");
-                        } else if let Ok(stderr) = String::from_utf8(output.stderr) {
-                           eprintln!("command status: {}", stderr);
+                        } else {
+                           eprintln!("Fail to set Datetime");
                         }
                      },
-                     Err(err) => eprintln!("command: {}", err)
+                     Err(err) => eprintln!("{}", err)
                   }
                },
-               Err(err) => eprintln!("parse str: {}", err)
+               Err(err) => eprintln!("{}", err)
             }
             self.is_changed = false;
          },
@@ -152,20 +166,20 @@ impl DateTimePage {
    }
 
    pub fn subscription(&self) -> Subscription<DateTimeMessage> {
-      if self.datetime_tab.auto_datetime {
+      // if self.datetime_tab.auto_datetime {
          time::every(std::time::Duration::from_millis(250)).map(|_| DateTimeMessage::Tick(Local::now()))
-      } else {
-         Subscription::none()
-      }
+      // } else {
+      //    Subscription::none()
+      // }
    }
 
    pub fn view(&mut self) -> Element<DateTimeMessage> {
       let DateTimePage {
+         datetime_manager,
          tabbar_state,
          current_tab_idx,
          datetime_tab,
-         timezone_tab,
-         current_tz,
+         timezone_tab, 
          selected_tz,
          defaults_state,
          appply_state,
@@ -208,7 +222,7 @@ impl DateTimePage {
             let txt_time: Element<_> = if *auto_datetime {
                Text::new(time).size(14).into()
             } else {
-               TextInput::new(txt_time_state, "", &time_val, DateTimeMessage::TxtTimeChanged).padding(10).width(Length::Units(85)).style(CustomTextInput::Default).into()
+               TextInput::new(txt_time_state, "", &time_val, DateTimeMessage::TxtTimeChanged).padding(5).width(Length::Units(75)).style(CustomTextInput::Default).into()
             };
             let canvas_clock = Canvas::new(clock).width(Length::Units(127)).height(Length::Units(127));
             let time_sec = Container::new(
@@ -243,12 +257,12 @@ impl DateTimePage {
 
             let chb_auto_tz = Checkbox::new(*auto_tz, "Set time zone automatically using current location", DateTimeMessage::AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_tz_hint = Text::new("To change the local time zone, select your area from the list below then click Apply.");
-            let txt_current_tz = Text::new(format!("Current local time zone: {}", current_tz));
+            let txt_current_tz = Text::new(format!("Current local time zone: {}", datetime_manager.timezone()));
 
             let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, DateTimeMessage::SearchTZChanged).padding(10).style(CustomTextInput::Default);
             let scroll_tz = filtered_tz_ls.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).padding(7).spacing(4), |scrollable, (idx, (tz, state))| {
                let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.clone()))).width(Length::Fill).style(
-                  if current_tz == tz {CustomButton::Selected} 
+                  if datetime_manager.timezone() == tz {CustomButton::Selected} 
                   else if let Some(selected_tz) = selected_tz {
                      if selected_tz == tz {CustomButton::Hovered}
                      else {CustomButton::Text}
@@ -305,35 +319,6 @@ impl DateTimePage {
    }
 }
 
-impl DateTimePage {
-   fn load_config(&mut self) -> Result<(), std::io::Error> {
-      let output = Command::new("timedatectl").arg("show").output()?;
-
-      if output.status.success() {
-         match String::from_utf8(output.stdout) {
-            Ok(stdout) => {
-               stdout.lines().for_each(|line| {
-                  if line.starts_with("Timezone=") {
-                     self.current_tz = line.split_at(9).1.trim().to_owned();
-                     self.selected_tz = Some(self.current_tz.clone());
-                  } else if line.starts_with("NTP=") {
-                     let val = line.split_at(4).1.trim();
-      
-                     if val == "yes" {
-                        self.datetime_tab.auto_datetime = true;
-                     } else {
-                        self.datetime_tab.auto_datetime = false;
-                     }
-                  } 
-               });
-            },
-            Err(err) => println!("{}", err)
-         }
-      }
-      Ok(())
-   }
-}
-
 #[derive(Debug, Default)]
 pub struct DateTimeTab {
    auto_datetime: bool,
@@ -346,7 +331,7 @@ impl DateTimeTab {
    pub fn new() -> Self {
       Self {
          auto_datetime: true,
-         ..Default::default()
+         ..Self::default()
       }
    }
 }
@@ -363,31 +348,10 @@ pub struct TimeZoneTab {
 
 impl TimeZoneTab {
    pub fn new() -> Self {
-      let mut timezone_tab = Self {
+      Self {
          auto_tz: true,
          ..Self::default()
-      };
-      if let Err(err) = timezone_tab.load_config() {
-         println!("{}", err);
       }
-      timezone_tab
-   }
-
-   fn load_config(&mut self) -> Result<(), std::io::Error> {
-      let mut ls_timezone = Vec::new();
-      let output = Command::new("timedatectl").arg("list-timezones").output()?;
-
-      if output.status.success() {
-         match String::from_utf8(output.stdout) {
-            Ok(stdout) => {
-               ls_timezone = stdout.lines().map(|line| line.to_string()).collect();
-               self.tz_ls = ls_timezone.into_iter().map(|tz| (tz, button::State::new())).collect();
-               self.filtered_tz_ls = self.tz_ls.clone();
-            },
-            Err(err) => println!("{}", err)
-         }
-      }
-      Ok(())
    }
 }
 
@@ -395,7 +359,6 @@ impl TimeZoneTab {
 struct Clock {
    now: DateTime<Local>,
    clock: Cache,
-   tz: String,
 }
 
 impl Default for Clock {
@@ -403,7 +366,6 @@ impl Default for Clock {
       Self {
          now: Local::now(),
          clock: Default::default(),
-         tz: String::new(),
       }
    }
 }
