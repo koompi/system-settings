@@ -8,11 +8,17 @@ use iced::{
 };
 use libkoompi::system_settings::datetime::DateTimeManager;
 
+const DATE_FMT: &'static str = "%d/%m/%Y";
+const TIME_FMT: &'static str = "%r";
+const TZ_FMT: &'static str = "%z";
+const DATETIME_FMT: &'static str = "%F %T";
+
 #[derive(Debug, Clone)]
 pub enum DateTimeMessage {
    TabChanged(usize),
    AutoDateTimeToggled(bool),
    TxtTimeChanged(String),
+   TxtDateChanged(String),
    Tick(DateTime<Local>),
    DefaultsClicked,
    ApplyClicked,
@@ -48,15 +54,11 @@ impl DateTimePage {
             Self {
                tabbar_state: tabs,
                selected_tz: Some(dt_mn.timezone().to_string()),
-               datetime_tab: DateTimeTab {
-                  auto_datetime: *dt_mn.ntp(),
-                  ..DateTimeTab::new()
-               },
+               datetime_tab: DateTimeTab::default(),
                timezone_tab: TimeZoneTab {
-                  auto_tz: *dt_mn.ntp(),
                   tz_ls: ls_tz.clone(),
                   filtered_tz_ls: ls_tz,
-                  ..TimeZoneTab::new()
+                  ..TimeZoneTab::default()
                },
                datetime_manager: dt_mn,
                ..Self::default()
@@ -77,22 +79,20 @@ impl DateTimePage {
       match msg {
          TabChanged(idx) => self.current_tab_idx = idx,
          AutoDateTimeToggled(is_checked) => {
-            self.datetime_tab.auto_datetime = is_checked; 
-            
-            match self.datetime_manager.set_ntp(self.datetime_tab.auto_datetime) {
-               Ok(res) => {
-                  if res {
-                     println!("Set NTP success");
-                  } else {
-                     eprintln!("Fail to set NTP");
-                  }
-               },
-               Err(err) => eprintln!("{}", err)
+            self.set_ntp(is_checked);
+            if !(*self.datetime_manager.ntp()) {
+               self.datetime_tab.temp_date_val = self.datetime_tab.clock.now.format(DATE_FMT).to_string();
+               self.datetime_tab.temp_time_val = self.datetime_tab.clock.now.format(TIME_FMT).to_string();
             }
          },
          TxtTimeChanged(val) => {
             self.datetime_tab.is_time_change = true;
             self.datetime_tab.temp_time_val = val;
+            self.is_changed = true;
+         },
+         TxtDateChanged(val) => {
+            self.datetime_tab.is_date_change = true;
+            self.datetime_tab.temp_date_val = val;
             self.is_changed = true;
          },
          Tick(now) => {
@@ -109,15 +109,16 @@ impl DateTimePage {
          ApplyClicked => {
             match self.current_tab_idx {
                0 => {
-                  let date = self.datetime_tab.clock.now.date().format("%v").to_string();
-                  let timezone = self.datetime_tab.clock.now.format("%z").to_string();
-                  let datetime = format!("{} {} {}", date, self.datetime_tab.temp_time_val, timezone);
-                  match DateTime::parse_from_str(datetime.as_str(), "%v %r %z") {
+                  let timezone = self.datetime_tab.clock.now.format(TZ_FMT).to_string();
+                  let datetime = format!("{} {} {}", self.datetime_tab.temp_date_val, self.datetime_tab.temp_time_val, timezone);
+                  match DateTime::parse_from_str(datetime.as_str(), format!("{} {} {}", DATE_FMT, TIME_FMT, TZ_FMT).as_str()) {
                      Ok(now) => {
                         self.datetime_tab.clock.now = now.into();
-                        match self.datetime_manager.set_datetime(&self.datetime_tab.clock.now.format("%F %T").to_string()) {
+                        match self.datetime_manager.set_datetime(&self.datetime_tab.clock.now.format(DATETIME_FMT).to_string()) {
                            Ok(res) => {
                               if res {
+                                 self.datetime_tab.is_date_change = false;
+                                 self.datetime_tab.is_time_change = false;
                                  println!("Set Datetime success");
                               } else {
                                  eprintln!("Fail to set Datetime");
@@ -148,10 +149,7 @@ impl DateTimePage {
             
             self.is_changed = false;
          },
-         AutoTZToggled(is_checked) => {
-            self.timezone_tab.auto_tz = is_checked;
-            self.is_changed = true;
-         },
+         AutoTZToggled(is_checked) => self.set_ntp(is_checked),
          SearchTZChanged(text) => {
             self.timezone_tab.search_val = text;
             self.timezone_tab.filtered_tz_ls = self.timezone_tab.tz_ls.iter()
@@ -205,27 +203,35 @@ impl DateTimePage {
       let tabview = match self.current_tab_idx {
          0 => {
             let DateTimeTab {
-               auto_datetime,
                clock,
                txt_time_state,
                temp_time_val,
                is_time_change,
+               txt_date_state,
+               temp_date_val, 
+               is_date_change,
             } = datetime_tab;
 
-            let chb_auto_datetime = Checkbox::new(*auto_datetime, "Set date and time automatically", DateTimeMessage::AutoDateTimeToggled).spacing(10).style(CustomCheckbox::Default);
-            let txt_date = Text::new(clock.now.date().format("%v").to_string()).size(14);
+            let chb_auto_datetime = Checkbox::new(*datetime_manager.ntp(), "Set date and time automatically", DateTimeMessage::AutoDateTimeToggled).spacing(10).style(CustomCheckbox::Default);
+            let date = clock.now.date().format(DATE_FMT).to_string();
+            let txt_date: Element<_> = if *datetime_manager.ntp() {
+               Text::new(date).into()
+            } else {
+               TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, DateTimeMessage::TxtDateChanged).padding(7).width(Length::Units(70)).style(CustomTextInput::Default).into()
+            };
+            let time = clock.now.time().format(TIME_FMT).to_string();
+            let txt_time: Element<_> = if *datetime_manager.ntp() {
+               Text::new(time).size(14).into()
+            } else {
+               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, DateTimeMessage::TxtTimeChanged).padding(7).width(Length::Units(75)).style(CustomTextInput::Default).into()
+            };
             let calendar_con = Container::new(Text::new("Calendar")).width(Length::Units(127)).height(Length::Units(127)).center_x().center_y().style(CustomContainer::ForegroundWhite);
             let calendar_sec = Container::new(
                Column::new().spacing(20).align_items(Align::Center)
                .push(calendar_con)
                .push(txt_date)
             );
-            let time = clock.now.time().format("%r").to_string();
-            let txt_time: Element<_> = if *auto_datetime {
-               Text::new(time).size(14).into()
-            } else {
-               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, DateTimeMessage::TxtTimeChanged).padding(5).width(Length::Units(75)).style(CustomTextInput::Default).into()
-            };
+
             let canvas_clock = Canvas::new(clock).width(Length::Units(127)).height(Length::Units(127));
             let time_sec = Container::new(
                Column::new().spacing(20).align_items(Align::Center)
@@ -249,7 +255,6 @@ impl DateTimePage {
          }
          1 => {
             let TimeZoneTab {
-               auto_tz,
                search_state,
                search_val,
                filtered_tz_ls,
@@ -257,7 +262,7 @@ impl DateTimePage {
                ..
             } = timezone_tab;
 
-            let chb_auto_tz = Checkbox::new(*auto_tz, "Set time zone automatically using current location", DateTimeMessage::AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_tz = Checkbox::new(*datetime_manager.ntp(), "Set time zone automatically using current location", DateTimeMessage::AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_tz_hint = Text::new("To change the local time zone, select your area from the list below then click Apply.");
             let txt_current_tz = Text::new(format!("Current local time zone: {}", datetime_manager.timezone()));
 
@@ -271,7 +276,7 @@ impl DateTimePage {
                   }
                   else {CustomButton::Text}
                );
-               if !(*auto_tz) {
+               if !(*datetime_manager.ntp()) {
                   btn = btn.on_press(DateTimeMessage::TZSelected(idx));
                }
                scrollable.push(btn)
@@ -319,43 +324,41 @@ impl DateTimePage {
 
       Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
    }
-}
 
-#[derive(Debug, Default)]
-pub struct DateTimeTab {
-   auto_datetime: bool,
-   clock: Clock,
-   txt_time_state: text_input::State,
-   temp_time_val: String,
-   is_time_change: bool,
-}
-
-impl DateTimeTab {
-   pub fn new() -> Self {
-      Self {
-         auto_datetime: true,
-         ..Self::default()
+   fn set_ntp(&mut self, ntp: bool) {
+      match self.datetime_manager.set_ntp(ntp) {
+         Ok(res) => {
+            if res {
+               println!("Set NTP success");
+            } else {
+               eprintln!("Fail to set NTP");
+            }
+         },
+         Err(err) => eprintln!("{}", err)
       }
    }
 }
 
+#[derive(Debug, Default)]
+pub struct DateTimeTab {
+   // auto_datetime: bool,
+   clock: Clock,
+   txt_time_state: text_input::State,
+   temp_time_val: String,
+   is_time_change: bool,
+   txt_date_state: text_input::State,
+   temp_date_val: String,
+   is_date_change: bool,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct TimeZoneTab {
-   auto_tz: bool,
+   // auto_tz: bool,
    search_state: text_input::State,
    search_val: String,
    tz_ls: Vec<(String, button::State)>,
    filtered_tz_ls: Vec<(String, button::State)>,
    scroll: scrollable::State,
-}
-
-impl TimeZoneTab {
-   pub fn new() -> Self {
-      Self {
-         auto_tz: true,
-         ..Self::default()
-      }
-   }
 }
 
 #[derive(Debug)]
