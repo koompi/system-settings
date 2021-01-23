@@ -12,7 +12,7 @@ iced_style = "0.2"
 iced_custom_widget = { git="https://github.com/leang27/iced_custom_widget", branch="master" }
 vedas_core = { git="https://github.com/koompi/vedas", branch="dev" }
 libkoompi = { git="https://github.com/koompi/libkoompi", branch="main" }
-# iced_aw = { git = "https://github.com/Kaiden42/iced_aw", branch="main" }
+# iced_aw = { git = "https://github.com/Kaiden42/iced_aw", branch="main", default-features = false, features = ["date_picker", "colors"] }
 
 image = "0.23"
 chrono = "0.4"
