@@ -6,7 +6,7 @@ use iced::{
    button, scrollable, text_input, time, Align, Length, Space, Point, Rectangle, Subscription, Vector, 
    Button, Checkbox, Color, Column, Container, Element, Row, TextInput, Scrollable, Text,
 };
-use libkoompi::system_settings::DateTimeManager;
+use libkoompi::system_settings::datetime::DateTimeManager;
 
 #[derive(Debug, Clone)]
 pub enum DateTimeMessage {
