@@ -9,7 +9,7 @@ use super::super::styles::{
    CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider,
 };
 use chrono::prelude::*;
-use libkoompi::system_settings::Brightness;
+use libkoompi::system_settings::devices::Brightness;
 use smart_default::SmartDefault;
 #[derive(Debug, Clone)]
 pub enum BatteryMessage {
