@@ -2,14 +2,16 @@ use chrono::prelude::*;
 use num_format::Locale;
 use num_format::{Buffer, CustomFormat, Grouping};
 use crate::helpers::ROOT_PATH;
-use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect};
+use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, HOVERED};
 use iced::{
    button, scrollable, pick_list, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, 
 };
-use iced_custom_widget::{Icon, IconBrand};
+use iced_custom_widget::Icon;
 use smart_default::SmartDefault;
 use libkoompi::system_settings::locale::{LocaleManager, LC_Keywords};
 use libkoompi::helpers::get_list_by_sep;
+
+const LS_MEASURE_UNITS: [&str; 3] = ["Metric", "Imperial US", "Imperial UK"];
 
 #[derive(Debug, Clone)]
 pub enum LangRegionMessage {
@@ -24,6 +26,7 @@ pub enum LangRegionMessage {
    TimeFormatToggled(bool),
    NumFormatChanged(String),
    CurrencyFormatChanged(String),
+   MeasureFormatChanged(&'static str),
    ShortDateFormatChanged(String),
    LongDateFormatChanged(String),
    ShortTimeFormatChanged(String),
@@ -40,7 +43,7 @@ pub enum LangRegionMessage {
 #[derive(Debug, Default)]
 pub struct LangRegionPage {
    locale_mn: LocaleManager,
-   tabbar_state: Vec<(String, button::State)>,
+   tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    general_tab: GeneralTab,
    formats_tab: FormatsTab,
@@ -54,32 +57,34 @@ pub struct LangRegionPage {
 impl LangRegionPage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  General  ".to_string(), button::State::new()),
-         ("  Formats  ".to_string(), button::State::new()),
-         ("  Apps  ".to_string(), button::State::new()),
+         ("  General  ", button::State::new()),
+         ("  Formats  ", button::State::new()),
+         ("  Apps  ", button::State::new()),
       ];
 
       match LocaleManager::new() {
          Ok(locale_mn) => {
-            let cur_lang_idx = locale_mn.list_locales().iter().position(|&lc| lc == locale_mn.language());
-            let mut ls_lc = locale_mn.list_locales().iter().map(|tz| (tz.to_string(), button::State::new())).collect::<Vec<(String, button::State)>>();
+            let cur_lang_idx = locale_mn.list_prefered_langs().iter().position(|&lc| lc == locale_mn.language());
+            let mut ls_prefered_langs = locale_mn.list_prefered_langs().iter().zip(locale_mn.list_regions()).map(|(lang, reg)| (lang.to_string(), reg.to_string(), button::State::new())).collect::<Vec<(String, String, button::State)>>();
             if let Some(cur_idx) = cur_lang_idx {
-               ls_lc.swap(0, cur_idx)
+               ls_prefered_langs.swap(0, cur_idx)
             };
             let first_day = locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday-1) as usize].clone();
             let region = locale_mn.language().to_string().clone();
             let num_format = locale_mn.numeric().to_string().clone();
             let currency_format = locale_mn.monetary().to_string().clone();
+            let measure_units = LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&"");
 
             Self {
                locale_mn,
                tabbar_state: tabs,
                general_tab: GeneralTab {
-                  prefered_langs: ls_lc,
+                  prefered_langs: ls_prefered_langs,
                   selected_firstday: first_day,
                   selected_region: region,
                   selected_num_format: num_format,
                   selected_currency_format: currency_format,
+                  selected_measure_format: measure_units,
                   ..GeneralTab::default()
                },
                ..Self::default()
@@ -100,7 +105,7 @@ impl LangRegionPage {
       match msg {
          TabChanged(idx) => self.current_tab_idx = idx,
          BtnAddClicked => {
-            self.general_tab.prefered_langs.push(("Other".to_string(), button::State::new()));
+            self.general_tab.prefered_langs.push((String::from("Other"), String::from("Other"), button::State::new()));
             self.is_changed = true;
          },
          BtnRemoveClicked => {
@@ -130,6 +135,7 @@ impl LangRegionPage {
          TimeFormatToggled(is_checked) => {self.general_tab.is_24_hours_format = is_checked; self.is_changed = true;},
          NumFormatChanged(val) => {self.general_tab.selected_num_format = val; self.is_changed = true;},
          CurrencyFormatChanged(val) => {self.general_tab.selected_currency_format = val; self.is_changed = true;},
+         MeasureFormatChanged(val) => {self.general_tab.selected_measure_format = val; self.is_changed = true;},
          ShortDateFormatChanged(val) => {self.formats_tab.selected_short_date_format = val; self.is_changed = true;},
          LongDateFormatChanged(val) => {self.formats_tab.selected_long_date_format = val; self.is_changed = true;},
          ShortTimeFormatChanged(val) => {self.formats_tab.selected_short_time_format = val; self.is_changed = true;},
@@ -191,7 +197,7 @@ impl LangRegionPage {
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(LangRegionMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(LangRegionMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -222,6 +228,8 @@ impl LangRegionPage {
                selected_num_format,
                currency_format,
                selected_currency_format,
+               measure_format,
+               selected_measure_format,
                now,
                number,
                currency,
@@ -252,11 +260,11 @@ impl LangRegionPage {
             let btn_group = Container::new(
                Row::new().push(btn_add).push(btn_remove).push(Space::with_width(Length::Fill)).push(btn_shift_group)
             ).width(Length::Fill).style(CustomContainer::Header);
-            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (title, state))| {
-               // let content = Column::new().spacing(4)
-               //    .push()
-               //    .push(Text::new(subtitle.as_str()).size(12).color(HOVERED));
-               let mut btn = Button::new(state, Text::new(format!("{} {}", title.as_str(), if idx == 0 {"(Primary)"} else {""}))).width(Length::Fill).on_press(LangRegionMessage::LangSelected(idx));
+            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (lang, reg, state))| {
+               let content = Column::new().spacing(4)
+                  .push(Text::new(format!("{} {}", *lang, if idx == 0 {"(Primary)"} else {""})))
+                  .push(Text::new(reg.as_str()).size(12).color(HOVERED));
+               let mut btn = Button::new(state, content).width(Length::Fill).on_press(LangRegionMessage::LangSelected(idx));
                btn = if let Some(selected_idx) = selected_lang {
                   btn.style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                } else {
@@ -287,6 +295,7 @@ impl LangRegionPage {
             let lb_time_format = Text::new("Time Format:");
             let lb_num_sep = Text::new("Number:");
             let lb_currency_sep = Text::new("Currency:");
+            let lb_measure_units = Text::new("Measurement Units:");
             let label_sec = Container::new(
                Column::new().spacing(20).align_items(Align::End)
                .push(lb_region)
@@ -294,16 +303,18 @@ impl LangRegionPage {
                .push(lb_time_format)
                .push(lb_num_sep)
                .push(lb_currency_sep)
+               .push(lb_measure_units)
             ).width(Length::FillPortion(3)).align_x(Align::End);
 
                // ផ្នែកព័ត៌មាន
-            let ls_locales = locale_mn.list_locales().iter().map(ToString::to_string).collect::<Vec<String>>();
+            let ls_locales = locale_mn.list_prefered_langs().iter().zip(locale_mn.list_regions()).map(|(lang, reg)| format!("{}_{}", lang, reg)).collect::<Vec<String>>();
             let ls_days = locale_mn.time_details().list_days();
             let pl_region = PickList::new(region_state, ls_locales.clone(), Some(selected_region.clone()), LangRegionMessage::RegionChanged).style(CustomSelect::Primary);
             let pl_first_day = PickList::new(firstday_state, ls_days, Some(selected_firstday.clone()), LangRegionMessage::FirstDayChanged).style(CustomSelect::Primary);
             let chb_time_format = Checkbox::new(*is_24_hours_format, "24-Hours Format", LangRegionMessage::TimeFormatToggled).spacing(10).style(CustomCheckbox::Default);
             let pl_num_format = PickList::new(num_format, ls_locales.clone(), Some(selected_num_format.clone()), LangRegionMessage::NumFormatChanged).style(CustomSelect::Primary);
             let pl_currency_format = PickList::new(currency_format, ls_locales.clone(), Some(selected_currency_format.clone()), LangRegionMessage::CurrencyFormatChanged).style(CustomSelect::Primary);
+            let pl_measure_units = PickList::new(measure_format, &LS_MEASURE_UNITS[..], Some(selected_measure_format), LangRegionMessage::MeasureFormatChanged).style(CustomSelect::Primary);
             let info_sec = Container::new(
                Column::new().spacing(12)
                .push(pl_region)
@@ -311,6 +322,7 @@ impl LangRegionPage {
                .push(chb_time_format)
                .push(pl_num_format)
                .push(pl_currency_format)
+               .push(pl_measure_units)
             ).width(Length::FillPortion(7));
 
             let mut number_formatted = Buffer::new(); 
@@ -351,7 +363,7 @@ impl LangRegionPage {
                   Container::new(
                      Column::new().spacing(10)
                      .push(Text::new(format!("{}", now.format(locale_mn.time_details().d_t_fmt.as_str()))).size(14))
-                     .push(Text::new(format!("{}, {}  {}  {}{}", now.format(locale_mn.time_details().d_fmt.as_str()), now.format(locale_mn.time_details().t_fmt.as_str()), number_formatted.as_str(), currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str())).size(14))
+                     .push(Text::new(format!("{}, {}  {}  {}{}", now.format(locale_mn.time_details().d_fmt.as_str()), now.format(locale_mn.time_details().t_fmt_ampm.as_str()), number_formatted.as_str(), currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str())).size(14))
                   ).height(Length::Fill).center_y()
                )
             ).width(Length::FillPortion(7));
@@ -532,7 +544,7 @@ impl LangRegionPage {
 
 #[derive(Debug, Clone, SmartDefault)]
 struct GeneralTab {
-   prefered_langs: Vec<(String, button::State)>,
+   prefered_langs: Vec<(String, String, button::State)>,
    selected_lang: Option<usize>,
    prefered_lang_scroll: scrollable::State,
    add_state: button::State, 
@@ -549,6 +561,8 @@ struct GeneralTab {
    selected_num_format: String,
    currency_format: pick_list::State<String>,
    selected_currency_format: String,
+   measure_format: pick_list::State<&'static str>,
+   selected_measure_format: &'static str,
    #[default(Local::now())]
    now: DateTime<Local>,
    #[default(12345)]

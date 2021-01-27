@@ -284,6 +284,7 @@ impl SystemSetting {
 
       SystemSetting::run(Settings {
          default_text_size: 13,
+         // default_font: Some(include_bytes!("../../assets/fonts/Nokora-Regular.ttf")),
          window: window::Settings {
             min_size: Some((750, 700)),
             icon: Some(window::Icon::from_rgba(rgba, width, height).expect("Failed to open icon")),
