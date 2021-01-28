@@ -289,9 +289,6 @@ impl PageModel {
          DateTimePageModel { datetime_page } => datetime_page
             .subscription()
             .map(PagesMessage::DateTimeMessage),
-         LanguagePageModel { lang_region_page } => lang_region_page
-            .subscription()
-            .map(PagesMessage::LangRegionMessage),
          UpdatePageModel { update_page } => {
             update_page.subscription().map(PagesMessage::SoftUpdateMsg)
          }
