@@ -227,9 +227,7 @@ impl Application for SystemSetting {
                .spacing(15)
                .push(
                   Row::new().push(Space::with_width(Length::Units(20))).push(
-                     Container::new(Text::new("System").size(15))
-                        .padding(7)
-                        .style(CustomContainer::FadedBrightForeground),
+                     Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground),
                   ),
                )
                .push(personal_prefs),
@@ -241,9 +239,7 @@ impl Application for SystemSetting {
                .spacing(15)
                .push(
                   Row::new().push(Space::with_width(Length::Units(20))).push(
-                     Container::new(Text::new("Hardware").size(15))
-                        .padding(7)
-                        .style(CustomContainer::FadedBrightForeground),
+                     Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground),
                   ),
                )
                .push(device_prefs),
@@ -251,10 +247,7 @@ impl Application for SystemSetting {
          .width(Length::Fill)
          .center_x();
          Container::new(
-            Scrollable::new(&mut self.scroll)
-               .spacing(30)
-               .width(Length::Fill)
-               .align_items(Align::Center)
+            Scrollable::new(&mut self.scroll).spacing(30).width(Length::Fill).align_items(Align::Center)
                .push(personal_section)
                .push(device_section),
          )
@@ -264,9 +257,7 @@ impl Application for SystemSetting {
       let content = self.pages.view().map(SystemMessage::PagesMessage);
 
       Container::new(
-         Column::new()
-            .spacing(15)
-            .width(Length::Fill)
+         Column::new().spacing(15).width(Length::Fill)
             .push(search_bar)
             .push(Row::new().spacing(27).push(sidebar).push(content)),
       )
@@ -284,7 +275,7 @@ impl SystemSetting {
 
       SystemSetting::run(Settings {
          default_text_size: 13,
-         // default_font: Some(include_bytes!("../../assets/fonts/Nokora-Regular.ttf")),
+         default_font: Some(include_bytes!("../../assets/fonts/Inter-Bold.otf")),
          window: window::Settings {
             min_size: Some((750, 700)),
             icon: Some(window::Icon::from_rgba(rgba, width, height).expect("Failed to open icon")),
