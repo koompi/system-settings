@@ -1,4 +1,4 @@
-#[macro_use]
+  #[macro_use]
 mod general_page;
 mod access_page;
 mod battery_page;
