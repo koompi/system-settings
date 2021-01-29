@@ -5,9 +5,10 @@ use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, Custom
 use iced::{
    button, scrollable, pick_list, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, 
 };
-use iced_custom_widget::Icon;
+use iced_custom_widget::{Icon, IconBrand};
 use smart_default::SmartDefault;
-use libkoompi::system_settings::locale::{LocaleManager, LC_Keywords};
+use libkoompi::system_settings::locale::{LocaleManager, LocaleConf, ExportTarget};
+use tauri_dialog::{DialogBuilder, DialogButtons, DialogSelection, DialogStyle};
 
 const LS_MEASURE_UNITS: [&str; 3] = ["Metric", "Imperial US", "Imperial UK"];
 
@@ -63,15 +64,15 @@ impl LangRegionPage {
 
       match LocaleManager::new() {
          Ok(locale_mn) => {
-            let ls_prefered_langs = locale_mn.list_prefered_langs().iter().map(|(_, lang_reg)| {
+            let ls_prefered_langs = locale_mn.list_prefered_langs().iter().map(|(key, lang_reg)| {
                let ls_lang = lang_reg.split("-").map(|i| i.trim().to_string()).collect::<Vec<String>>();
                let lang = ls_lang.first().unwrap();
                if let Some(reg) = ls_lang.last() {
-                  (lang.clone(), reg.clone(), button::State::new())
+                  (key.to_string(), lang.clone(), reg.clone(), button::State::new())
                } else {
-                  (lang.clone(), lang.clone(), button::State::new())
+                  (key.to_string(), lang.clone(), lang.clone(), button::State::new())
                }
-            }).collect::<Vec<(String, String, button::State)>>();
+            }).collect::<Vec<(String, String, String, button::State)>>();
             let first_day = Self::get_first_day(&locale_mn);
             let region = locale_mn.address().to_string().clone();
             let time_format = locale_mn.time().to_string().clone();
@@ -110,7 +111,7 @@ impl LangRegionPage {
       match msg {
          TabChanged(idx) => self.current_tab_idx = idx,
          BtnAddClicked => {
-            self.general_tab.prefered_langs.push((String::from("Other"), String::from("Other"), button::State::new()));
+            // self.general_tab.prefered_langs.push((String::from("Other"), String::from("Other"), button::State::new()));
             self.is_changed = true;
          },
          BtnRemoveClicked => {
@@ -163,6 +164,39 @@ impl LangRegionPage {
          },
          DefaultsClicked => *self = Self::new(),
          ApplyClicked => {
+            let lc_conf = LocaleConf {
+               lang: self.general_tab.prefered_langs.first().unwrap().0.clone(),
+               language: self.general_tab.prefered_langs.iter().map(|(k, ..)| *k.split(".").collect::<Vec<&str>>().first().unwrap()).collect::<Vec<&str>>().join(":").clone(),
+               lc_numeric: self.locale_mn.list_langs_regions().into_iter().find(|(_, lang_reg)| lang_reg.to_string() == self.general_tab.selected_num_format).unwrap().0.to_string(),
+               lc_time: self.locale_mn.list_langs_regions().into_iter().find(|(_, lang_reg)| lang_reg.to_string() == self.general_tab.selected_time_format).unwrap().0.to_string(),
+               lc_monetary: self.locale_mn.list_langs_regions().into_iter().find(|(_, lang_reg)| lang_reg.to_string() == self.general_tab.selected_currency_format).unwrap().0.to_string(),
+               lc_address: self.locale_mn.list_langs_regions().into_iter().find(|(_, lang_reg)| lang_reg.to_string() == self.general_tab.selected_region).unwrap().0.to_string(),
+               lc_measurement: self.general_tab.prefered_langs.first().unwrap().0.clone(), // !fix this
+            };
+
+            match self.locale_mn.set_locale(lc_conf, ExportTarget::Local) {
+               Ok(()) => {
+                  DialogBuilder::new()
+                     .message("These changes will take effect after the next login.")
+                     .title("Note")
+                     .style(DialogStyle::Info)
+                     .buttons(DialogButtons::Ok)
+                     .build()
+                     .show();
+               },
+               Err(err) => {
+                  let res = DialogBuilder::new()
+                     .message(format!("{}", err).as_str())
+                     .title("Error")
+                     .style(DialogStyle::Error)
+                     .buttons(DialogButtons::Quit)
+                     .build()
+                     .show();
+                  if res == DialogSelection::Quit {
+                     std::process::exit(1);
+                  }
+               }
+            }
             self.is_changed = false;
          },
          CancelClicked => {
@@ -269,7 +303,7 @@ impl LangRegionPage {
             let btn_group = Container::new(
                Row::new().push(btn_add).push(btn_remove).push(Space::with_width(Length::Fill)).push(btn_shift_group)
             ).width(Length::Fill).style(CustomContainer::Header);
-            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (lang, reg, state))| {
+            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (_, lang, reg, state))| {
                let content = Column::new().spacing(4)
                   .push(Text::new(format!("{} {}", *lang, if idx == 0 {"(Primary)"} else {""})))
                   .push(Text::new(reg.as_str()).size(12).color(HOVERED));
@@ -356,60 +390,53 @@ impl LangRegionPage {
 
             // ផ្នែកឧទាហរណ៍
             let lb_example = Text::new("Example:").size(15);
-            let lb_full_time = Text::new("Full Time:");
-            let lb_short_time = Text::new("Short Time:");
-            let lb_first_day = Text::new("First day of week:");
-            let lb_num = Text::new("Number:");
-            let lb_currency = Text::new("Currency:");
-            let lb_measure_unit = Text::new("Measurement Units:");
-            let example_label_sec = Container::new(
+            let lb_full_time = Text::new("Full Time:").width(Length::FillPortion(3));
+            let lb_short_time = Text::new("Short Time:").width(Length::FillPortion(3));
+            let lb_first_day = Text::new("First day of week:").width(Length::FillPortion(3));
+            let lb_num = Text::new("Number:").width(Length::FillPortion(3));
+            let lb_currency = Text::new("Currency:").width(Length::FillPortion(3));
+            let lb_measure_unit = Text::new("Measurement Units:").width(Length::FillPortion(3));
+            let txt_full_time = Text::new(now.format(locale_mn.time_details().d_t_fmt.as_str()).to_string()).width(Length::FillPortion(10));
+            let txt_short_time = Text::new(format!("{} {}", now.format(locale_mn.time_details().d_fmt.as_str()), now.format(locale_mn.time_details().t_fmt.as_str()))).width(Length::FillPortion(10));
+            let txt_first_day = Text::new(Self::get_first_day(&locale_mn)).width(Length::FillPortion(10));
+            let txt_num = Text::new(number_formatted.as_str()).width(Length::FillPortion(10));
+            let txt_currency = Text::new(format!("{} {}", currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str())).width(Length::FillPortion(10));
+            let txt_measure_unit = Text::new(*LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&"")).width(Length::FillPortion(10));
+            let lable_txt = |label: Text, txt: Text| { Row::new().spacing(10).align_items(Align::Center).push(label).push(txt) };
+            let example_sec = Container::new(
                Column::new().spacing(10)
-               .push(lb_full_time)
-               .push(lb_short_time)
-               .push(lb_first_day)
-               .push(lb_num)
-               .push(lb_currency)
-               .push(lb_measure_unit)
-            ).width(Length::FillPortion(3));
-
-            let txt_full_time = Text::new(now.format(locale_mn.time_details().d_t_fmt.as_str()).to_string());
-            let txt_short_time = Text::new(format!("{} {}", now.format(locale_mn.time_details().d_fmt.as_str()), now.format(locale_mn.time_details().t_fmt.as_str())));
-            let txt_first_day = Text::new(Self::get_first_day(&locale_mn));
-            let txt_num = Text::new(number_formatted.as_str());
-            let txt_currency = Text::new(format!("{} {}", currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str()));
-            let txt_measure_unit = Text::new(*LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&""));
-            let example_info_sec = Container::new(
-               Column::new().spacing(10)
-               .push(txt_full_time)
-               .push(txt_short_time)
-               .push(txt_first_day)
-               .push(txt_num)
-               .push(txt_currency)
-               .push(txt_measure_unit)
-            ).width(Length::FillPortion(10));
+               .push(lb_example)
+               .push(lable_txt(lb_full_time, txt_full_time))
+               .push(lable_txt(lb_short_time, txt_short_time))
+               .push(lable_txt(lb_first_day, txt_first_day))
+               .push(lable_txt(lb_num, txt_num))
+               .push(lable_txt(lb_currency, txt_currency))
+               .push(lable_txt(lb_measure_unit, txt_measure_unit))
+            ).width(Length::Fill);
 
             let right_pane = Container::new(
-               Scrollable::new(content_scroll).spacing(15)
+               Scrollable::new(content_scroll).spacing(15).scroller_width(4).scrollbar_width(4)
                .push(
                   Row::new().spacing(10).align_items(Align::Center)
                   .push(label_sec)
                   .push(info_sec)
                )
-               .push(lb_example)
-               .push(
-                  Row::new().spacing(10).align_items(Align::Center)
-                  .push(example_label_sec)
-                  .push(example_info_sec)
-               )
+               .push(example_sec)
             ).width(Length::FillPortion(7));
 
             Container::new(
-               Column::new().spacing(10)
-               .push(lb_prefered_lang)
+               Row::new()
+               .push(Space::with_width(Length::Units(10)))
                .push(
-                  Row::new().spacing(20)
-                  .push(left_pane)
-                  .push(right_pane)
+                  Column::new().spacing(10)
+                  .push(Space::with_height(Length::Units(10)))
+                  .push(lb_prefered_lang)
+                  .push(
+                     Row::new().spacing(20)
+                     .push(left_pane)
+                     .push(right_pane)
+                  )
+                  .push(Space::with_height(Length::Units(15)))
                )
             ).width(Length::Fill).height(Length::Fill)
          }
@@ -502,50 +529,51 @@ impl LangRegionPage {
          //       )
          //    ).width(Length::Fill).height(Length::Fill)
          // }
-         // 2 => {
-         //    let AppsTab {
-         //       app_list,
-         //       selected_app,
-         //       add_state,
-         //       remove_state,
-         //       scroll,
-         //    } = apps_tab;
+         1 => {
+            let AppsTab {
+               app_list,
+               selected_app,
+               add_state,
+               remove_state,
+               scroll,
+            } = apps_tab;
 
-         //    let lb_customize = Text::new("Customize language settings for the apps below:");
-         //    let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(LangRegionMessage::BtnAddAppClicked).style(CustomButton::Text);
-         //    let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
-         //    if selected_app.is_some() && app_list.len() > 1 {
-         //       btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveAppClicked);
-         //    }
-         //    let btn_group = Container::new(
-         //       Row::new().push(btn_add).push(btn_remove)
-         //    );
+            let lb_customize = Text::new("Customize language settings for the apps below:");
+            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(LangRegionMessage::BtnAddAppClicked).style(CustomButton::Text);
+            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
+            if selected_app.is_some() && app_list.len() > 1 {
+               btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveAppClicked);
+            }
+            let btn_group = Container::new(
+               Row::new().push(btn_add).push(btn_remove)
+            );
 
-         //    let apps_group = app_list.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).padding(7).spacing(4), |scroll, (idx, (icon, title, pl_state, selected_lang, state))| {
-         //       let content = Row::new().spacing(7).padding(4).align_items(Align::Center)
-         //          .push(IconBrand::new(*icon).size(30))
-         //          .push(Text::new(title.as_str()))
-         //          .push(Space::with_width(Length::Fill))
-         //          .push(PickList::new(pl_state, &AppLang::ALL[..], Some(*selected_lang), LangRegionMessage::AppLangChanged).style(CustomSelect::Primary))
-         //          .push(Button::new(state, Icon::new('\u{f138}').size(20)).padding(2).on_press(LangRegionMessage::AppSelected(idx)).style(CustomButton::Text));
-         //       let mut con = Container::new(content).width(Length::Fill);
-         //       con = if let Some(selected_idx) = selected_app {
-         //          con.style(if *selected_idx == idx {CustomContainer::FadedBrightForeground} else {CustomContainer::ForegroundWhite})
-         //       } else {
-         //          con.style(CustomContainer::ForegroundWhite)
-         //       };
-         //       scroll.push(con)
-         //    });
+            let ls_locales = locale_mn.list_langs_regions().iter().map(|(_, lang)| lang.to_string()).collect::<Vec<String>>();
+            let apps_group = app_list.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).padding(7).spacing(4), |scroll, (idx, (icon, title, pl_state, selected_lang, state))| {
+               let content = Row::new().spacing(7).padding(4).align_items(Align::Center)
+                  .push(IconBrand::new(*icon).size(30))
+                  .push(Text::new(title.as_str()))
+                  .push(Space::with_width(Length::Fill))
+                  .push(PickList::new(pl_state, ls_locales.clone(), Some(selected_lang.clone()), LangRegionMessage::AppLangChanged).style(CustomSelect::Primary))
+                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).padding(2).on_press(LangRegionMessage::AppSelected(idx)).style(CustomButton::Text));
+               let mut con = Container::new(content).width(Length::Fill);
+               con = if let Some(selected_idx) = selected_app {
+                  con.style(if *selected_idx == idx {CustomContainer::FadedBrightForeground} else {CustomContainer::ForegroundWhite})
+               } else {
+                  con.style(CustomContainer::ForegroundWhite)
+               };
+               scroll.push(con)
+            });
 
-         //    Container::new(
-         //       Column::new().spacing(10)
-         //       .push(lb_customize)
-         //       .push(
-         //          Container::new(apps_group).height(Length::Fill).padding(7).style(CustomContainer::ForegroundWhite)
-         //       )
-         //       .push(btn_group)
-         //    ).width(Length::Fill).height(Length::Fill)
-         // }
+            Container::new(
+               Column::new().spacing(10).padding(10)
+               .push(lb_customize)
+               .push(
+                  Container::new(apps_group).height(Length::Fill).padding(7).style(CustomContainer::ForegroundWhite)
+               )
+               .push(btn_group)
+            ).width(Length::Fill).height(Length::Fill)
+         }
          _ => Container::new(Space::with_height(Length::Fill)),
       };
 
@@ -570,7 +598,7 @@ impl LangRegionPage {
       let content = Column::new().width(Length::Fill)
          .push(header_sec)
          .push(tabbar_sec)
-         .push(tabview.height(Length::Fill).padding(25).style(CustomContainer::ForegroundGray))
+         .push(tabview.height(Length::Fill).style(CustomContainer::ForegroundGray))
          .push(bottom_sec);
 
       Container::new(content).padding(10).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
@@ -585,7 +613,7 @@ impl LangRegionPage {
 
 #[derive(Debug, Clone, SmartDefault)]
 struct GeneralTab {
-   prefered_langs: Vec<(String, String, button::State)>,
+   prefered_langs: Vec<(String, String, String, button::State)>,
    selected_lang: Option<usize>,
    prefered_lang_scroll: scrollable::State,
    add_state: button::State, 
