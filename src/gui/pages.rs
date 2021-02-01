@@ -1,4 +1,4 @@
-#[macro_use]
+  #[macro_use]
 mod general_page;
 mod access_page;
 mod battery_page;
@@ -289,9 +289,6 @@ impl PageModel {
          DateTimePageModel { datetime_page } => datetime_page
             .subscription()
             .map(PagesMessage::DateTimeMessage),
-         LanguagePageModel { lang_region_page } => lang_region_page
-            .subscription()
-            .map(PagesMessage::LangRegionMessage),
          UpdatePageModel { update_page } => {
             update_page.subscription().map(PagesMessage::SoftUpdateMsg)
          }
