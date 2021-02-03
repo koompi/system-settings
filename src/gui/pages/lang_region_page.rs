@@ -1,13 +1,14 @@
-use chrono::prelude::*;
-use num_format::{Buffer, CustomFormat, Grouping};
+use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomSelect, HOVERED};
 use crate::helpers::ROOT_PATH;
-use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, HOVERED};
+use chrono::prelude::*;
 use iced::{
-   button, scrollable, pick_list, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, 
+   button, pick_list, scrollable, Align, Button, Checkbox, Column, Container, Element, Length,
+   PickList, Row, Scrollable, Space, Svg, Text,
 };
 use iced_custom_widget::Icon;
+use libkoompi::system_settings::locale::LocaleManager;
+use num_format::{Buffer, CustomFormat, Grouping};
 use smart_default::SmartDefault;
-use libkoompi::system_settings::locale::{LocaleManager, LC_Keywords};
 
 const LS_MEASURE_UNITS: [&str; 3] = ["Metric", "Imperial US", "Imperial UK"];
 
@@ -63,21 +64,30 @@ impl LangRegionPage {
 
       match LocaleManager::new() {
          Ok(locale_mn) => {
-            let ls_prefered_langs = locale_mn.list_prefered_langs().iter().map(|(_, lang_reg)| {
-               let ls_lang = lang_reg.split("-").map(|i| i.trim().to_string()).collect::<Vec<String>>();
-               let lang = ls_lang.first().unwrap();
-               if let Some(reg) = ls_lang.last() {
-                  (lang.clone(), reg.clone(), button::State::new())
-               } else {
-                  (lang.clone(), lang.clone(), button::State::new())
-               }
-            }).collect::<Vec<(String, String, button::State)>>();
+            let ls_prefered_langs = locale_mn
+               .list_prefered_langs()
+               .iter()
+               .map(|(_, lang_reg)| {
+                  let ls_lang = lang_reg
+                     .split("-")
+                     .map(|i| i.trim().to_string())
+                     .collect::<Vec<String>>();
+                  let lang = ls_lang.first().unwrap();
+                  if let Some(reg) = ls_lang.last() {
+                     (lang.clone(), reg.clone(), button::State::new())
+                  } else {
+                     (lang.clone(), lang.clone(), button::State::new())
+                  }
+               })
+               .collect::<Vec<(String, String, button::State)>>();
             let first_day = Self::get_first_day(&locale_mn);
             let region = locale_mn.address().to_string().clone();
             let time_format = locale_mn.time().to_string().clone();
             let num_format = locale_mn.numeric().to_string().clone();
             let currency_format = locale_mn.monetary().to_string().clone();
-            let measure_units = LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&"");
+            let measure_units = LS_MEASURE_UNITS
+               .get(locale_mn.measurement_details().measurement - 1)
+               .unwrap_or(&"");
 
             Self {
                locale_mn,
@@ -94,7 +104,7 @@ impl LangRegionPage {
                },
                ..Self::default()
             }
-         },
+         }
          Err(err) => {
             eprintln!("{}", err); // error handling here
             Self {
@@ -110,70 +120,110 @@ impl LangRegionPage {
       match msg {
          TabChanged(idx) => self.current_tab_idx = idx,
          BtnAddClicked => {
-            self.general_tab.prefered_langs.push((String::from("Other"), String::from("Other"), button::State::new()));
+            self.general_tab.prefered_langs.push((
+               String::from("Other"),
+               String::from("Other"),
+               button::State::new(),
+            ));
             self.is_changed = true;
-         },
+         }
          BtnRemoveClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
                self.general_tab.prefered_langs.remove(selected_idx);
                self.general_tab.selected_lang = None;
                self.is_changed = true;
             }
-         },
+         }
          BtnUpClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
-               self.general_tab.prefered_langs.swap(selected_idx, selected_idx-1);
-               self.general_tab.selected_lang = Some(selected_idx-1);
+               self
+                  .general_tab
+                  .prefered_langs
+                  .swap(selected_idx, selected_idx - 1);
+               self.general_tab.selected_lang = Some(selected_idx - 1);
                self.is_changed = true;
             }
-         },
+         }
          BtnDownClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
-               self.general_tab.prefered_langs.swap(selected_idx, selected_idx+1);
-               self.general_tab.selected_lang = Some(selected_idx+1);
+               self
+                  .general_tab
+                  .prefered_langs
+                  .swap(selected_idx, selected_idx + 1);
+               self.general_tab.selected_lang = Some(selected_idx + 1);
                self.is_changed = true;
             }
-         },
+         }
          LangSelected(idx) => self.general_tab.selected_lang = Some(idx),
-         RegionChanged(val) => {self.general_tab.selected_region = val; self.is_changed = true;},
-         FirstDayChanged(val) => {self.general_tab.selected_firstday = val; self.is_changed = true;},
-         TimeChanged(val) => {self.general_tab.selected_time_format = val; self.is_changed = true;},
-         TimeFormatToggled(is_checked) => {self.general_tab.is_24_hours_format = is_checked; self.is_changed = true;},
-         NumFormatChanged(val) => {self.general_tab.selected_num_format = val; self.is_changed = true;},
-         CurrencyFormatChanged(val) => {self.general_tab.selected_currency_format = val; self.is_changed = true;},
-         MeasureFormatChanged(val) => {self.general_tab.selected_measure_format = val; self.is_changed = true;},
+         RegionChanged(val) => {
+            self.general_tab.selected_region = val;
+            self.is_changed = true;
+         }
+         FirstDayChanged(val) => {
+            self.general_tab.selected_firstday = val;
+            self.is_changed = true;
+         }
+         TimeChanged(val) => {
+            self.general_tab.selected_time_format = val;
+            self.is_changed = true;
+         }
+         TimeFormatToggled(is_checked) => {
+            self.general_tab.is_24_hours_format = is_checked;
+            self.is_changed = true;
+         }
+         NumFormatChanged(val) => {
+            self.general_tab.selected_num_format = val;
+            self.is_changed = true;
+         }
+         CurrencyFormatChanged(val) => {
+            self.general_tab.selected_currency_format = val;
+            self.is_changed = true;
+         }
+         MeasureFormatChanged(val) => {
+            self.general_tab.selected_measure_format = val;
+            self.is_changed = true;
+         }
          // ShortDateFormatChanged(val) => {self.formats_tab.selected_short_date_format = val; self.is_changed = true;},
          // LongDateFormatChanged(val) => {self.formats_tab.selected_long_date_format = val; self.is_changed = true;},
          // ShortTimeFormatChanged(val) => {self.formats_tab.selected_short_time_format = val; self.is_changed = true;},
          // LongTimeFormatChanged(val) => {self.formats_tab.selected_long_time_format = val; self.is_changed = true;},
-         BtnAddAppClicked => {self.apps_tab.app_list.push(('\u{f120}', String::from("Terminal"), pick_list::State::default(), String::from("terminal"), button::State::new())); self.is_changed = true;},
+         BtnAddAppClicked => {
+            self.apps_tab.app_list.push((
+               '\u{f120}',
+               String::from("Terminal"),
+               pick_list::State::default(),
+               String::from("terminal"),
+               button::State::new(),
+            ));
+            self.is_changed = true;
+         }
          BtnRemoveAppClicked => {
             if let Some(selected_idx) = self.apps_tab.selected_app {
                self.apps_tab.app_list.remove(selected_idx);
                self.apps_tab.selected_app = None;
                self.is_changed = true;
             }
-         },
+         }
          AppSelected(idx) => self.apps_tab.selected_app = Some(idx),
          AppLangChanged(val) => {
             if let Some(selected_idx) = self.apps_tab.selected_app {
                self.apps_tab.app_list.get_mut(selected_idx).unwrap().3 = val;
                self.is_changed = true;
             }
-         },
+         }
          DefaultsClicked => *self = Self::new(),
          ApplyClicked => {
             self.is_changed = false;
-         },
+         }
          CancelClicked => {
             match self.current_tab_idx {
                0 => self.general_tab = GeneralTab::default(),
                // 1 => self.formats_tab = FormatsTab::default(),
                1 => self.apps_tab = AppsTab::default(),
-               _ => {},
+               _ => {}
             }
             self.is_changed = false;
-         },
+         }
       }
    }
 
@@ -192,18 +242,24 @@ impl LangRegionPage {
       } = self;
 
       // ផ្នែកក្បាល
-      let icon = Svg::from_path(format!("{}/assets/images/language.svg", ROOT_PATH())).width(Length::Units(75)).height(Length::Units(75));
+      let icon = Svg::from_path(format!("{}/assets/images/language.svg", ROOT_PATH()))
+         .width(Length::Units(75))
+         .height(Length::Units(75));
       let txt_lang = Text::new("Language & Region preferences control the language you see in menus and dialogs, formats of dates, times, numbers and currency.");
       let header_sec = Container::new(
-         Row::new().spacing(20).align_items(Align::Center)
-         .push(icon)
-         .push(txt_lang)
+         Row::new()
+            .spacing(20)
+            .align_items(Align::Center)
+            .push(icon)
+            .push(txt_lang),
       );
 
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(LangRegionMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(*name))
+            .padding(5)
+            .on_press(LangRegionMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -211,8 +267,14 @@ impl LangRegionPage {
          }
          tabbar = tabbar.push(btn);
       }
-      let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
-      let tabbar_sec = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
+      let tabbar_con = Container::new(tabbar)
+         .padding(2)
+         .center_x()
+         .style(CustomContainer::Segment);
+      let tabbar_sec = Container::new(tabbar_con)
+         .padding(7)
+         .width(Length::Fill)
+         .center_x();
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -246,59 +308,84 @@ impl LangRegionPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let lb_prefered_lang = Text::new("Preferred Languages:");
-            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(LangRegionMessage::BtnAddClicked).style(CustomButton::Text);
-            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
+            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23))
+               .padding(2)
+               .on_press(LangRegionMessage::BtnAddClicked)
+               .style(CustomButton::Text);
+            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
             if selected_lang.is_some() && prefered_langs.len() > 1 {
                btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveClicked);
             }
 
-            let mut btn_up = Button::new(up_state, Icon::new('\u{f106}').size(23)).padding(2).style(CustomButton::Text);
-            let mut btn_down = Button::new(down_state, Icon::new('\u{f107}').size(23)).padding(2).style(CustomButton::Text);
+            let mut btn_up = Button::new(up_state, Icon::new('\u{f106}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
+            let mut btn_down = Button::new(down_state, Icon::new('\u{f107}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
             if let Some(selected_idx) = selected_lang {
                if *selected_idx != 0 {
                   btn_up = btn_up.on_press(LangRegionMessage::BtnUpClicked);
                }
-               if *selected_idx != (prefered_langs.len()-1) {
+               if *selected_idx != (prefered_langs.len() - 1) {
                   btn_down = btn_down.on_press(LangRegionMessage::BtnDownClicked);
                }
             }
-            let btn_shift_group = Container::new(
-               Row::new().push(btn_up).push(btn_down)
-            );
+            let btn_shift_group = Container::new(Row::new().push(btn_up).push(btn_down));
 
             let btn_group = Container::new(
-               Row::new().push(btn_add).push(btn_remove).push(Space::with_width(Length::Fill)).push(btn_shift_group)
-            ).width(Length::Fill).style(CustomContainer::Header);
-            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (lang, reg, state))| {
-               let content = Column::new().spacing(4)
-                  .push(Text::new(format!("{} {}", *lang, if idx == 0 {"(Primary)"} else {""})))
-                  .push(Text::new(reg.as_str()).size(12).color(HOVERED));
-               let mut btn = Button::new(state, content).width(Length::Fill).on_press(LangRegionMessage::LangSelected(idx));
-               btn = if let Some(selected_idx) = selected_lang {
-                  btn.style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
-               } else {
-                  btn.style(CustomButton::Sidebar)
-               };
-               scroll.push(btn)
-            });
-            
+               Row::new()
+                  .push(btn_add)
+                  .push(btn_remove)
+                  .push(Space::with_width(Length::Fill))
+                  .push(btn_shift_group),
+            )
+            .width(Length::Fill)
+            .style(CustomContainer::Header);
+            let lang_group = prefered_langs.iter_mut().enumerate().fold(
+               Scrollable::new(prefered_lang_scroll)
+                  .height(Length::Fill)
+                  .padding(7)
+                  .spacing(4),
+               |scroll, (idx, (lang, reg, state))| {
+                  let content = Column::new()
+                     .spacing(4)
+                     .push(Text::new(format!(
+                        "{} {}",
+                        *lang,
+                        if idx == 0 { "(Primary)" } else { "" }
+                     )))
+                     .push(Text::new(reg.as_str()).size(12).color(HOVERED));
+                  let mut btn = Button::new(state, content)
+                     .width(Length::Fill)
+                     .on_press(LangRegionMessage::LangSelected(idx));
+                  btn = if let Some(selected_idx) = selected_lang {
+                     btn.style(if *selected_idx == idx {
+                        CustomButton::SelectedSidebar
+                     } else {
+                        CustomButton::Sidebar
+                     })
+                  } else {
+                     btn.style(CustomButton::Sidebar)
+                  };
+                  scroll.push(btn)
+               },
+            );
             let left_pane = Container::new(
-               Row::new().spacing(10).align_items(Align::Center)
-               .push(
-                  Column::new().spacing(10)
-                  .push(
-                     Container::new(
-                        Column::new()
-                        .push(lang_group)
-                        .push(btn_group)
-                     ).height(Length::Fill).style(CustomContainer::ForegroundWhite)
-                  )
-               )
-               // .push(btn_shift_group)
-            ).width(Length::FillPortion(3));
+               Row::new().spacing(10).align_items(Align::Center).push(
+                  Column::new().spacing(10).push(
+                     Container::new(Column::new().push(lang_group).push(btn_group))
+                        .height(Length::Fill)
+                        .style(CustomContainer::ForegroundWhite),
+                  ),
+               ), // .push(btn_shift_group)
+            )
+            .width(Length::FillPortion(3));
 
             // ផ្ទាំងខាងស្ដាំ
-               // ផ្នែកស្លាក
+            // ផ្នែកស្លាក
             let lb_region = Text::new("Region:");
             let lb_first_day = Text::new("First day of week:");
             let lb_time = Text::new("Time:");
@@ -307,43 +394,94 @@ impl LangRegionPage {
             let lb_currency = Text::new("Currency:");
             let lb_measure_unit = Text::new("Measurement Units:");
             let label_sec = Container::new(
-               Column::new().spacing(20)
-               .push(lb_region)
-               .push(lb_first_day)
-               .push(lb_time)
-               .push(lb_time_format)
-               .push(lb_num)
-               .push(lb_currency)
-               .push(lb_measure_unit)
-            ).width(Length::FillPortion(3));
+               Column::new()
+                  .spacing(20)
+                  .push(lb_region)
+                  .push(lb_first_day)
+                  .push(lb_time)
+                  .push(lb_time_format)
+                  .push(lb_num)
+                  .push(lb_currency)
+                  .push(lb_measure_unit),
+            )
+            .width(Length::FillPortion(3));
 
-               // ផ្នែកព័ត៌មាន
-            let ls_locales = locale_mn.list_langs_regions().iter().map(|(_, lang)| lang.to_string()).collect::<Vec<String>>();
+            // ផ្នែកព័ត៌មាន
+            let ls_locales = locale_mn
+               .list_langs_regions()
+               .iter()
+               .map(|(_, lang)| lang.to_string())
+               .collect::<Vec<String>>();
             let ls_days = locale_mn.time_details().list_days();
-            let pl_region = PickList::new(region_state, ls_locales.clone(), Some(selected_region.clone()), LangRegionMessage::RegionChanged).style(CustomSelect::Primary);
-            let pl_first_day = PickList::new(firstday_state, ls_days, Some(selected_firstday.clone()), LangRegionMessage::FirstDayChanged).style(CustomSelect::Primary);
-            let pl_time = PickList::new(time_format, ls_locales.clone(), Some(selected_time_format.clone()), LangRegionMessage::TimeChanged).style(CustomSelect::Primary);
-            let chb_time_format = Checkbox::new(*is_24_hours_format, "24-Hours Format", LangRegionMessage::TimeFormatToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_num_format = PickList::new(num_format, ls_locales.clone(), Some(selected_num_format.clone()), LangRegionMessage::NumFormatChanged).style(CustomSelect::Primary);
-            let pl_currency_format = PickList::new(currency_format, ls_locales.clone(), Some(selected_currency_format.clone()), LangRegionMessage::CurrencyFormatChanged).style(CustomSelect::Primary);
-            let pl_measure_units = PickList::new(measure_format, &LS_MEASURE_UNITS[..], Some(selected_measure_format), LangRegionMessage::MeasureFormatChanged).style(CustomSelect::Primary);
+            let pl_region = PickList::new(
+               region_state,
+               ls_locales.clone(),
+               Some(selected_region.clone()),
+               LangRegionMessage::RegionChanged,
+            )
+            .style(CustomSelect::Primary);
+            let pl_first_day = PickList::new(
+               firstday_state,
+               ls_days,
+               Some(selected_firstday.clone()),
+               LangRegionMessage::FirstDayChanged,
+            )
+            .style(CustomSelect::Primary);
+            let pl_time = PickList::new(
+               time_format,
+               ls_locales.clone(),
+               Some(selected_time_format.clone()),
+               LangRegionMessage::TimeChanged,
+            )
+            .style(CustomSelect::Primary);
+            let chb_time_format = Checkbox::new(
+               *is_24_hours_format,
+               "24-Hours Format",
+               LangRegionMessage::TimeFormatToggled,
+            )
+            .spacing(10)
+            .style(CustomCheckbox::Default);
+            let pl_num_format = PickList::new(
+               num_format,
+               ls_locales.clone(),
+               Some(selected_num_format.clone()),
+               LangRegionMessage::NumFormatChanged,
+            )
+            .style(CustomSelect::Primary);
+            let pl_currency_format = PickList::new(
+               currency_format,
+               ls_locales.clone(),
+               Some(selected_currency_format.clone()),
+               LangRegionMessage::CurrencyFormatChanged,
+            )
+            .style(CustomSelect::Primary);
+            let pl_measure_units = PickList::new(
+               measure_format,
+               &LS_MEASURE_UNITS[..],
+               Some(selected_measure_format),
+               LangRegionMessage::MeasureFormatChanged,
+            )
+            .style(CustomSelect::Primary);
             let info_sec = Container::new(
-               Column::new().spacing(12)
-               .push(pl_region)
-               .push(pl_first_day)
-               .push(pl_time)
-               .push(chb_time_format)
-               .push(pl_num_format)
-               .push(pl_currency_format)
-               .push(pl_measure_units)
-            ).width(Length::FillPortion(10));
+               Column::new()
+                  .spacing(12)
+                  .push(pl_region)
+                  .push(pl_first_day)
+                  .push(pl_time)
+                  .push(chb_time_format)
+                  .push(pl_num_format)
+                  .push(pl_currency_format)
+                  .push(pl_measure_units),
+            )
+            .width(Length::FillPortion(10));
 
-            let mut number_formatted = Buffer::new(); 
+            let mut number_formatted = Buffer::new();
             let number_format = CustomFormat::builder()
                .grouping(Grouping::Standard)
                .decimal(locale_mn.numeric_details().decimal_point.as_str())
                .separator(locale_mn.numeric_details().thousands_sep.as_str())
-               .build().unwrap();
+               .build()
+               .unwrap();
             number_formatted.write_formatted(number, &number_format);
 
             let mut currency_formatted = Buffer::new();
@@ -351,7 +489,8 @@ impl LangRegionPage {
                .grouping(Grouping::Standard)
                .decimal(locale_mn.monetary_details().mon_decimal_point.as_str())
                .separator(locale_mn.monetary_details().mon_thousands_sep.as_str())
-               .build().unwrap();
+               .build()
+               .unwrap();
             currency_formatted.write_formatted(currency, &currency_format);
 
             // ផ្នែកឧទាហរណ៍
@@ -363,55 +502,79 @@ impl LangRegionPage {
             let lb_currency = Text::new("Currency:");
             let lb_measure_unit = Text::new("Measurement Units:");
             let example_label_sec = Container::new(
-               Column::new().spacing(10)
-               .push(lb_full_time)
-               .push(lb_short_time)
-               .push(lb_first_day)
-               .push(lb_num)
-               .push(lb_currency)
-               .push(lb_measure_unit)
-            ).width(Length::FillPortion(3));
+               Column::new()
+                  .spacing(10)
+                  .push(lb_full_time)
+                  .push(lb_short_time)
+                  .push(lb_first_day)
+                  .push(lb_num)
+                  .push(lb_currency)
+                  .push(lb_measure_unit),
+            )
+            .width(Length::FillPortion(3));
 
-            let txt_full_time = Text::new(now.format(locale_mn.time_details().d_t_fmt.as_str()).to_string());
-            let txt_short_time = Text::new(format!("{} {}", now.format(locale_mn.time_details().d_fmt.as_str()), now.format(locale_mn.time_details().t_fmt.as_str())));
+            let txt_full_time = Text::new(
+               now.format(locale_mn.time_details().d_t_fmt.as_str())
+                  .to_string(),
+            );
+            let txt_short_time = Text::new(format!(
+               "{} {}",
+               now.format(locale_mn.time_details().d_fmt.as_str()),
+               now.format(locale_mn.time_details().t_fmt.as_str())
+            ));
             let txt_first_day = Text::new(Self::get_first_day(&locale_mn));
             let txt_num = Text::new(number_formatted.as_str());
-            let txt_currency = Text::new(format!("{} {}", currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str()));
-            let txt_measure_unit = Text::new(*LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&""));
+            let txt_currency = Text::new(format!(
+               "{} {}",
+               currency_formatted.as_str(),
+               locale_mn.monetary_details().currency_symbol.as_str()
+            ));
+            let txt_measure_unit = Text::new(
+               *LS_MEASURE_UNITS
+                  .get(locale_mn.measurement_details().measurement - 1)
+                  .unwrap_or(&""),
+            );
             let example_info_sec = Container::new(
-               Column::new().spacing(10)
-               .push(txt_full_time)
-               .push(txt_short_time)
-               .push(txt_first_day)
-               .push(txt_num)
-               .push(txt_currency)
-               .push(txt_measure_unit)
-            ).width(Length::FillPortion(10));
+               Column::new()
+                  .spacing(10)
+                  .push(txt_full_time)
+                  .push(txt_short_time)
+                  .push(txt_first_day)
+                  .push(txt_num)
+                  .push(txt_currency)
+                  .push(txt_measure_unit),
+            )
+            .width(Length::FillPortion(10));
 
             let right_pane = Container::new(
-               Scrollable::new(content_scroll).spacing(15)
-               .push(
-                  Row::new().spacing(10).align_items(Align::Center)
-                  .push(label_sec)
-                  .push(info_sec)
-               )
-               .push(lb_example)
-               .push(
-                  Row::new().spacing(10).align_items(Align::Center)
-                  .push(example_label_sec)
-                  .push(example_info_sec)
-               )
-            ).width(Length::FillPortion(7));
+               Scrollable::new(content_scroll)
+                  .spacing(15)
+                  .push(
+                     Row::new()
+                        .spacing(10)
+                        .align_items(Align::Center)
+                        .push(label_sec)
+                        .push(info_sec),
+                  )
+                  .push(lb_example)
+                  .push(
+                     Row::new()
+                        .spacing(10)
+                        .align_items(Align::Center)
+                        .push(example_label_sec)
+                        .push(example_info_sec),
+                  ),
+            )
+            .width(Length::FillPortion(7));
 
             Container::new(
-               Column::new().spacing(10)
-               .push(lb_prefered_lang)
-               .push(
-                  Row::new().spacing(20)
-                  .push(left_pane)
-                  .push(right_pane)
-               )
-            ).width(Length::Fill).height(Length::Fill)
+               Column::new()
+                  .spacing(10)
+                  .push(lb_prefered_lang)
+                  .push(Row::new().spacing(20).push(left_pane).push(right_pane)),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill)
          }
          // 1 => {
          //    let FormatsTab {
@@ -550,36 +713,57 @@ impl LangRegionPage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = Button::new(defaults_state, Text::new("  Defaults  ")).on_press(LangRegionMessage::DefaultsClicked).style(CustomButton::Default);
-      let mut btn_cancel = Button::new(cancel_state, Text::new("  Cancel  ")).style(CustomButton::Hovered);
-      let mut btn_apply = Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
+      let btn_defaults = Button::new(defaults_state, Text::new("  Defaults  "))
+         .on_press(LangRegionMessage::DefaultsClicked)
+         .style(CustomButton::Default);
+      let mut btn_cancel =
+         Button::new(cancel_state, Text::new("  Cancel  ")).style(CustomButton::Hovered);
+      let mut btn_apply =
+         Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
       if *is_changed {
          btn_apply = btn_apply.on_press(LangRegionMessage::ApplyClicked);
          btn_cancel = btn_cancel.on_press(LangRegionMessage::CancelClicked);
       }
 
       let bottom_sec = Container::new(
-         Row::new().padding(15).spacing(10).align_items(Align::Center)
-         .push(btn_defaults)
-         .push(Space::with_width(Length::Fill))
-         .push(btn_cancel)
-         .push(btn_apply)
-      ).width(Length::Fill).align_x(Align::End);
+         Row::new()
+            .padding(15)
+            .spacing(10)
+            .align_items(Align::Center)
+            .push(btn_defaults)
+            .push(Space::with_width(Length::Fill))
+            .push(btn_cancel)
+            .push(btn_apply),
+      )
+      .width(Length::Fill)
+      .align_x(Align::End);
 
       // មាតិកា
-      let content = Column::new().width(Length::Fill)
+      let content = Column::new()
+         .width(Length::Fill)
          .push(header_sec)
          .push(tabbar_sec)
-         .push(tabview.height(Length::Fill).padding(25).style(CustomContainer::ForegroundGray))
+         .push(
+            tabview
+               .height(Length::Fill)
+               .padding(25)
+               .style(CustomContainer::ForegroundGray),
+         )
          .push(bottom_sec);
 
-      Container::new(content).padding(10).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
+      Container::new(content)
+         .padding(10)
+         .width(Length::FillPortion(15))
+         .height(Length::Fill)
+         .style(CustomContainer::Background)
+         .into()
    }
 }
 
 impl LangRegionPage {
    fn get_first_day(locale_mn: &LocaleManager) -> String {
-      locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday-1) as usize].clone()
+      locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday - 1) as usize]
+         .clone()
    }
 }
 
@@ -588,8 +772,8 @@ struct GeneralTab {
    prefered_langs: Vec<(String, String, button::State)>,
    selected_lang: Option<usize>,
    prefered_lang_scroll: scrollable::State,
-   add_state: button::State, 
-   remove_state: button::State, 
+   add_state: button::State,
+   remove_state: button::State,
    up_state: button::State,
    down_state: button::State,
    // right section
@@ -631,7 +815,13 @@ struct GeneralTab {
 
 #[derive(Debug, Clone, Default)]
 struct AppsTab {
-   app_list: Vec<(char, String, pick_list::State<String>, String, button::State)>,
+   app_list: Vec<(
+      char,
+      String,
+      pick_list::State<String>,
+      String,
+      button::State,
+   )>,
    selected_app: Option<usize>,
    add_state: button::State,
    remove_state: button::State,
