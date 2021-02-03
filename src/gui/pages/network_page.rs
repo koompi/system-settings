@@ -1642,6 +1642,14 @@ impl NetSettings {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn sound_test() {
+        assert_eq!(2 + 2, 3);
+    }
+}
+
 // helper functions
 // fn apply_row<'a, F>(
 //     name: &str,
