@@ -618,11 +618,11 @@
 //       Ok(value.unwrap())
 //    }
 // }
-
+#![allow(unused_variables)]
+#![allow(dead_code)]
 use iced::{
-   button, executor, pick_list, scrollable, slider, window, Align, Application, Button, Column,
-   Command, Container, Element, Length, PickList, Row, Rule, Scrollable, Settings, Slider, Space,
-   Subscription, Text,
+   button, pick_list, scrollable, slider, Align, Button, Column, Container, Element, Length,
+   PickList, Row, Rule, Scrollable, Slider, Space, Text,
 };
 
 use iced_custom_widget as icw;
@@ -721,7 +721,7 @@ pub trait SoundEffect {
 #[derive(Debug, Default, Clone)]
 pub struct SettingsSoundEffect {
    file: std::path::PathBuf,
-   hash_sounds: HashMap<SoundEffectType, PathBuf>,
+   hash_sounds: Vec<(SoundEffectType, PathBuf)>,
    effect_type: SoundEffectType,
    volume: u32,
    speed: u32,
@@ -875,21 +875,21 @@ impl fmt::Display for InputDevice {
 //         &self.hash_sounds.index(&key)
 //     }
 // }
-impl Index<&SoundEffectType> for SettingsSoundEffect {
-   type Output = PathBuf;
-   fn index(&self, key: &SoundEffectType) -> &Self::Output {
-      &self.hash_sounds.index(&key)
-   }
-}
+// impl Index<&SoundEffectType> for SettingsSoundEffect {
+//    type Output = PathBuf;
+//    fn index(&self, key: &SoundEffectType) -> &Self::Output {
+//       &self.hash_sounds.index(&key)
+//    }
+// }
 impl SoundPage {
    pub fn new() -> SoundPage {
       let str_con = |f: &str| -> String { f.to_string() };
       let mut vec_sounds: Vec<String> = vec![
          str_con("Bootup"),
-         str_con("Shutdown"),
          str_con("Log out"),
-         str_con("Wake Up"),
+         str_con("Shutdown"),
          str_con("Volume +/-"),
+         str_con("Wake Up"),
          // str_con("Notifications"),
          // str_con("Low battery"),
          // str_con("Send icon in Launcher to Desktop"),
@@ -904,15 +904,23 @@ impl SoundPage {
       vec_sounds.iter_mut().for_each(|name| {
          vec_tuple.push((button::State::new(), button::State::new(), name.clone()))
       });
-      let mut sound_effect_hash: HashMap<SoundEffectType, PathBuf> = HashMap::new();
-      match playback::read_directory(
-         std::path::PathBuf::new().join(standart_path::sys_data_dir().unwrap().join("syssettings")),
-      ) {
+      let mut sound_effect_hash: Vec<(SoundEffectType, PathBuf)> = Vec::new();
+
+      match playback::read_directory(if cfg!(debug_assertions) {
+         print!("run debug");
+         std::path::PathBuf::new().join(&format!("{}/assets/sounds", env!("CARGO_MANIFEST_DIR")))
+      } else {
+         std::path::PathBuf::new().join(
+            standart_path::sys_data_dir()
+               .unwrap()
+               .join("syssettings/sounds"),
+         )
+      }) {
          Ok(mut path) =>
          {
             #[allow(const_item_mutation)]
             for (i, j) in SoundEffectType::ALL[..].iter_mut().zip(path.iter_mut()) {
-               sound_effect_hash.insert(*i, j.to_path_buf());
+               sound_effect_hash.push((*i, j.to_path_buf()));
             }
          }
          Err(e) => println!("Error: {}", e),
@@ -920,10 +928,6 @@ impl SoundPage {
       for (i, j) in &sound_effect_hash {
          println!("key: {} value: {:?}", i, j);
       }
-      println!(
-         "Booup value: {:?}",
-         sound_effect_hash.index(&SoundEffectType::Bootup)
-      );
 
       Self {
          FONT_SIZE: 12,
@@ -953,7 +957,6 @@ impl SoundPage {
          }
          SoundMessage::SoundOutChanged(val) => {
             self.out_value = val;
-            SoundBackEnd::initialize();
          }
          SoundMessage::InputLevelChanged(val) => {
             self.input_level = val;
@@ -963,7 +966,7 @@ impl SoundPage {
          }
          SoundMessage::TestSoundEffect(idx) => {
             let key = SoundEffectType::ALL[idx];
-            let value = self.sound_effecs.hash_sounds.index(&key);
+            let value = &self.sound_effecs.hash_sounds[idx].1;
             match playback::run(&value) {
                Ok(()) => println!("sucesss"),
                Err(e) => println!("Error: {}", e),
@@ -1349,18 +1352,13 @@ mod playback {
 
    pub fn read_directory(in_path: std::path::PathBuf) -> Result<Vec<PathBuf>, std::io::Error> {
       let mut list_sounds: Vec<PathBuf> = Vec::new();
-      let sound_dir = "sounds";
-      if in_path.join(sound_dir).exists() {
-         for path in read_dir(in_path.join(sound_dir))? {
+      if in_path.exists() {
+         for path in read_dir(in_path)? {
             let dir = path?;
             list_sounds.push(dir.path());
          }
       } else {
-         make_dir(&in_path, sound_dir)?;
          let paths = read_dir(in_path)?;
-         paths.for_each(|val| {
-            println!("Name: {:?}", val);
-         });
       }
       Ok(list_sounds)
    }
@@ -1441,13 +1439,13 @@ mod standart_path {
    }
 }
 
-mod SoundBackEnd {
+// mod SoundBackEnd {
 
-   pub fn initialize() {}
-   pub fn volume_up(level: u32) {}
-   pub fn volumn_down(level: u32) {}
-   pub fn mute_sound(is_mute: bool) {}
-}
+//    pub fn initialize() {}
+//    pub fn volume_up(level: u32) {}
+//    pub fn volumn_down(level: u32) {}
+//    pub fn mute_sound(is_mute: bool) {}
+// }
 
 #[cfg(test)]
 mod tests {
