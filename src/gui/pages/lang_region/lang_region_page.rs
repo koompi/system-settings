@@ -1,14 +1,12 @@
-use std::fmt::{self, Display, Formatter};
 use std::collections::HashMap;
-use chrono::prelude::*;
 use num_format::{Buffer, CustomFormat, Grouping};
+use super::lang_region_utils::*;
 use crate::helpers::ROOT_PATH;
 use crate::gui::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect, CustomTextInput, HOVERED};
 use iced::{
-   button, scrollable, pick_list, text_input, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, TextInput,
+   button, pick_list, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, TextInput,
 };
 use iced_custom_widget::{Icon, IconBrand};
-use smart_default::SmartDefault;
 use libkoompi::system_settings::locale::{LocaleManager, LocaleConf, LS_MEASURE_UNITS};
 use tauri_dialog::{DialogBuilder, DialogButtons, DialogSelection, DialogStyle};
 
@@ -55,7 +53,6 @@ pub struct LangRegionPage {
    tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    general_tab: GeneralTab,
-   // formats_tab: FormatsTab,
    apps_tab: AppsTab,
    defaults_state: button::State,
    cancel_state: button::State,
@@ -67,7 +64,6 @@ impl LangRegionPage {
    pub fn new() -> Self {
       let tabs = vec![
          ("  General  ", button::State::new()),
-         // ("  Formats  ", button::State::new()),
          ("  Apps  ", button::State::new()),
       ];
 
@@ -714,134 +710,5 @@ impl LangRegionPage {
    fn get_first_day(locale_mn: &LocaleManager) -> String {
       locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday - 1) as usize]
          .clone()
-   }
-}
-
-#[derive(Debug, Clone, SmartDefault)]
-struct GeneralTab {
-   prefered_langs: Vec<(PreferedLang, button::State)>,
-   selected_lang: Option<usize>,
-   prefered_lang_scroll: scrollable::State,
-   add_state: button::State,
-   remove_state: button::State,
-   up_state: button::State,
-   down_state: button::State,
-   // right section
-   region_state: pick_list::State<LCKeyVal>,
-   selected_region: Option<LCKeyVal>,
-   firstday_state: pick_list::State<String>,
-   selected_firstday: Option<String>,
-   time_format: pick_list::State<LCKeyVal>,
-   selected_time_format: Option<LCKeyVal>,
-   is_24_hours_format: bool,
-   num_format: pick_list::State<LCKeyVal>,
-   selected_num_format: Option<LCKeyVal>,
-   currency_format: pick_list::State<LCKeyVal>,
-   selected_currency_format: Option<LCKeyVal>,
-   measure_format: pick_list::State<LCKeyVal>,
-   selected_measure_format: Option<LCKeyVal>,
-   content_scroll: scrollable::State,
-   #[default(Local.ymd(1991, 10, 23).and_hms(9, 0, 0))]
-   now: DateTime<Local>,
-   #[default(12345)]
-   number: i32,
-   #[default(56789)]
-   currency: i32,
-   // add prefered lang section
-   is_adding: bool,
-   add_langs: Vec<(PreferedLang, button::State)>,
-   filtered_add_langs: Vec<(PreferedLang, button::State)>,
-   search_prefered_lang_state: text_input::State,
-   search_prefered_lang_val: String,
-   selected_add_lang: Option<PreferedLang>,
-   btn_okay_state: button::State,
-   btn_cancel_state: button::State,
-}
-
-// #[derive(Debug, Clone, SmartDefault)]
-// struct FormatsTab {
-//    short_date_format: pick_list::State<String>,
-//    selected_short_date_format: String,
-//    long_date_format: pick_list::State<String>,
-//    selected_long_date_format: String,
-//    short_time_format: pick_list::State<String>,
-//    selected_short_time_format: String,
-//    long_time_format: pick_list::State<String>,
-//    selected_long_time_format: String,
-//    #[default(Local::now())]
-//    now: DateTime<Local>,
-// }
-
-#[derive(Debug, Clone, Default)]
-struct AppsTab {
-   app_list: Vec<(
-      char,
-      String,
-      pick_list::State<String>,
-      String,
-      button::State,
-   )>,
-   selected_app: Option<usize>,
-   add_state: button::State,
-   remove_state: button::State,
-   scroll: scrollable::State,
-}
-
-use std::cmp::Ordering;
-
-#[derive(Debug, Clone, Default, Eq, PartialEq, PartialOrd)]
-pub struct LCKeyVal {
-   key: String,
-   val: String,
-}
-
-impl LCKeyVal {
-   pub fn new<T: Into<String>>(key_val: (T, T)) -> Self {
-      Self {
-         key: key_val.0.into(),
-         val: key_val.1.into(),
-      }
-   }
-}
-
-impl Display for LCKeyVal {
-   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-      write!(f, "{}", self.val)
-   }
-}
-
-impl Ord for LCKeyVal {
-   fn cmp(&self, other: &Self) -> Ordering {
-      self.key.cmp(&other.key)
-   }
-}
-
-#[derive(Debug, Clone, Default, PartialEq, PartialOrd, Eq)]
-pub struct PreferedLang {
-   key: String,
-   lang: String, 
-   reg: String,
-}
-
-
-impl PreferedLang {
-   pub fn new(key: &str, lang: &str, reg: &str) -> Self {
-      Self {
-         key: key.to_owned(),
-         lang: lang.to_owned(),
-         reg: reg.to_owned(),
-      }
-   }
-}
-
-impl Display for PreferedLang {
-   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-      write!(f, "{} — {}", self.lang, self.reg)
-   }
-}
-
-impl Ord for PreferedLang {
-   fn cmp(&self, other: &Self) -> Ordering {
-      self.key.cmp(&other.key)
    }
 }

@@ -1,13 +1,11 @@
+use super::keyboard_utils::*;
+use crate::helpers::ROOT_PATH;
+use crate::gui::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
 use iced::{
-   pick_list, slider, button, scrollable, Element, Align, Space, Length, Svg,
-   Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList, Slider, Radio,
+   button, Element, Align, Space, Length, Svg, Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList, Slider,
 };
 use iced_custom_widget::Icon;
 use vedas_core::svg;
-use crate::helpers::ROOT_PATH;
-
-use super::super::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomRadio, CustomSelect};
-use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
 pub enum KeyboardMessage {
@@ -27,10 +25,6 @@ pub enum KeyboardMessage {
    BtnRemoveClicked,
    ShowInputMenuToggled(bool),
    AutoSwitchToggled(bool),
-   DictationToggled(bool),
-   LanguageChanged(Language),
-   ShortcutChanged(ShortcutDict),
-   AboutClicked,
 }
 
 #[derive(Debug, Clone)]
@@ -40,7 +34,6 @@ pub struct KeyboardPage {
    keyboard: Keyboard,
    shortcuts: Shortcuts,
    input_sources: InputSources,
-   dictation: Dictation,
    btn_setup_bt_keyboard: button::State,
    is_setup_bt_keyboard: bool
 }
@@ -52,13 +45,12 @@ impl KeyboardPage {
             ("  Keyboard  ", button::State::new()),
             ("  Shortcuts  ", button::State::new()),
             ("  Input Sources  ", button::State::new()),
-            ("  Dictation  ", button::State::new()),
+            ("  Global Options  ", button::State::new()),
          ],
          current_tab_idx: 0,
          keyboard: Keyboard::new(),
          shortcuts: Shortcuts::new(),
          input_sources: InputSources::new(),
-         dictation: Dictation::new(),
          btn_setup_bt_keyboard: button::State::new(),
          is_setup_bt_keyboard: false,
       }
@@ -92,10 +84,6 @@ impl KeyboardPage {
          },
          KeyboardMessage::ShowInputMenuToggled(val) => self.input_sources.show_input_menu = val,
          KeyboardMessage::AutoSwitchToggled(val) => self.input_sources.auto_switch = val,
-         KeyboardMessage::DictationToggled(_) => self.dictation.turn_on_dict = !self.dictation.turn_on_dict,
-         KeyboardMessage::LanguageChanged(language) => self.dictation.language_val = language,
-         KeyboardMessage::ShortcutChanged(shortcut) => self.dictation.shortcut_val = shortcut,
-         KeyboardMessage::AboutClicked => {}
       }
    }
 
@@ -106,7 +94,6 @@ impl KeyboardPage {
          keyboard,
          shortcuts,
          input_sources,
-         dictation,
          btn_setup_bt_keyboard,
          is_setup_bt_keyboard
       } = self;
@@ -329,69 +316,69 @@ impl KeyboardPage {
                .push(bottom_row)
             ).width(Length::Fill).height(Length::Fill)
          }, 
-         3 => {
-            let Dictation {
-               btn_about, 
-               turn_on_dict,
-               language_state,
-               language_val,
-               shortcut_state,
-               shortcut_val,
-            } = dictation;
+         // 3 => {
+         //    let Dictation {
+         //       btn_about, 
+         //       turn_on_dict,
+         //       language_state,
+         //       language_val,
+         //       shortcut_state,
+         //       shortcut_val,
+         //    } = dictation;
 
-            // ផ្ទាំងខាងឆ្វេង
-            let mic_image = svg!(format!("{}/assets/images/mic.svg", ROOT_PATH())).height(Length::Units(127));
-            let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).center_x();
+         //    // ផ្ទាំងខាងឆ្វេង
+         //    let mic_image = svg!(format!("{}/assets/images/mic.svg", ROOT_PATH())).height(Length::Units(127));
+         //    let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).center_x();
 
-            // ផ្ទាំងខាងស្ដាំ
-            let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
-            let lb_dictation = Text::new("Dictation:");
-            let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
-            let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
-            let dictation_section = Row::new().spacing(10).align_items(Align::Center)
-               .push(lb_dictation)
-               .push(rd_dictaion_on)
-               .push(rd_dictaion_off);
+         //    // ផ្ទាំងខាងស្ដាំ
+         //    let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
+         //    let lb_dictation = Text::new("Dictation:");
+         //    let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
+         //    let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
+         //    let dictation_section = Row::new().spacing(10).align_items(Align::Center)
+         //       .push(lb_dictation)
+         //       .push(rd_dictaion_on)
+         //       .push(rd_dictaion_off);
 
-            let lb_language = Text::new("Language:");
-            let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged).style(CustomSelect::Primary);
-            let language_section = Row::new().spacing(10).align_items(Align::Center)
-               .push(lb_language)
-               .push(pl_language);
+         //    let lb_language = Text::new("Language:");
+         //    let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged).style(CustomSelect::Primary);
+         //    let language_section = Row::new().spacing(10).align_items(Align::Center)
+         //       .push(lb_language)
+         //       .push(pl_language);
 
-            let lb_shortcut = Text::new("Shortcut:");
-            let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged).style(CustomSelect::Primary);
-            let shortcut_section = Row::new().spacing(10).align_items(Align::Center)
-               .push(lb_shortcut)
-               .push(pl_shortcut);
+         //    let lb_shortcut = Text::new("Shortcut:");
+         //    let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged).style(CustomSelect::Primary);
+         //    let shortcut_section = Row::new().spacing(10).align_items(Align::Center)
+         //       .push(lb_shortcut)
+         //       .push(pl_shortcut);
             
-            let right_con = Container::new(
-               Column::new().spacing(20)
-               .push(txt_dictation)
-               .push(
-                  Column::new().spacing(10)
-                  .push(dictation_section)
-                  .push(language_section)
-                  .push(shortcut_section)
-               )
-            ).width(Length::FillPortion(7)).height(Length::Fill);
+         //    let right_con = Container::new(
+         //       Column::new().spacing(20)
+         //       .push(txt_dictation)
+         //       .push(
+         //          Column::new().spacing(10)
+         //          .push(dictation_section)
+         //          .push(language_section)
+         //          .push(shortcut_section)
+         //       )
+         //    ).width(Length::FillPortion(7)).height(Length::Fill);
          
-            Container::new(
-               Column::new().spacing(10)
-               .push(
-                  Container::new(
-                     Row::new().spacing(15)
-                     .push(mic_con)
-                     .push(right_con)
-                  ).height(Length::FillPortion(11))
-               )
-               .push(
-                  Container::new(
-                     Button::new(btn_about, Text::new("  About Dictation & Privacy  ")).on_press(KeyboardMessage::AboutClicked).style(CustomButton::Default)
-                  ).width(Length::Fill).align_x(Align::End)
-               )
-            ).width(Length::Fill).height(Length::Fill)
-         },
+         //    Container::new(
+         //       Column::new().spacing(10)
+         //       .push(
+         //          Container::new(
+         //             Row::new().spacing(15)
+         //             .push(mic_con)
+         //             .push(right_con)
+         //          ).height(Length::FillPortion(11))
+         //       )
+         //       .push(
+         //          Container::new(
+         //             Button::new(btn_about, Text::new("  About Dictation & Privacy  ")).on_press(KeyboardMessage::AboutClicked).style(CustomButton::Default)
+         //          ).width(Length::Fill).align_x(Align::End)
+         //       )
+         //    ).width(Length::Fill).height(Length::Fill)
+         // },
          _ => Container::new(Space::with_height(Length::Fill))
       };
 
@@ -408,248 +395,5 @@ impl KeyboardPage {
          .push(bottom_section);
 
       Container::new(content).width(Length::FillPortion(15)).padding(20).height(Length::Fill).style(CustomContainer::Background).into()
-   }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, SmartDefault)]
-pub enum TurnBacklightOff {
-   #[default]
-   _5s,
-   _10s,
-   _30s,
-   _1m,
-   _5m
-}
-
-impl TurnBacklightOff {
-   const ALL: [TurnBacklightOff; 5] = [
-      TurnBacklightOff::_5s,
-      TurnBacklightOff::_10s,
-      TurnBacklightOff::_30s,
-      TurnBacklightOff::_1m,
-      TurnBacklightOff::_5m
-   ];
-}
-
-impl std::fmt::Display for TurnBacklightOff {
-   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(
-         f,
-         "{}",
-         match self {
-            TurnBacklightOff::_5s => "5 secs",
-            TurnBacklightOff::_10s => "10 secs",
-            TurnBacklightOff::_30s => "30 secs",
-            TurnBacklightOff::_1m => "1 min",
-            TurnBacklightOff::_5m => "5 mins"  
-         }
-      )
-   }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Keyboard {
-   key_repeat_state: slider::State,
-   key_repeat_val: u8,
-   delay_repeat_state: slider::State,
-   delay_repeat_val: u8,
-   adjust_brightness_low_light: bool,
-   turn_backlight_off: bool,
-   turn_backlight_off_after_state: pick_list::State<TurnBacklightOff>,
-   turn_backlight_off_after_val: TurnBacklightOff,
-}
-
-impl Keyboard {
-   pub fn new() -> Self {
-      Self {
-         key_repeat_val: 7,
-         delay_repeat_val: 3,
-         adjust_brightness_low_light: true,
-         turn_backlight_off: false,
-         ..Default::default()
-      }
-   }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Shortcuts {
-   btn_restore: button::State,
-   shortcuts_tab: Vec<(char, &'static str, button::State)>,
-   shortcuts_tab_map: Vec<Vec<(bool, &'static str, &'static str)>>,
-   left_pane_selected: usize,
-   right_pane_selected: usize,
-   use_keyboard_nav: bool,
-   left_pane_scroll: scrollable::State,
-   right_pane_scroll: scrollable::State,
-}
-
-impl Shortcuts {
-   pub fn new() -> Self {
-      Self {
-         shortcuts_tab: vec![
-            ('\u{f86d}', "Menu & Dock", button::State::new()), 
-            ('\u{f86d}', "Workspaces", button::State::new()),
-            ('\u{f11c}', "Keyboard", button::State::new()), 
-            ('\u{f11c}', "Input Sources", button::State::new()), 
-            ('\u{f083}', "Screenshots", button::State::new()), 
-            ('\u{f552}', "Services", button::State::new()), 
-            ('\u{f002}', "Spotlight", button::State::new()), 
-         ],
-         shortcuts_tab_map: vec![
-            vec![
-               (true, "Turn Dock Hiding On/Off", "shift+ctrl+D"),
-               (false, "Show Menu", ""),
-            ],
-            vec![
-               (true, "Workspaces", "shift+UP"),
-               (false, "Show Notification Center", ""),
-               (true, "Turn Do Not Disturb On/Off", ""),
-               (true, "Application Windows", "shift+DOWN"),
-               (true, "Show Desktop", "F11"),
-            ],
-            vec![
-               (true, "Change the way Tab moves focus", "shift+F7"),
-               (true, "Turn keyboard access On/Off", "shift+F1"),
-               (true, "Move focus to menu bar", "shift+F2"),
-               (true, "Move focus to Dock", "shift+F3"),
-               (true, "Move focus to Window toolbar", "shift+F4"),
-               (true, "Move focus to next Window", "ctrl+`"),
-               (true, "Move focus to window drawer", "ctrl+shift+`"),
-               (true, "Move focus to status menus", "shift+F5"),
-            ],
-            vec![
-               (false, "Select the previous source", "shift+Space"),
-               (false, "Select next source in Input menu", "ctrl+shift+Space"),
-            ],
-            vec![
-               (true, "Workspaces", "shift+UP"),
-               (false, "Show Notification Center", ""),
-               (true, "Turn Do Not Disturb On/Off", ""),
-               (true, "Application Windows", "shift+DOWN"),
-               (true, "Show Desktop", "F11"),
-            ],
-            vec![
-               (true, "Change the way Tab moves focus", "shift+F7"),
-               (true, "Turn keyboard access On/Off", "shift+F1"),
-               (true, "Move focus to menu bar", "shift+F2"),
-               (true, "Move focus to Dock", "shift+F3"),
-               (true, "Move focus to Window toolbar", "shift+F4"),
-               (true, "Move focus to next Window", "ctrl+`"),
-               (true, "Move focus to window drawer", "ctrl+shift+`"),
-               (true, "Move focus to status menus", "shift+F5"),
-            ],
-            vec![
-               (false, "Select the previous source", "shift+Space"),
-               (false, "Select next source in Input menu", "ctrl+shift+Space"),
-            ],
-         ],
-         ..Default::default()
-      }
-   }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct InputSources {
-   btn_add_state: button::State, 
-   btn_remove_state: button::State, 
-   input_sources_tab: Vec<(char, String, button::State)>,
-   input_sources_selected: Option<usize>,
-   show_input_menu: bool,
-   auto_switch: bool,
-   left_pane_scroll: scrollable::State,
-   right_pane_scroll: scrollable::State,
-}
-
-impl InputSources {
-   pub fn new() -> Self {
-      Self {
-         input_sources_tab: vec![
-            ('\u{f0ac}', "English".to_string(), button::State::new()),
-            ('\u{f57e}', "Khmer".to_string(), button::State::new()),
-         ],
-         input_sources_selected: Some(1),
-         show_input_menu: true,
-         auto_switch: false,
-         ..Default::default()
-      }
-   }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Dictation {
-   btn_about: button::State, 
-   turn_on_dict: bool,
-   language_state: pick_list::State<Language>,
-   language_val: Language,
-   shortcut_state: pick_list::State<ShortcutDict>,
-   shortcut_val: ShortcutDict,
-}
-
-impl Dictation {
-   pub fn new() -> Self {
-      Self::default()
-   }
-}
-
-#[derive(Debug, Clone, Copy, SmartDefault, PartialEq, Eq)]
-pub enum Language {
-   English,
-   #[default]
-   Khmer,
-   AddNew
-}
-
-impl Language {
-   const ALL: [Language; 3] = [
-      Language::English,
-      Language::Khmer,
-      Language::AddNew,
-   ];
-}
-
-impl std::fmt::Display for Language {
-   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(
-         f,
-         "{}",
-         match self {
-            Language::English => "English (US)",
-            Language::Khmer => "Khmer",
-            Language::AddNew => "Add Language...",
-         }
-      )
-   }
-}
-
-#[derive(Debug, Clone, Copy, SmartDefault, PartialEq, Eq)]
-pub enum ShortcutDict {
-   Off,
-   #[default]
-   CtrlTwice,
-   FnTwice,
-   Customize
-}
-
-impl ShortcutDict {
-   const ALL: [ShortcutDict; 4] = [
-      ShortcutDict::Off,
-      ShortcutDict::CtrlTwice,
-      ShortcutDict::FnTwice,
-      ShortcutDict::Customize,
-   ];
-}
-
-impl std::fmt::Display for ShortcutDict {
-   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(
-         f,
-         "{}",
-         match self {
-            ShortcutDict::Off => "Off",
-            ShortcutDict::CtrlTwice => "Press Ctrl Key Twice",
-            ShortcutDict::FnTwice => "Press Fn Key Twice",
-            ShortcutDict::Customize => "Customize...",
-         }
-      )
    }
 }
