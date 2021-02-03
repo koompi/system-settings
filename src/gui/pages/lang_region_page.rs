@@ -116,7 +116,7 @@ impl LangRegionPage {
                },
                ..Self::default()
             }
-         },
+         }
          Err(err) => {
             eprintln!("{}", err); // error handling here
             Self {
@@ -141,21 +141,27 @@ impl LangRegionPage {
                self.general_tab.selected_lang = None;
                self.is_changed = true;
             }
-         },
+         }
          BtnUpClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
-               self.general_tab.prefered_langs.swap(selected_idx, selected_idx-1);
-               self.general_tab.selected_lang = Some(selected_idx-1);
+               self
+                  .general_tab
+                  .prefered_langs
+                  .swap(selected_idx, selected_idx - 1);
+               self.general_tab.selected_lang = Some(selected_idx - 1);
                self.is_changed = true;
             }
-         },
+         }
          BtnDownClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
-               self.general_tab.prefered_langs.swap(selected_idx, selected_idx+1);
-               self.general_tab.selected_lang = Some(selected_idx+1);
+               self
+                  .general_tab
+                  .prefered_langs
+                  .swap(selected_idx, selected_idx + 1);
+               self.general_tab.selected_lang = Some(selected_idx + 1);
                self.is_changed = true;
             }
-         },
+         }
          LangSelected(idx) => self.general_tab.selected_lang = Some(idx),
          RegionChanged(val) => {self.general_tab.selected_region = Some(val); self.is_changed = true;},
          FirstDayChanged(val) => {self.general_tab.selected_firstday = Some(val); self.is_changed = true;},
@@ -168,21 +174,30 @@ impl LangRegionPage {
          // LongDateFormatChanged(val) => {self.formats_tab.selected_long_date_format = val; self.is_changed = true;},
          // ShortTimeFormatChanged(val) => {self.formats_tab.selected_short_time_format = val; self.is_changed = true;},
          // LongTimeFormatChanged(val) => {self.formats_tab.selected_long_time_format = val; self.is_changed = true;},
-         BtnAddAppClicked => {self.apps_tab.app_list.push(('\u{f120}', String::from("Terminal"), pick_list::State::default(), String::from("terminal"), button::State::new())); self.is_changed = true;},
+         BtnAddAppClicked => {
+            self.apps_tab.app_list.push((
+               '\u{f120}',
+               String::from("Terminal"),
+               pick_list::State::default(),
+               String::from("terminal"),
+               button::State::new(),
+            ));
+            self.is_changed = true;
+         }
          BtnRemoveAppClicked => {
             if let Some(selected_idx) = self.apps_tab.selected_app {
                self.apps_tab.app_list.remove(selected_idx);
                self.apps_tab.selected_app = None;
                self.is_changed = true;
             }
-         },
+         }
          AppSelected(idx) => self.apps_tab.selected_app = Some(idx),
          AppLangChanged(val) => {
             if let Some(selected_idx) = self.apps_tab.selected_app {
                self.apps_tab.app_list.get_mut(selected_idx).unwrap().3 = val;
                self.is_changed = true;
             }
-         },
+         }
          DefaultsClicked => *self = Self::new(),
          ApplyClicked => {
             let map_measurement: HashMap<String, String> = LS_MEASURE_UNITS.iter().map(|(key, lang)| (key.to_string(), lang.to_string())).collect();
@@ -219,7 +234,7 @@ impl LangRegionPage {
                }
             }
             self.is_changed = false;
-         },
+         }
          CancelClicked => {
             // match self.current_tab_idx {
             //    0 => self.general_tab = GeneralTab::default(),
@@ -265,18 +280,24 @@ impl LangRegionPage {
       } = self;
 
       // ផ្នែកក្បាល
-      let icon = Svg::from_path(format!("{}/assets/images/language.svg", ROOT_PATH())).width(Length::Units(75)).height(Length::Units(75));
+      let icon = Svg::from_path(format!("{}/assets/images/language.svg", ROOT_PATH()))
+         .width(Length::Units(75))
+         .height(Length::Units(75));
       let txt_lang = Text::new("Language & Region preferences control the language you see in menus and dialogs, formats of dates, times, numbers and currency.");
       let header_sec = Container::new(
-         Row::new().spacing(20).align_items(Align::Center)
-         .push(icon)
-         .push(txt_lang)
+         Row::new()
+            .spacing(20)
+            .align_items(Align::Center)
+            .push(icon)
+            .push(txt_lang),
       );
 
       // របារផ្ទាំង
       let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
       for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(LangRegionMessage::TabChanged(idx));
+         let mut btn = Button::new(btn_state, Text::new(*name))
+            .padding(5)
+            .on_press(LangRegionMessage::TabChanged(idx));
          if *current_tab_idx == idx {
             btn = btn.style(CustomButton::SelectedTab);
          } else {
@@ -284,8 +305,14 @@ impl LangRegionPage {
          }
          tabbar = tabbar.push(btn);
       }
-      let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
-      let tabbar_sec = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
+      let tabbar_con = Container::new(tabbar)
+         .padding(2)
+         .center_x()
+         .style(CustomContainer::Segment);
+      let tabbar_sec = Container::new(tabbar_con)
+         .padding(7)
+         .width(Length::Fill)
+         .center_x();
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -302,25 +329,32 @@ impl LangRegionPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let lb_prefered_lang = Text::new("Preferred Languages:");
-            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(LangRegionMessage::BtnAddClicked).style(CustomButton::Text);
-            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
+            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23))
+               .padding(2)
+               .on_press(LangRegionMessage::BtnAddClicked)
+               .style(CustomButton::Text);
+            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
             if selected_lang.is_some() && prefered_langs.len() > 1 {
                btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveClicked);
             }
 
-            let mut btn_up = Button::new(up_state, Icon::new('\u{f106}').size(23)).padding(2).style(CustomButton::Text);
-            let mut btn_down = Button::new(down_state, Icon::new('\u{f107}').size(23)).padding(2).style(CustomButton::Text);
+            let mut btn_up = Button::new(up_state, Icon::new('\u{f106}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
+            let mut btn_down = Button::new(down_state, Icon::new('\u{f107}').size(23))
+               .padding(2)
+               .style(CustomButton::Text);
             if let Some(selected_idx) = selected_lang {
                if *selected_idx != 0 {
                   btn_up = btn_up.on_press(LangRegionMessage::BtnUpClicked);
                }
-               if *selected_idx != (prefered_langs.len()-1) {
+               if *selected_idx != (prefered_langs.len() - 1) {
                   btn_down = btn_down.on_press(LangRegionMessage::BtnDownClicked);
                }
             }
-            let btn_shift_group = Container::new(
-               Row::new().push(btn_up).push(btn_down)
-            );
+            let btn_shift_group = Container::new(Row::new().push(btn_up).push(btn_down));
 
             let btn_group = Container::new(
                Row::new().push(btn_add).push(btn_remove).push(Space::with_width(Length::Fill)).push(btn_shift_group)
@@ -337,21 +371,17 @@ impl LangRegionPage {
                };
                scroll.push(btn)
             });
-            
+           
             let left_pane = Container::new(
-               Row::new().spacing(10).align_items(Align::Center)
-               .push(
-                  Column::new().spacing(10)
-                  .push(
-                     Container::new(
-                        Column::new()
-                        .push(lang_group)
-                        .push(btn_group)
-                     ).height(Length::Fill).style(CustomContainer::ForegroundWhite)
-                  )
-               )
-               // .push(btn_shift_group)
-            ).width(Length::FillPortion(3));
+               Row::new().spacing(10).align_items(Align::Center).push(
+                  Column::new().spacing(10).push(
+                     Container::new(Column::new().push(lang_group).push(btn_group))
+                        .height(Length::Fill)
+                        .style(CustomContainer::ForegroundWhite),
+                  ),
+               ), // .push(btn_shift_group)
+            )
+            .width(Length::FillPortion(3));
 
             // ផ្ទាំងខាងស្ដាំ
             let right_pane = if !(*is_adding) {
@@ -638,36 +668,52 @@ impl LangRegionPage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = Button::new(defaults_state, Text::new("  Defaults  ")).on_press(LangRegionMessage::DefaultsClicked).style(CustomButton::Default);
-      let mut btn_cancel = Button::new(cancel_state, Text::new("  Cancel  ")).style(CustomButton::Hovered);
-      let mut btn_apply = Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
+      let btn_defaults = Button::new(defaults_state, Text::new("  Defaults  "))
+         .on_press(LangRegionMessage::DefaultsClicked)
+         .style(CustomButton::Default);
+      let mut btn_cancel =
+         Button::new(cancel_state, Text::new("  Cancel  ")).style(CustomButton::Hovered);
+      let mut btn_apply =
+         Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
       if *is_changed {
          btn_apply = btn_apply.on_press(LangRegionMessage::ApplyClicked);
          btn_cancel = btn_cancel.on_press(LangRegionMessage::CancelClicked);
       }
 
       let bottom_sec = Container::new(
-         Row::new().padding(15).spacing(10).align_items(Align::Center)
-         .push(btn_defaults)
-         .push(Space::with_width(Length::Fill))
-         .push(btn_cancel)
-         .push(btn_apply)
-      ).width(Length::Fill).align_x(Align::End);
+         Row::new()
+            .padding(15)
+            .spacing(10)
+            .align_items(Align::Center)
+            .push(btn_defaults)
+            .push(Space::with_width(Length::Fill))
+            .push(btn_cancel)
+            .push(btn_apply),
+      )
+      .width(Length::Fill)
+      .align_x(Align::End);
 
       // មាតិកា
-      let content = Column::new().width(Length::Fill)
+      let content = Column::new()
+         .width(Length::Fill)
          .push(header_sec)
          .push(tabbar_sec)
          .push(tabview.height(Length::Fill).style(CustomContainer::ForegroundGray))
          .push(bottom_sec);
 
-      Container::new(content).padding(10).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
+      Container::new(content)
+         .padding(10)
+         .width(Length::FillPortion(15))
+         .height(Length::Fill)
+         .style(CustomContainer::Background)
+         .into()
    }
 }
 
 impl LangRegionPage {
    fn get_first_day(locale_mn: &LocaleManager) -> String {
-      locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday-1) as usize].clone()
+      locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday - 1) as usize]
+         .clone()
    }
 }
 
@@ -676,8 +722,8 @@ struct GeneralTab {
    prefered_langs: Vec<(PreferedLang, button::State)>,
    selected_lang: Option<usize>,
    prefered_lang_scroll: scrollable::State,
-   add_state: button::State, 
-   remove_state: button::State, 
+   add_state: button::State,
+   remove_state: button::State,
    up_state: button::State,
    down_state: button::State,
    // right section
@@ -728,7 +774,13 @@ struct GeneralTab {
 
 #[derive(Debug, Clone, Default)]
 struct AppsTab {
-   app_list: Vec<(char, String, pick_list::State<String>, String, button::State)>,
+   app_list: Vec<(
+      char,
+      String,
+      pick_list::State<String>,
+      String,
+      button::State,
+   )>,
    selected_app: Option<usize>,
    add_state: button::State,
    remove_state: button::State,
