@@ -7,6 +7,7 @@ use iced::{
    Button, Checkbox, Color, Column, Container, Element, Row, TextInput, Scrollable, Text,
 };
 use libkoompi::system_settings::datetime::DateTimeManager;
+use iced_custom_widget::Icon;
 
 const DATE_FMT: &'static str = "%d/%m/%Y";
 const TIME_FMT: &'static str = "%r";
@@ -24,7 +25,8 @@ pub enum DateTimeMessage {
    ApplyClicked,
    AutoTZToggled(bool),
    SearchTZChanged(String),
-   TZSelected(usize),
+   TZSelected(String),
+   ContinentSelected(String),
 }
 
 #[derive(Debug, Default)]
@@ -49,15 +51,25 @@ impl DateTimePage {
 
       match DateTimeManager::new() {
          Ok(dt_mn) => {
-            let ls_tz = dt_mn.list_timezones().iter().map(|tz| (tz.to_string(), button::State::new())).collect::<Vec<(String, button::State)>>();
+            let mut ls_continents = dt_mn.list_timezones().keys().map(ToString::to_string).collect::<Vec<String>>();
+            ls_continents.sort();
+            let ls_view_con = ls_continents.into_iter().map(move |con| (con, button::State::new())).collect::<Vec<(String, button::State)>>();
+            let selected_tz = dt_mn.timezone().to_string();
+            let selected_con = dt_mn.list_timezones().iter().find_map(|(key, val)| if val.contains(&selected_tz.split('/').collect::<Vec<&str>>().last().unwrap().to_string()) { Some(key.to_string()) } else { None });
+            let ls_tz = match &selected_con {
+               Some(selected) => dt_mn.list_timezones().get(selected).unwrap().iter().map(|tz| (tz.to_string(), button::State::new())).collect(),
+               None => Vec::new()
+            };
 
             Self {
                tabbar_state: tabs,
-               selected_tz: Some(dt_mn.timezone().to_string()),
+               selected_tz: Some(selected_tz.clone()),
                datetime_tab: DateTimeTab::default(),
                timezone_tab: TimeZoneTab {
-                  tz_ls: ls_tz.clone(),
-                  filtered_tz_ls: ls_tz,
+                  ls_continents: ls_view_con.clone(),
+                  selected_continent: selected_con,
+                  ls_tz: ls_tz.clone(),
+                  filtered_ls_tz: ls_tz.clone(),
                   ..TimeZoneTab::default()
                },
                datetime_manager: dt_mn,
@@ -131,18 +143,21 @@ impl DateTimePage {
                   }
                },
                1 => {
-                  if let Some(selected_tz) = &self.selected_tz {
-                     match self.datetime_manager.set_timezone(selected_tz) {
-                        Ok(res) => {
-                           if res {
-                              println!("Set timezone success");
-                           } else {
-                              eprintln!("Fail to set timezone");
-                           }
-                        },
-                        Err(err) => eprintln!("{}", err)
+                  if let Some(selected_con) = &self.timezone_tab.selected_continent {
+                     if let Some(selected_tz) = &self.selected_tz {
+                        match self.datetime_manager.set_timezone(format!("{}/{}", selected_con, selected_tz).as_str()) {
+                           Ok(res) => {
+                              if res {
+                                 println!("Set timezone success");
+                              } else {
+                                 eprintln!("Fail to set timezone");
+                              }
+                           },
+                           Err(err) => eprintln!("{}", err)
+                        }
                      }
                   }
+                  
                },
                _ => {}
             }
@@ -152,16 +167,25 @@ impl DateTimePage {
          AutoTZToggled(is_checked) => self.set_ntp(is_checked),
          SearchTZChanged(text) => {
             self.timezone_tab.search_val = text;
-            self.timezone_tab.filtered_tz_ls = self.timezone_tab.tz_ls.iter()
-            .filter(|tz| tz.0.to_lowercase().contains(&self.timezone_tab.search_val.to_lowercase()))
-            .cloned()
-            .collect();
+            self.filter_tz();
          },
-         TZSelected(idx) => {
-            self.selected_tz = Some(self.timezone_tab.filtered_tz_ls[idx].0.clone());
+         TZSelected(tz) => {
+            self.selected_tz = Some(tz);
             self.is_changed = true;
          },
+         ContinentSelected(con) => {
+            self.timezone_tab.selected_continent = Some(con.clone());
+            self.timezone_tab.ls_tz = self.datetime_manager.list_timezones().get(&con).unwrap().iter().map(|tz| (tz.to_string(), button::State::new())).collect();
+            self.filter_tz();
+         },
       }
+   }
+
+   fn filter_tz(&mut self) {
+      self.timezone_tab.filtered_ls_tz = self.timezone_tab.ls_tz.iter()
+         .filter(|tz| tz.0.to_lowercase().contains(&self.timezone_tab.search_val.to_lowercase()))
+         .cloned()
+         .collect();
    }
 
    pub fn subscription(&self) -> Subscription<DateTimeMessage> {
@@ -257,8 +281,11 @@ impl DateTimePage {
             let TimeZoneTab {
                search_state,
                search_val,
-               filtered_tz_ls,
-               scroll,
+               filtered_ls_tz,
+               ls_continents,
+               selected_continent,
+               scroll_tz,
+               scroll_continent,
                ..
             } = timezone_tab;
 
@@ -267,27 +294,52 @@ impl DateTimePage {
             let txt_current_tz = Text::new(format!("Current local time zone: {}", datetime_manager.timezone()));
 
             let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, DateTimeMessage::SearchTZChanged).padding(10).style(CustomTextInput::Default);
-            let scroll_tz = filtered_tz_ls.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).padding(7).spacing(4), |scrollable, (idx, (tz, state))| {
-               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.clone()))).width(Length::Fill).style(
-                  if datetime_manager.timezone() == tz {CustomButton::Selected} 
-                  else if let Some(selected_tz) = selected_tz {
-                     if selected_tz == tz {CustomButton::Hovered}
+            let scrollable_continent = ls_continents.iter_mut().fold(Scrollable::new(scroll_continent).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (con, state)| {
+               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(con.as_str()))).width(Length::Fill).style(
+                  if let Some(selected) = selected_continent {
+                     if selected == con {CustomButton::Selected}
                      else {CustomButton::Text}
                   }
                   else {CustomButton::Text}
                );
                if !(*datetime_manager.ntp()) {
-                  btn = btn.on_press(DateTimeMessage::TZSelected(idx));
+                  btn = btn.on_press(DateTimeMessage::ContinentSelected(con.clone()));
+               }
+               scrollable.push(btn)
+            });
+            let continent_pane = Container::new(
+               Column::new()
+                  .push(
+                     Container::new(Text::new("Continents")).width(Length::Fill).padding(7).style(CustomContainer::Header),
+                  )
+                  .push(scrollable_continent),
+            ).height(Length::Fill).width(Length::Fill).style(CustomContainer::ForegroundWhite);
+
+            let scrollable_tz = filtered_ls_tz.iter_mut().fold(Scrollable::new(scroll_tz).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (tz, state)| {
+               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.as_str()))).width(Length::Fill).style(
+                  if let Some(selected_con) = selected_continent {
+                     if datetime_manager.timezone() == &format!("{}/{}", selected_con, tz) {CustomButton::Selected} 
+                     else if let Some(selected_tz) = selected_tz {
+                        if selected_tz == tz {CustomButton::Hovered}
+                        else {CustomButton::Text}
+                     }
+                     else {CustomButton::Text}
+                  }
+                  else {CustomButton::Text}
+               );
+               if !(*datetime_manager.ntp()) {
+                  btn = btn.on_press(DateTimeMessage::TZSelected(tz.clone()));
                }
                scrollable.push(btn)
             });
             let tz_pane = Container::new(
                Column::new()
                   .push(
-                     Container::new(Text::new("Time Zones").size(12)).width(Length::Fill).padding(7).style(CustomContainer::Header),
+                     Container::new(Text::new("Time Zones")).width(Length::Fill).padding(7).style(CustomContainer::Header),
                   )
-                  .push(scroll_tz),
-            ).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+                  .push(scrollable_tz),
+            ).height(Length::Fill).width(Length::Fill).style(CustomContainer::ForegroundWhite);
+
 
             Container::new(
                Column::new().spacing(15)
@@ -298,7 +350,12 @@ impl DateTimePage {
                   .push(txt_current_tz)
                )
                .push(input_search_tz)
-               .push(tz_pane)
+               .push(
+                  Row::new().spacing(20).align_items(Align::Center)
+                  .push(continent_pane)
+                  .push(Icon::new('\u{f105}').size(27))
+                  .push(tz_pane)
+               )
             ).width(Length::Fill)
          }
          _ => Container::new(Space::with_height(Length::Fill)),
@@ -356,9 +413,12 @@ pub struct TimeZoneTab {
    // auto_tz: bool,
    search_state: text_input::State,
    search_val: String,
-   tz_ls: Vec<(String, button::State)>,
-   filtered_tz_ls: Vec<(String, button::State)>,
-   scroll: scrollable::State,
+   ls_continents: Vec<(String, button::State)>,
+   ls_tz: Vec<(String, button::State)>,
+   filtered_ls_tz: Vec<(String, button::State)>,
+   selected_continent: Option<String>,
+   scroll_tz: scrollable::State,
+   scroll_continent: scrollable::State,
 }
 
 #[derive(Debug)]

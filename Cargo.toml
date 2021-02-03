@@ -11,16 +11,17 @@ iced = { version = "0.2", features = ["debug", "svg", "canvas", "tokio"] }
 iced_style = "0.2"
 iced_custom_widget = { git="https://github.com/koompi/iced_custom_widget.git", branch="master" }
 vedas_core = { git="https://github.com/koompi/vedas", branch="dev" }
-libkoompi = { git="https://github.com/koompi/libkoompi", branch="main" }
+libkoompi = { git="https://github.com/koompi/libkoompi", branch="hangleang" }
 
 image = "0.23"
 chrono = "0.4"
 opener = "0.4"
-sysinfo = "0.15.9"
+sysinfo = "0.16"
 sys-info = "0.8"
 serde = { version = "1.0", features=['derive'] }
 serde_json = "1.0"
 smart-default = "0.6"
 num-format = { version = "0.4", features = ["with-system-locale"] }
+tauri-dialog = "0.1.0"
 sdl2 = "0.34.3"
 dirs = "3.0.1"
