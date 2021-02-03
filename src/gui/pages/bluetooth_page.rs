@@ -1,7 +1,6 @@
 use iced::{
-   button, executor, scrollable, text_input, Align, Application, Button, Checkbox, Column, Command,
-   Container, Element, HorizontalAlignment, Length, Row, Rule, Scrollable, Settings, Space,
-   Subscription, Text, TextInput, VerticalAlignment,
+   button, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
+   HorizontalAlignment, Length, Row, Rule, Scrollable, Space, Text, TextInput, VerticalAlignment,
 };
 use iced_custom_widget as icw;
 // use iced_native::window::Event;
