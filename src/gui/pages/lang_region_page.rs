@@ -7,7 +7,7 @@ use iced::{
 };
 use iced_custom_widget::Icon;
 use smart_default::SmartDefault;
-use libkoompi::system_settings::locale::{LocaleManager, LC_Keywords};
+use libkoompi::system_settings::locale::{LocaleManager};
 
 const LS_MEASURE_UNITS: [&str; 3] = ["Metric", "Imperial US", "Imperial UK"];
 
