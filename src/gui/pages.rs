@@ -18,7 +18,6 @@ mod sys_info_page;
 mod touchpad_page;
 mod update_page;
 mod user_page;
-
 use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};

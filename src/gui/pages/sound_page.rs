@@ -618,11 +618,11 @@
 //       Ok(value.unwrap())
 //    }
 // }
-
+#![allow(unused_variables)]
+#![allow(dead_code)]
 use iced::{
-   button, executor, pick_list, scrollable, slider, window, Align, Application, Button, Column,
-   Command, Container, Element, Length, PickList, Row, Rule, Scrollable, Settings, Slider, Space,
-   Subscription, Text,
+   button, pick_list, scrollable, slider, Align, Button, Column, Container, Element, Length,
+   PickList, Row, Rule, Scrollable, Slider, Space, Text,
 };
 
 use iced_custom_widget as icw;
@@ -905,9 +905,17 @@ impl SoundPage {
          vec_tuple.push((button::State::new(), button::State::new(), name.clone()))
       });
       let mut sound_effect_hash: HashMap<SoundEffectType, PathBuf> = HashMap::new();
-      match playback::read_directory(
-         std::path::PathBuf::new().join(standart_path::sys_data_dir().unwrap().join("syssettings")),
-      ) {
+
+      match playback::read_directory(if cfg!(debug_assertions) {
+         print!("run debug");
+         std::path::PathBuf::new().join(&format!("{}/assets/sounds", env!("CARGO_MANIFEST_DIR")))
+      } else {
+         std::path::PathBuf::new().join(
+            standart_path::sys_data_dir()
+               .unwrap()
+               .join("syssettings/sounds"),
+         )
+      }) {
          Ok(mut path) =>
          {
             #[allow(const_item_mutation)]
@@ -953,7 +961,6 @@ impl SoundPage {
          }
          SoundMessage::SoundOutChanged(val) => {
             self.out_value = val;
-            SoundBackEnd::initialize();
          }
          SoundMessage::InputLevelChanged(val) => {
             self.input_level = val;
@@ -1349,18 +1356,13 @@ mod playback {
 
    pub fn read_directory(in_path: std::path::PathBuf) -> Result<Vec<PathBuf>, std::io::Error> {
       let mut list_sounds: Vec<PathBuf> = Vec::new();
-      let sound_dir = "sounds";
-      if in_path.join(sound_dir).exists() {
-         for path in read_dir(in_path.join(sound_dir))? {
+      if in_path.exists() {
+         for path in read_dir(in_path)? {
             let dir = path?;
             list_sounds.push(dir.path());
          }
       } else {
-         make_dir(&in_path, sound_dir)?;
          let paths = read_dir(in_path)?;
-         paths.for_each(|val| {
-            println!("Name: {:?}", val);
-         });
       }
       Ok(list_sounds)
    }
@@ -1441,13 +1443,13 @@ mod standart_path {
    }
 }
 
-mod SoundBackEnd {
+// mod SoundBackEnd {
 
-   pub fn initialize() {}
-   pub fn volume_up(level: u32) {}
-   pub fn volumn_down(level: u32) {}
-   pub fn mute_sound(is_mute: bool) {}
-}
+//    pub fn initialize() {}
+//    pub fn volume_up(level: u32) {}
+//    pub fn volumn_down(level: u32) {}
+//    pub fn mute_sound(is_mute: bool) {}
+// }
 
 #[cfg(test)]
 mod tests {
