@@ -1,9 +1,10 @@
-  #[macro_use]
+#[macro_use]
 mod general_page;
 mod access_page;
 mod battery_page;
 mod bluetooth_page;
 mod date_time_page;
+mod desktop_page;
 mod display_page;
 mod keyboard_page;
 mod lang_region_page;
@@ -11,34 +12,33 @@ mod mouse_page;
 mod network_page;
 mod notification_page;
 mod printer_page;
+mod privacy_page;
 mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
 mod update_page;
 mod user_page;
-mod privacy_page;
-mod desktop_page;
 
 use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
 use date_time_page::{DateTimeMessage, DateTimePage};
+use desktop_page::{DesktopMessage, DesktopPage};
 use display_page::{DisplayMessage, DisplayPage};
 use general_page::{General, GeneralMessage};
+use iced::{Container, Element, Length, Space, Subscription};
 use keyboard_page::{KeyboardMessage, KeyboardPage};
 use lang_region_page::{LangRegionMessage, LangRegionPage};
 use mouse_page::{MouseMessage, MousePage};
 use network_page::{NetMessage, NetworkPage};
 use notification_page::{NotifyMsg, NotifyPage};
 use printer_page::{PrinterMessage, PrinterPage};
+use privacy_page::{PrivacyMessage, PrivacyPage};
 use sound_page::{SoundMessage, SoundPage};
 use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
 use update_page::{SoftUpdateMsg, SoftwareUpdate};
 use user_page::{UserPage, UserPageMsg};
-use privacy_page::{PrivacyPage, PrivacyMessage};
-use desktop_page::{DesktopPage, DesktopMessage};
-use iced::{Container, Element, Length, Space, Subscription};
 
 pub struct Pages {
    pages: Vec<PageModel>,
@@ -113,7 +113,7 @@ impl Pages {
                access_page: AccessPage::new(),
             },
             DesktopPageModel {
-               desktop_page: DesktopPage::new()
+               desktop_page: DesktopPage::new(),
             },
             NotificationsModel {
                noti_page: NotifyPage::new(),
@@ -315,12 +315,18 @@ impl PageModel {
          UpdatePageModel { update_page } => update_page
             .view()
             .map(move |msg| PagesMessage::SoftUpdateMsg(msg)),
-         AccessPageModel { access_page } => access_page.view().map(move |msg| PagesMessage::AccessMessage(msg)),
-         DesktopPageModel { desktop_page } => desktop_page.view().map(move |msg| PagesMessage::DesktopMessage(msg)),
+         AccessPageModel { access_page } => access_page
+            .view()
+            .map(move |msg| PagesMessage::AccessMessage(msg)),
+         DesktopPageModel { desktop_page } => desktop_page
+            .view()
+            .map(move |msg| PagesMessage::DesktopMessage(msg)),
          NotificationsModel { noti_page } => noti_page
             .view()
             .map(move |msg| PagesMessage::NotifyMsg(msg)),
-         PrivacyPageModel { privacy_page } => privacy_page.view().map(move |msg| PagesMessage::PrivacyMessage(msg)),
+         PrivacyPageModel { privacy_page } => privacy_page
+            .view()
+            .map(move |msg| PagesMessage::PrivacyMessage(msg)),
          NetworkPageModel { network_page } => network_page
             .view()
             .map(move |msg| PagesMessage::NetMessage(msg)),
