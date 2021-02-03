@@ -1,6 +1,5 @@
 use iced::{
-   button, checkbox, container, pick_list, progress_bar, slider, text_input, Background, Color,
-   Vector,
+   button, checkbox, container, pick_list, progress_bar, slider, text_input, Background, Color, Vector,
 };
 
 pub const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
