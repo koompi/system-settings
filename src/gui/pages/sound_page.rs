@@ -721,7 +721,7 @@ pub trait SoundEffect {
 #[derive(Debug, Default, Clone)]
 pub struct SettingsSoundEffect {
    file: std::path::PathBuf,
-   hash_sounds: HashMap<SoundEffectType, PathBuf>,
+   hash_sounds: Vec<(SoundEffectType, PathBuf)>,
    effect_type: SoundEffectType,
    volume: u32,
    speed: u32,
@@ -875,21 +875,21 @@ impl fmt::Display for InputDevice {
 //         &self.hash_sounds.index(&key)
 //     }
 // }
-impl Index<&SoundEffectType> for SettingsSoundEffect {
-   type Output = PathBuf;
-   fn index(&self, key: &SoundEffectType) -> &Self::Output {
-      &self.hash_sounds.index(&key)
-   }
-}
+// impl Index<&SoundEffectType> for SettingsSoundEffect {
+//    type Output = PathBuf;
+//    fn index(&self, key: &SoundEffectType) -> &Self::Output {
+//       &self.hash_sounds.index(&key)
+//    }
+// }
 impl SoundPage {
    pub fn new() -> SoundPage {
       let str_con = |f: &str| -> String { f.to_string() };
       let mut vec_sounds: Vec<String> = vec![
          str_con("Bootup"),
-         str_con("Shutdown"),
          str_con("Log out"),
-         str_con("Wake Up"),
+         str_con("Shutdown"),
          str_con("Volume +/-"),
+         str_con("Wake Up"),
          // str_con("Notifications"),
          // str_con("Low battery"),
          // str_con("Send icon in Launcher to Desktop"),
@@ -904,7 +904,7 @@ impl SoundPage {
       vec_sounds.iter_mut().for_each(|name| {
          vec_tuple.push((button::State::new(), button::State::new(), name.clone()))
       });
-      let mut sound_effect_hash: HashMap<SoundEffectType, PathBuf> = HashMap::new();
+      let mut sound_effect_hash: Vec<(SoundEffectType, PathBuf)> = Vec::new();
 
       match playback::read_directory(if cfg!(debug_assertions) {
          print!("run debug");
@@ -920,7 +920,7 @@ impl SoundPage {
          {
             #[allow(const_item_mutation)]
             for (i, j) in SoundEffectType::ALL[..].iter_mut().zip(path.iter_mut()) {
-               sound_effect_hash.insert(*i, j.to_path_buf());
+               sound_effect_hash.push((*i, j.to_path_buf()));
             }
          }
          Err(e) => println!("Error: {}", e),
@@ -928,10 +928,6 @@ impl SoundPage {
       for (i, j) in &sound_effect_hash {
          println!("key: {} value: {:?}", i, j);
       }
-      println!(
-         "Booup value: {:?}",
-         sound_effect_hash.index(&SoundEffectType::Bootup)
-      );
 
       Self {
          FONT_SIZE: 12,
@@ -970,7 +966,7 @@ impl SoundPage {
          }
          SoundMessage::TestSoundEffect(idx) => {
             let key = SoundEffectType::ALL[idx];
-            let value = self.sound_effecs.hash_sounds.index(&key);
+            let value = &self.sound_effecs.hash_sounds[idx].1;
             match playback::run(&value) {
                Ok(()) => println!("sucesss"),
                Err(e) => println!("Error: {}", e),
