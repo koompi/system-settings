@@ -1,8 +1,11 @@
 use super::keyboard_utils::*;
+use super::add_input_source_sec::AddInputSrcMessage;
+use super::conf_input_source_sec::ConfigInputSrcMessage;
 use crate::helpers::ROOT_PATH;
 use crate::gui::styles::{CustomButton, CustomContainer, CustomSlider, CustomCheckbox, CustomSelect};
+use crate::gui::addon_widgets::{icon_btn, tabbar};
 use iced::{
-   button, Element, Align, Space, Length, Svg, Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList, Slider,
+   button, Element, Align, Space, Length, Svg, Container, Checkbox, Row, Text, Column, Scrollable, PickList, Slider, Button
 };
 use iced_custom_widget::Icon;
 use vedas_core::svg;
@@ -15,27 +18,49 @@ pub enum KeyboardMessage {
    AdjustBrightnessToggled(bool),
    TurnBacklightOffToggled(bool),
    BacklightOffDurationChanged(TurnBacklightOff),
-   SetUpBluetoothKeyboard(bool),
    LeftTabSelected(usize),
    RightPaneSelectedToggled(usize, bool),
    RestoreDefaultClicked,
    KeyNavToggled(bool),
    InputSourceLeftTabSelected(usize),
-   BtnAddClicked,
-   BtnRemoveClicked,
+   AddClicked,
+   RemoveClicked,
+   UpClicked,
+   DownClicked,
+   ConfigClicked,
    ShowInputMenuToggled(bool),
    AutoSwitchToggled(bool),
+   AddInputSrcMsg(AddInputSrcMessage),
+   ConfigInputSrcMsg(ConfigInputSrcMessage),
+   ToggleInpSrcChanged(String),
+   ShowPressToggleKey(bool),
+   TempSwitchInpSrcChanged(String),
+   SwitchInpSrcFWChanged(String),
+   SwitchInpSrcBWChanged(String),
+   Skip1InpSrc(bool),
+   ActInpSrcChanged(String),
+   DeactInpSrcChanged(String),
+   ActiveByDef(bool),
+   ShareInpStateChanged(String),
+   SwitchShowInpSrcInfo(bool),
+   ChangeFocusShowInpSrcInfo(bool),
+   ResetClicked,
+   DefaultsClicked,
+   OKClicked,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct KeyboardPage {
    tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    keyboard: Keyboard,
    shortcuts: Shortcuts,
-   input_sources: InputSources,
-   btn_setup_bt_keyboard: button::State,
-   is_setup_bt_keyboard: bool
+   input_sources_tab: InputSources,
+   global_opts: GlobalOptions,
+   btn_reset_state: button::State,
+   btn_defaults_state: button::State,
+   btn_ok_state: button::State,
+   is_changed: bool,
 }
 
 impl KeyboardPage {
@@ -50,40 +75,101 @@ impl KeyboardPage {
          current_tab_idx: 0,
          keyboard: Keyboard::new(),
          shortcuts: Shortcuts::new(),
-         input_sources: InputSources::new(),
-         btn_setup_bt_keyboard: button::State::new(),
-         is_setup_bt_keyboard: false,
+         input_sources_tab: InputSources::new(),
+         global_opts: GlobalOptions::new(),
+         ..Self::default()
       }
    }
 
    pub fn update(&mut self, msg: KeyboardMessage) {
-      match msg {
-         KeyboardMessage::TabChanged(idx) => self.current_tab_idx = idx,
-         KeyboardMessage::KeyRepeatChanged(val) => self.keyboard.key_repeat_val = val,
-         KeyboardMessage::DelayRepeatChanged(val) => self.keyboard.delay_repeat_val = val,
-         KeyboardMessage::AdjustBrightnessToggled(val) => self.keyboard.adjust_brightness_low_light = val,
-         KeyboardMessage::TurnBacklightOffToggled(val) => self.keyboard.turn_backlight_off = val,
-         KeyboardMessage::BacklightOffDurationChanged(duration) => self.keyboard.turn_backlight_off_after_val = duration,
-         KeyboardMessage::SetUpBluetoothKeyboard(val) => self.is_setup_bt_keyboard = val, 
-         KeyboardMessage::LeftTabSelected(idx) => self.shortcuts.left_pane_selected = idx,
-         KeyboardMessage::RightPaneSelectedToggled(idx, is_checked) => {
-            self.shortcuts.right_pane_selected = idx;
-            self.shortcuts.shortcuts_tab_map.get_mut(self.shortcuts.left_pane_selected).unwrap().get_mut(idx).unwrap().0 = is_checked;
+      use KeyboardMessage::*;
+      let KeyboardPage {
+         keyboard,
+         shortcuts,
+         input_sources_tab,
+         global_opts: GlobalOptions {
+            hotkey_sec,
+            behavior_sec,
          },
-         KeyboardMessage::RestoreDefaultClicked => self.shortcuts = Shortcuts::new(),
-         KeyboardMessage::KeyNavToggled(val) => self.shortcuts.use_keyboard_nav = val,
-         KeyboardMessage::InputSourceLeftTabSelected(idx) => self.input_sources.input_sources_selected = Some(idx),
-         KeyboardMessage::BtnAddClicked => self.input_sources.input_sources_tab.push(('\u{f1ab}', "Other".to_string(), button::State::new())),
-         KeyboardMessage::BtnRemoveClicked => {
-            if let Some(selected_idx) = self.input_sources.input_sources_selected {
-               if self.input_sources.input_sources_tab.len() > 1 {
-                  self.input_sources.input_sources_tab.remove(selected_idx);
+         ..
+      } = self;
+
+      let mut should_apply = Some(true);
+      match msg {
+         TabChanged(idx) => {self.current_tab_idx = idx; should_apply = None},
+         KeyRepeatChanged(val) => keyboard.key_repeat_val = val,
+         DelayRepeatChanged(val) => keyboard.delay_repeat_val = val,
+         AdjustBrightnessToggled(val) => keyboard.adjust_brightness_low_light = val,
+         TurnBacklightOffToggled(val) => keyboard.turn_backlight_off = val,
+         BacklightOffDurationChanged(duration) => keyboard.turn_backlight_off_after_val = duration,
+         LeftTabSelected(idx) => {shortcuts.left_pane_selected = idx; should_apply = None},
+         RightPaneSelectedToggled(idx, is_checked) => {
+            shortcuts.right_pane_selected = idx;
+            shortcuts.shortcuts_tab_map.get_mut(shortcuts.left_pane_selected).unwrap().get_mut(idx).unwrap().0 = is_checked;
+         },
+         RestoreDefaultClicked => self.shortcuts = Shortcuts::new(),
+         KeyNavToggled(val) => shortcuts.use_keyboard_nav = val,
+         InputSourceLeftTabSelected(idx) => {input_sources_tab.input_sources_selected = Some(idx); should_apply = None},
+         AddClicked => {input_sources_tab.is_adding = true; should_apply = None},
+         RemoveClicked => {
+            if let Some(selected_idx) = input_sources_tab.input_sources_selected {
+               if input_sources_tab.input_sources.len() > 1 {
+                  input_sources_tab.input_sources.remove(selected_idx);
                }
             }
-            self.input_sources.input_sources_selected = None;
+            input_sources_tab.input_sources_selected = None;
          },
-         KeyboardMessage::ShowInputMenuToggled(val) => self.input_sources.show_input_menu = val,
-         KeyboardMessage::AutoSwitchToggled(val) => self.input_sources.auto_switch = val,
+         UpClicked => {
+            if let Some(selected_idx) = input_sources_tab.input_sources_selected {
+               let next_idx = selected_idx - 1;
+               input_sources_tab.input_sources.swap(selected_idx, next_idx);
+               input_sources_tab.input_sources_selected = Some(next_idx);
+            }
+         },
+         DownClicked => {
+            if let Some(selected_idx) = input_sources_tab.input_sources_selected {
+               let next_idx = selected_idx + 1;
+               input_sources_tab.input_sources.swap(selected_idx, next_idx);
+               input_sources_tab.input_sources_selected = Some(next_idx);
+            }
+         },
+         ConfigClicked => input_sources_tab.is_config = true,
+         ShowInputMenuToggled(val) => input_sources_tab.show_input_menu = val,
+         AutoSwitchToggled(val) => input_sources_tab.auto_switch = val,
+         ToggleInpSrcChanged(val) => hotkey_sec.toggle_inp_src_val = Some(val),
+         ShowPressToggleKey(is_checked) => hotkey_sec.show_press_toggle_repeat = is_checked,
+         TempSwitchInpSrcChanged(val) => hotkey_sec.temp_switch_first_n_cur_inp_src_val = Some(val),
+         SwitchInpSrcFWChanged(val) => hotkey_sec.switch_inp_src_fw_val = Some(val),
+         SwitchInpSrcBWChanged(val) => hotkey_sec.switch_inp_src_bw_val = Some(val),
+         Skip1InpSrc(is_checked) => hotkey_sec.skip_first_inp_src_switch = is_checked,
+         ActInpSrcChanged(val) => hotkey_sec.act_inp_src_val = Some(val),
+         DeactInpSrcChanged(val) => hotkey_sec.deact_inp_src_val = Some(val),
+         ActiveByDef(is_checked) => behavior_sec.act_by_def = is_checked,
+         ShareInpStateChanged(val) => behavior_sec.share_inp_state_val = Some(val),
+         SwitchShowInpSrcInfo(is_checked) => behavior_sec.switch_show_inp_src_info = is_checked,
+         ChangeFocusShowInpSrcInfo(is_checked) => behavior_sec.change_focus_show_inp_src_info = is_checked,
+         AddInputSrcMsg(add_inp_msg) => match add_inp_msg {
+            AddInputSrcMessage::AddClicked(layout) => {
+               input_sources_tab.input_sources.push(('\u{f1ab}', layout, button::State::new())); 
+               input_sources_tab.is_adding = false;
+            },
+            AddInputSrcMessage::CancelClicked => input_sources_tab.is_adding = false,
+            _ => input_sources_tab.add_input_source_sec.update(add_inp_msg)
+         },
+         ConfigInputSrcMsg(conf_inp_src_msg) => match conf_inp_src_msg {
+            ConfigInputSrcMessage::AddClicked | ConfigInputSrcMessage::CancelClicked => input_sources_tab.is_config = false,
+            _ => input_sources_tab.config_input_source_sec.update(conf_inp_src_msg)
+         },
+         OKClicked => should_apply = Some(false),
+         DefaultsClicked | ResetClicked => {
+            let curr_tab = self.current_tab_idx;
+            *self = Self::new();
+            self.current_tab_idx = curr_tab;
+            should_apply = Some(false);
+         },
+      }
+      if let Some(should_apply) = should_apply {
+         self.is_changed = should_apply;
       }
    }
 
@@ -93,24 +179,16 @@ impl KeyboardPage {
          current_tab_idx,
          keyboard,
          shortcuts,
-         input_sources,
-         btn_setup_bt_keyboard,
-         is_setup_bt_keyboard
+         input_sources_tab,
+         global_opts,
+         is_changed,
+         btn_reset_state,
+         btn_defaults_state,
+         btn_ok_state,
       } = self;
 
       // របារផ្ទាំង
-      let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
-      for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(*name)).padding(5).on_press(KeyboardMessage::TabChanged(idx));
-         if *current_tab_idx == idx {
-            btn = btn.style(CustomButton::SelectedTab);
-         } else {
-            btn = btn.style(CustomButton::Tab);
-         }
-         tabbar = tabbar.push(btn);
-      }
-      let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
-      let tabbar_section = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
+      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, |idx| KeyboardMessage::TabChanged(idx));
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -172,7 +250,6 @@ impl KeyboardPage {
          },
          1 => {
             let Shortcuts {
-               btn_restore,
                shortcuts_tab,
                shortcuts_tab_map,
                left_pane_selected,
@@ -186,11 +263,8 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
-               col.push(
-                  Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(*title))).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
-               )
+               col.push(icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar}))
             });
-            
             let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
@@ -202,19 +276,12 @@ impl KeyboardPage {
 
                col.push(Container::new(row).width(Length::Fill).style(if *right_pane_selected == idx {CustomContainer::Hovered} else {CustomContainer::ForegroundWhite}))
             });
-
             let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
-            let btn_restore = Button::new(btn_restore, Text::new("  Defaults  ")).on_press(KeyboardMessage::RestoreDefaultClicked).style(CustomButton::Default);
-            let restore_row = Row::new().spacing(20).align_items(Align::Center).push(btn_restore);
-            let restore_section = Container::new(restore_row).width(Length::Fill);
-            
             let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyboardMessage::KeyNavToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_hint = Text::new("Press the Tab key to move focus forward and Shift tab to move focus backward.");
-
             let bottom_col = Column::new().spacing(10).width(Length::Fill)
-               .push(restore_section)
                .push(Space::with_height(Length::Units(50)))
                .push(chb_keyboard_nav)
                .push(Row::new().push(Space::with_width(Length::Units(30))).push(txt_hint));
@@ -236,62 +303,98 @@ impl KeyboardPage {
             let InputSources {
                btn_add_state, 
                btn_remove_state, 
-               input_sources_tab,
+               btn_up_state, 
+               btn_down_state, 
+               btn_config_state, 
+               input_sources,
                input_sources_selected,
-               show_input_menu,
                auto_switch,
+               show_input_menu,
+               is_adding,
+               add_input_source_sec,
+               is_config,
+               config_input_source_sec,
                left_pane_scroll,
                right_pane_scroll,
-            } = input_sources;
+            } = input_sources_tab;
+
+            let lb_inp_src = Text::new("To change default input source, select and move it to top of the list.").size(15);
 
             // ផ្ទាំងខាងឆ្វេង
-            let tab_len = input_sources_tab.len();
-            let left_tab_col = input_sources_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
+            let inp_src_len = input_sources.len();
+            let left_tab_col = input_sources.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
+               let btn = icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx));
                col.push(
                   if let Some(selected_idx) = input_sources_selected {
-                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
+                     btn.style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                   } else {
-                     Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(title.as_str()))).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx)).style(CustomButton::Sidebar)
+                     btn.style(CustomButton::Sidebar)
                   }
                )
             });
-            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(KeyboardMessage::BtnAddClicked).style(CustomButton::Text);
+            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(KeyboardMessage::AddClicked).style(CustomButton::Text);
             let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
-            if input_sources_selected.is_some() && tab_len > 1 {
-               btn_remove = btn_remove.on_press(KeyboardMessage::BtnRemoveClicked);
+            let mut btn_up = Button::new(btn_up_state, Icon::new('\u{f062}').size(23)).padding(2).style(CustomButton::Hovered);
+            let mut btn_down = Button::new(btn_down_state, Icon::new('\u{f063}').size(23)).padding(2).style(CustomButton::Hovered);
+            let mut btn_config = Button::new(btn_config_state, Icon::new('\u{f013}').size(23)).padding(2).style(CustomButton::Hovered);
+            if let Some(selected_idx) = input_sources_selected {
+               if *selected_idx != 0 {
+                  btn_up = btn_up.on_press(KeyboardMessage::UpClicked);
+               }
+               if *selected_idx != (inp_src_len - 1) {
+                  btn_down = btn_down.on_press(KeyboardMessage::DownClicked);
+               }
+               if !(*is_adding || *is_config) {
+                  btn_config = btn_config.on_press(KeyboardMessage::ConfigClicked);
+               }
             }
-            let btn_group = Container::new(
-               Row::new().push(btn_add).push(btn_remove)
-            ).width(Length::Fill).style(CustomContainer::Header);
+            if input_sources_selected.is_some() && inp_src_len > 1 {
+               btn_remove = btn_remove.on_press(KeyboardMessage::RemoveClicked);
+            }
+            let btn_group = Container::new(Row::new().push(btn_add).push(btn_remove)).width(Length::Fill).style(CustomContainer::Header);
+            let btn_shift_group = Container::new(Column::new().spacing(10).push(btn_up).push(btn_down).push(btn_config)).height(Length::Fill).center_y();
+
             let left_pane = Container::new(
-               Column::new()
-               .push(left_tab_col)
-               .push(btn_group)
-            ).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
+               Row::new().spacing(10).align_items(Align::Center)
+               .push(
+                  Container::new(
+                     Column::new()
+                     .push(left_tab_col)
+                     .push(btn_group)
+                  ).width(Length::Fill).height(Length::Fill).style(CustomContainer::ForegroundWhite)
+               )
+               .push(btn_shift_group)
+            ).width(Length::FillPortion(4)).height(Length::Fill);
 
             // ផ្ទាំងខាងស្ដាំ
-            let keyboard_image_con = match input_sources_selected {
-               Some(idx) => match idx {
-                  0 => {
-                     let en_keyboard = svg!(format!("{}/assets/images/keyboard.svg", ROOT_PATH())).height(Length::Units(250));
-                     Container::new(
-                        Row::new().push(Space::with_width(Length::FillPortion(1))).push(en_keyboard).push(Space::with_width(Length::FillPortion(1)))
-                     ).width(Length::Fill).center_x().center_y()
-                  },
-                  1 => {
-                     let kh_keyboard = svg!(format!("{}/assets/images/keyboard.svg", ROOT_PATH())).height(Length::Units(250));
-                     Container::new(
-                        Row::new().push(Space::with_width(Length::FillPortion(1))).push(kh_keyboard).push(Space::with_width(Length::FillPortion(1)))
-                     ).width(Length::Fill).center_x().center_y()
-                  },
-                  _ => Container::new(Space::with_width(Length::Fill))
-               }
-               None => Container::new(Space::with_width(Length::Fill))
+            let right_pane: Element<_> = if *is_config {
+               config_input_source_sec.view().map(move |msg| KeyboardMessage::ConfigInputSrcMsg(msg))
+            } else if !(*is_adding) {
+               let keyboard_image_con = match input_sources_selected {
+                  Some(idx) => match idx {
+                     0 => {
+                        let en_keyboard = svg!(format!("{}/assets/images/keyboard.svg", ROOT_PATH())).height(Length::Units(250));
+                        Container::new(
+                           Row::new().push(Space::with_width(Length::FillPortion(1))).push(en_keyboard).push(Space::with_width(Length::FillPortion(1)))
+                        ).width(Length::Fill).center_x().center_y()
+                     },
+                     1 => {
+                        let kh_keyboard = svg!(format!("{}/assets/images/keyboard.svg", ROOT_PATH())).height(Length::Units(250));
+                        Container::new(
+                           Row::new().push(Space::with_width(Length::FillPortion(1))).push(kh_keyboard).push(Space::with_width(Length::FillPortion(1)))
+                        ).width(Length::Fill).center_x().center_y()
+                     },
+                     _ => Container::new(Space::with_width(Length::Fill))
+                  }
+                  None => Container::new(Space::with_width(Length::Fill))
+               };
+   
+               Container::new(
+                  Scrollable::new(right_pane_scroll).push(keyboard_image_con)
+               ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite).into()
+            } else {
+               add_input_source_sec.view().map(move |msg| KeyboardMessage::AddInputSrcMsg(msg))
             };
-
-            let right_pane = Container::new(
-               Scrollable::new(right_pane_scroll).push(keyboard_image_con)
-            ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
             let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
@@ -306,6 +409,7 @@ impl KeyboardPage {
             
             Container::new(
                Column::new().spacing(10)
+               .push(lb_inp_src)
                .push(
                   Container::new(
                      Row::new().spacing(15)
@@ -316,83 +420,138 @@ impl KeyboardPage {
                .push(bottom_row)
             ).width(Length::Fill).height(Length::Fill)
          }, 
-         // 3 => {
-         //    let Dictation {
-         //       btn_about, 
-         //       turn_on_dict,
-         //       language_state,
-         //       language_val,
-         //       shortcut_state,
-         //       shortcut_val,
-         //    } = dictation;
+         3 => {
+            let GlobalOptions {
+               hotkey_sec: HotKey {
+                  toggle_inp_src_state,
+                  toggle_inp_src_val,
+                  show_press_toggle_repeat,
+                  temp_switch_first_n_cur_inp_src_state,
+                  temp_switch_first_n_cur_inp_src_val,
+                  switch_inp_src_fw_state,
+                  switch_inp_src_fw_val,
+                  switch_inp_src_bw_state,
+                  switch_inp_src_bw_val,
+                  skip_first_inp_src_switch,
+                  act_inp_src_state,
+                  act_inp_src_val,
+                  deact_inp_src_state,
+                  deact_inp_src_val,
+               },
+               behavior_sec: Behavior {
+                  act_by_def,
+                  share_inp_state,
+                  share_inp_state_val,
+                  switch_show_inp_src_info,
+                  change_focus_show_inp_src_info,
+               }
+            } = global_opts;
 
-         //    // ផ្ទាំងខាងឆ្វេង
-         //    let mic_image = svg!(format!("{}/assets/images/mic.svg", ROOT_PATH())).height(Length::Units(127));
-         //    let mic_con = Container::new(mic_image).width(Length::FillPortion(3)).center_x();
+            let sec_lb_hotkey = Text::new("Hotkey").size(15);
+            let lb_toggle_inp_src = Text::new("Toggle Input Source:");
+            let lb_show_press_toggle_key_repeat = Text::new("Display label when press toggle key repeatedly:");
+            let lb_temp_switch_inp_src = Text::new("Temporally switch between first and current input source:");
+            let lb_inp_src_fw = Text::new("Switch Input Source Forward:");
+            let lb_inp_src_bw = Text::new("Switch Input Source Backward:");
+            let lb_skip_fst_inp_while_switch = Text::new("Skip First Input Source While Switching:");
+            let lb_act_inp_src = Text::new("Activate Input Source:");
+            let lb_deact_inp_src = Text::new("Deactivate Input Source:");
+            let ls_hotkeys: Vec<String> = GlobalOptions::hotkey_opts.iter().map(ToString::to_string).collect();
+            let select_toggle_inp_src = PickList::new(toggle_inp_src_state, ls_hotkeys.clone(), toggle_inp_src_val.clone(), KeyboardMessage::ToggleInpSrcChanged).style(CustomSelect::Primary);
+            let chb_show_press_toggle_key_repeat = Checkbox::new(*show_press_toggle_repeat, "", KeyboardMessage::ShowPressToggleKey).spacing(10).style(CustomCheckbox::Default);
+            let select_temp_switch_inp_src = PickList::new(temp_switch_first_n_cur_inp_src_state, ls_hotkeys.clone(), temp_switch_first_n_cur_inp_src_val.clone(), KeyboardMessage::TempSwitchInpSrcChanged).style(CustomSelect::Primary);
+            let select_swich_inp_src_fw = PickList::new(switch_inp_src_fw_state, ls_hotkeys.clone(), switch_inp_src_fw_val.clone(), KeyboardMessage::SwitchInpSrcFWChanged).style(CustomSelect::Primary);
+            let select_switch_inp_src_bw = PickList::new(switch_inp_src_bw_state, ls_hotkeys.clone(), switch_inp_src_bw_val.clone(), KeyboardMessage::SwitchInpSrcBWChanged).style(CustomSelect::Primary);
+            let chb_skip_fst_inp_while_switch = Checkbox::new(*skip_first_inp_src_switch, "", KeyboardMessage::Skip1InpSrc).spacing(10).style(CustomCheckbox::Default);
+            let select_act_inp_src = PickList::new(act_inp_src_state, ls_hotkeys.clone(), act_inp_src_val.clone(), KeyboardMessage::ActInpSrcChanged).style(CustomSelect::Primary);
+            let select_deact_inp_src = PickList::new(deact_inp_src_state, ls_hotkeys.clone(), deact_inp_src_val.clone(), KeyboardMessage::DeactInpSrcChanged).style(CustomSelect::Primary);
+            let hotkey_sec = Row::new().spacing(10)
+               .push(
+                  Column::new().spacing(15).align_items(Align::End)
+                  .push(sec_lb_hotkey)
+                  .push(lb_toggle_inp_src)
+                  .push(lb_show_press_toggle_key_repeat)
+                  .push(lb_temp_switch_inp_src)
+                  .push(lb_inp_src_fw)
+                  .push(lb_inp_src_bw)
+                  .push(lb_skip_fst_inp_while_switch)
+                  .push(lb_act_inp_src)
+                  .push(lb_deact_inp_src)
+               )
+               .push(
+                  Column::new().spacing(5)
+                  .push(Space::with_height(Length::Units(27)))
+                  .push(select_toggle_inp_src)
+                  .push(chb_show_press_toggle_key_repeat)
+                  .push(select_temp_switch_inp_src)
+                  .push(select_swich_inp_src_fw)
+                  .push(select_switch_inp_src_bw)
+                  .push(chb_skip_fst_inp_while_switch)
+                  .push(select_act_inp_src)
+                  .push(select_deact_inp_src)
+               );
 
-         //    // ផ្ទាំងខាងស្ដាំ
-         //    let txt_dictation = Text::new("Use dictation wherever you can type text. To start dictating,\nuse the shortcut or select Start Dictation from the Edit menu.");
-         //    let lb_dictation = Text::new("Dictation:");
-         //    let rd_dictaion_on = Radio::new(true, "On", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if *turn_on_dict {CustomRadio::Active} else {CustomRadio::Disactive});
-         //    let rd_dictaion_off = Radio::new(false, "Off", Some(*turn_on_dict), KeyboardMessage::DictationToggled).size(15).spacing(10).style(if !(*turn_on_dict) {CustomRadio::Active} else {CustomRadio::Disactive});
-         //    let dictation_section = Row::new().spacing(10).align_items(Align::Center)
-         //       .push(lb_dictation)
-         //       .push(rd_dictaion_on)
-         //       .push(rd_dictaion_off);
+            let sec_lb_behavior = Text::new("Behavior").size(15);
+            let lb_act_by_def = Text::new("Active By Default:");
+            let lb_share_inp_state = Text::new("Share Input State:");
+            let lb_switch_show_inp_src_info = Text::new("Show Input Source info when switch:");
+            let lb_change_focus_show_inp_src_info = Text::new("Show Input Source info when changing focus:");
+            let ls_share_inp_state: Vec<String> = GlobalOptions::share_inp_state_opt.iter().map(ToString::to_string).collect();
+            let chb_act_by_def = Checkbox::new(*act_by_def, "", KeyboardMessage::ActiveByDef).spacing(10).style(CustomCheckbox::Default);
+            let select_share_inp_state = PickList::new(share_inp_state, ls_share_inp_state.clone(), share_inp_state_val.clone(), KeyboardMessage::ShareInpStateChanged).style(CustomSelect::Primary);
+            let chb_switch_show_inp_src_info = Checkbox::new(*switch_show_inp_src_info, "", KeyboardMessage::SwitchShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
+            let chb_change_focus_show_inp_src_info = Checkbox::new(*change_focus_show_inp_src_info, "", KeyboardMessage::ChangeFocusShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
+            let behavior_sec = Row::new().spacing(10)
+               .push(
+                  Column::new().spacing(15).align_items(Align::End)
+                  .push(sec_lb_behavior)
+                  .push(lb_act_by_def)
+                  .push(lb_share_inp_state)
+                  .push(lb_switch_show_inp_src_info)
+                  .push(lb_change_focus_show_inp_src_info)
+               )
+               .push(
+                  Column::new().spacing(5)
+                  .push(Space::with_height(Length::Units(27)))
+                  .push(chb_act_by_def)
+                  .push(select_share_inp_state)
+                  .push(chb_switch_show_inp_src_info)
+                  .push(chb_change_focus_show_inp_src_info)
+               );
 
-         //    let lb_language = Text::new("Language:");
-         //    let pl_language = PickList::new(language_state, &Language::ALL[..], Some(*language_val), KeyboardMessage::LanguageChanged).style(CustomSelect::Primary);
-         //    let language_section = Row::new().spacing(10).align_items(Align::Center)
-         //       .push(lb_language)
-         //       .push(pl_language);
-
-         //    let lb_shortcut = Text::new("Shortcut:");
-         //    let pl_shortcut = PickList::new(shortcut_state, &ShortcutDict::ALL[..], Some(*shortcut_val), KeyboardMessage::ShortcutChanged).style(CustomSelect::Primary);
-         //    let shortcut_section = Row::new().spacing(10).align_items(Align::Center)
-         //       .push(lb_shortcut)
-         //       .push(pl_shortcut);
-            
-         //    let right_con = Container::new(
-         //       Column::new().spacing(20)
-         //       .push(txt_dictation)
-         //       .push(
-         //          Column::new().spacing(10)
-         //          .push(dictation_section)
-         //          .push(language_section)
-         //          .push(shortcut_section)
-         //       )
-         //    ).width(Length::FillPortion(7)).height(Length::Fill);
-         
-         //    Container::new(
-         //       Column::new().spacing(10)
-         //       .push(
-         //          Container::new(
-         //             Row::new().spacing(15)
-         //             .push(mic_con)
-         //             .push(right_con)
-         //          ).height(Length::FillPortion(11))
-         //       )
-         //       .push(
-         //          Container::new(
-         //             Button::new(btn_about, Text::new("  About Dictation & Privacy  ")).on_press(KeyboardMessage::AboutClicked).style(CustomButton::Default)
-         //          ).width(Length::Fill).align_x(Align::End)
-         //       )
-         //    ).width(Length::Fill).height(Length::Fill)
-         // },
+            Container::new(
+               Column::new().spacing(15).align_items(Align::Center)
+               .push(hotkey_sec)
+               .push(Row::new().push(Space::with_width(Length::Units(20))).push(behavior_sec))
+            ).width(Length::Fill).center_x()
+         },
          _ => Container::new(Space::with_height(Length::Fill))
       };
 
       // ផ្នែកខាងក្រោម
-      let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
-         .push(Text::new(if *is_setup_bt_keyboard {"Sorry, It's just UI"} else {""}))
-         .push(Button::new(btn_setup_bt_keyboard, Text::new("  Set Up Bluetooth Keyboard...  ")).style(CustomButton::Default).on_press(KeyboardMessage::SetUpBluetoothKeyboard(!self.is_setup_bt_keyboard)));
-      let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
+      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(KeyboardMessage::DefaultsClicked).style(CustomButton::Default);
+      let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
+      let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
+      if *is_changed {
+         btn_ok = btn_ok.on_press(KeyboardMessage::OKClicked);
+         btn_reset = btn_reset.on_press(KeyboardMessage::ResetClicked);
+      }
+
+      let bottom_sec = Container::new(
+         Row::new().padding(15).spacing(10).align_items(Align::Center)
+         .push(btn_defaults)
+         .push(btn_reset)
+         .push(Space::with_width(Length::Fill))
+         .push(btn_ok),
+      )
+      .width(Length::Fill)
+      .align_x(Align::End);
 
       // មាតិកា   
       let content = Column::new().width(Length::Fill).align_items(Align::Center)
-         .push(tabbar_section)
-         .push(tabview.height(Length::Fill).padding(20).style(CustomContainer::ForegroundGray))
-         .push(bottom_section);
+         .push(tabbar_sec)
+         .push(tabview.height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
+         .push(bottom_sec);
 
       Container::new(content).width(Length::FillPortion(15)).padding(20).height(Length::Fill).style(CustomContainer::Background).into()
    }

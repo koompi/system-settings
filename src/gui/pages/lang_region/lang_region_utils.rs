@@ -46,20 +46,6 @@ pub struct GeneralTab {
    pub btn_cancel_state: button::State,
 }
 
-// #[derive(Debug, Clone, SmartDefault)]
-// struct FormatsTab {
-//    pub short_date_format: pick_list::State<String>,
-//    pub selected_short_date_format: String,
-//    pub long_date_format: pick_list::State<String>,
-//    pub selected_long_date_format: String,
-//    pub short_time_format: pick_list::State<String>,
-//    pub selected_short_time_format: String,
-//    pub long_time_format: pick_list::State<String>,
-//    pub selected_long_time_format: String,
-//    #[default(Local::now())]
-//    pub now: DateTime<Local>,
-// }
-
 #[derive(Debug, Clone, Default)]
 pub struct AppsTab {
    pub app_list: Vec<(char, String, pick_list::State<String>, String, button::State)>,

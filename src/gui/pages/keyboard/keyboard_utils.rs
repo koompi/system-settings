@@ -1,3 +1,5 @@
+use super::add_input_source_sec::AddInputSrcSec;
+use super::conf_input_source_sec::ConfigInputSrcSec;
 use smart_default::SmartDefault;
 use iced::{
    slider, button, scrollable, pick_list
@@ -65,7 +67,6 @@ impl Keyboard {
 
 #[derive(Debug, Clone, Default)]
 pub struct Shortcuts {
-   pub btn_restore: button::State,
    pub shortcuts_tab: Vec<(char, &'static str, button::State)>,
    pub shortcuts_tab_map: Vec<Vec<(bool, &'static str, &'static str)>>,
    pub left_pane_selected: usize,
@@ -144,10 +145,19 @@ impl Shortcuts {
 pub struct InputSources {
    pub btn_add_state: button::State, 
    pub btn_remove_state: button::State, 
-   pub input_sources_tab: Vec<(char, String, button::State)>,
+   pub btn_up_state: button::State, 
+   pub btn_down_state: button::State, 
+   pub btn_config_state: button::State, 
+   pub input_sources: Vec<(char, String, button::State)>,
    pub input_sources_selected: Option<usize>,
    pub show_input_menu: bool,
    pub auto_switch: bool,
+   // add input source
+   pub is_adding: bool,
+   pub add_input_source_sec: AddInputSrcSec,
+   // config input source
+   pub is_config: bool,
+   pub config_input_source_sec: ConfigInputSrcSec,
    pub left_pane_scroll: scrollable::State,
    pub right_pane_scroll: scrollable::State,
 }
@@ -155,11 +165,12 @@ pub struct InputSources {
 impl InputSources {
    pub fn new() -> Self {
       Self {
-         input_sources_tab: vec![
-            ('\u{f0ac}', "English".to_string(), button::State::new()),
+         input_sources: vec![
             ('\u{f57e}', "Khmer".to_string(), button::State::new()),
+            ('\u{f0ac}', "English".to_string(), button::State::new()),
          ],
-         input_sources_selected: Some(1),
+         add_input_source_sec: AddInputSrcSec::new(),
+         config_input_source_sec: ConfigInputSrcSec::new(),
          show_input_menu: true,
          auto_switch: false,
          ..Default::default()
@@ -167,81 +178,65 @@ impl InputSources {
    }
 }
 
-// #[derive(Debug, Clone, Default)]
-// pub struct Dictation {
-//    btn_about: button::State, 
-//    turn_on_dict: bool,
-//    language_state: pick_list::State<Language>,
-//    language_val: Language,
-//    shortcut_state: pick_list::State<ShortcutDict>,
-//    shortcut_val: ShortcutDict,
-// }
+#[derive(Debug, Clone, Default)]
+pub struct GlobalOptions {
+   pub hotkey_sec: HotKey,
+   pub behavior_sec: Behavior,
+}
 
-// impl Dictation {
-//    pub fn new() -> Self {
-//       Self::default()
-//    }
-// }
+#[derive(Debug, Clone, Default)]
+pub struct HotKey {
+   pub toggle_inp_src_state: pick_list::State<String>,
+   pub toggle_inp_src_val: Option<String>,
+   pub show_press_toggle_repeat: bool,
+   pub temp_switch_first_n_cur_inp_src_state: pick_list::State<String>,
+   pub temp_switch_first_n_cur_inp_src_val: Option<String>,
+   pub switch_inp_src_fw_state: pick_list::State<String>,
+   pub switch_inp_src_fw_val: Option<String>,
+   pub switch_inp_src_bw_state: pick_list::State<String>,
+   pub switch_inp_src_bw_val: Option<String>,
+   pub skip_first_inp_src_switch: bool,
+   pub act_inp_src_state: pick_list::State<String>,
+   pub act_inp_src_val: Option<String>,
+   pub deact_inp_src_state: pick_list::State<String>,
+   pub deact_inp_src_val: Option<String>,
+}
 
-// #[derive(Debug, Clone, Copy, SmartDefault, PartialEq, Eq)]
-// pub enum Language {
-//    English,
-//    #[default]
-//    Khmer,
-//    AddNew
-// }
+#[derive(Debug, Clone, Default)]
+pub struct Behavior {
+   pub act_by_def: bool,
+   pub share_inp_state: pick_list::State<String>,
+   pub share_inp_state_val: Option<String>,
+   pub switch_show_inp_src_info: bool,
+   pub change_focus_show_inp_src_info: bool,
+}
 
-// impl Language {
-//    const ALL: [Language; 3] = [
-//       Language::English,
-//       Language::Khmer,
-//       Language::AddNew,
-//    ];
-// }
+#[allow(non_upper_case_globals)]
+impl GlobalOptions {
+   pub const hotkey_opts: [&'static str; 6] = [
+      "Control+Left Shift", "Control+Right Shift", "Super+Space", "Shift+Super+Space", "Shift+Tab", "Control+Alt+Space"
+   ]; 
+   pub const share_inp_state_opt: [&'static str; 3] = ["All", "Application", "No"];
 
-// impl std::fmt::Display for Language {
-//    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//       write!(
-//          f,
-//          "{}",
-//          match self {
-//             Language::English => "English (US)",
-//             Language::Khmer => "Khmer",
-//             Language::AddNew => "Add Language...",
-//          }
-//       )
-//    }
-// }
-
-// #[derive(Debug, Clone, Copy, SmartDefault, PartialEq, Eq)]
-// pub enum ShortcutDict {
-//    Off,
-//    #[default]
-//    CtrlTwice,
-//    FnTwice,
-//    Customize
-// }
-
-// impl ShortcutDict {
-//    const ALL: [ShortcutDict; 4] = [
-//       ShortcutDict::Off,
-//       ShortcutDict::CtrlTwice,
-//       ShortcutDict::FnTwice,
-//       ShortcutDict::Customize,
-//    ];
-// }
-
-// impl std::fmt::Display for ShortcutDict {
-//    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//       write!(
-//          f,
-//          "{}",
-//          match self {
-//             ShortcutDict::Off => "Off",
-//             ShortcutDict::CtrlTwice => "Press Ctrl Key Twice",
-//             ShortcutDict::FnTwice => "Press Fn Key Twice",
-//             ShortcutDict::Customize => "Customize...",
-//          }
-//       )
-//    }
-// }
+   pub fn new() -> Self {
+      Self {
+         hotkey_sec: HotKey {
+            toggle_inp_src_val: Some(Self::hotkey_opts[0].to_owned()),
+            show_press_toggle_repeat: true,
+            switch_inp_src_fw_val: Some(Self::hotkey_opts[0].to_owned()),
+            switch_inp_src_bw_val: Some(Self::hotkey_opts[1].to_owned()),
+            skip_first_inp_src_switch: false,
+            act_inp_src_val: Some(Self::hotkey_opts[2].to_owned()),
+            deact_inp_src_val: Some(Self::hotkey_opts[3].to_owned()),
+            ..HotKey::default()
+         },
+         behavior_sec: Behavior {
+            act_by_def: false,
+            share_inp_state_val: Some(Self::share_inp_state_opt[2].to_owned()),
+            switch_show_inp_src_info: true,
+            change_focus_show_inp_src_info: false,
+            ..Behavior::default()
+         }
+      }
+   }
+}
