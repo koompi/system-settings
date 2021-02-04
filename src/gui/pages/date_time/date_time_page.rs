@@ -1,18 +1,14 @@
-use chrono::prelude::*;
 use chrono::{DateTime, Local};
-use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomTextInput, HOVERED, ERROR};
+use super::date_time_utils::*;
+use crate::gui::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomTextInput};
+use crate::gui::addon_widgets::{icon_btn, tabbar};
 use iced::{
-   canvas::{self, Cache, Canvas, Cursor, Geometry, LineCap, Path, Stroke},
-   button, scrollable, text_input, time, Align, Length, Space, Point, Rectangle, Subscription, Vector, 
-   Button, Checkbox, Color, Column, Container, Element, Row, TextInput, Scrollable, Text,
+   button, time, Align, Length, Space, Subscription, Button, Checkbox, Column, Container, Element, Row, TextInput, Scrollable, Text, canvas::Canvas,
 };
-use libkoompi::system_settings::datetime::DateTimeManager;
+use libkoompi::system_settings::{datetime::DateTimeManager, locale::LocaleManager};
 use iced_custom_widget::Icon;
 
-const DATE_FMT: &'static str = "%d/%m/%Y";
-const TIME_FMT: &'static str = "%r";
 const TZ_FMT: &'static str = "%z";
-const DATETIME_FMT: &'static str = "%F %T";
 
 #[derive(Debug, Clone)]
 pub enum DateTimeMessage {
@@ -22,6 +18,7 @@ pub enum DateTimeMessage {
    TxtDateChanged(String),
    Tick(DateTime<Local>),
    DefaultsClicked,
+   ResetClicked,
    ApplyClicked,
    AutoTZToggled(bool),
    SearchTZChanged(String),
@@ -31,49 +28,63 @@ pub enum DateTimeMessage {
 
 #[derive(Debug, Default)]
 pub struct DateTimePage {
+   locale_manager: LocaleManager,
    datetime_manager: DateTimeManager,
-   tabbar_state: Vec<(String, button::State)>,
+   tabbar_state: Vec<(&'static str, button::State)>,
    current_tab_idx: usize,
    datetime_tab: DateTimeTab,
    timezone_tab: TimeZoneTab,
    selected_tz: Option<String>,
-   defaults_state: button::State,
-   appply_state: button::State,
+   btn_defaults_state: button::State,
+   btn_reset_state: button::State,
+   btn_ok_state: button::State,
    is_changed: bool,
 }
 
 impl DateTimePage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  Date & Time  ".to_string(), button::State::new()),
-         ("  Time Zone  ".to_string(), button::State::new()),
+         ("  Date & Time  ", button::State::new()),
+         ("  Time Zone  ", button::State::new()),
       ];
 
       match DateTimeManager::new() {
          Ok(dt_mn) => {
-            let mut ls_continents = dt_mn.list_timezones().keys().map(ToString::to_string).collect::<Vec<String>>();
-            ls_continents.sort();
-            let ls_view_con = ls_continents.into_iter().map(move |con| (con, button::State::new())).collect::<Vec<(String, button::State)>>();
-            let selected_tz = dt_mn.timezone().to_string();
-            let selected_con = dt_mn.list_timezones().iter().find_map(|(key, val)| if val.contains(&selected_tz.split('/').collect::<Vec<&str>>().last().unwrap().to_string()) { Some(key.to_string()) } else { None });
-            let ls_tz = match &selected_con {
-               Some(selected) => dt_mn.list_timezones().get(selected).unwrap().iter().map(|tz| (tz.to_string(), button::State::new())).collect(),
-               None => Vec::new()
-            };
-
-            Self {
-               tabbar_state: tabs,
-               selected_tz: Some(selected_tz.clone()),
-               datetime_tab: DateTimeTab::default(),
-               timezone_tab: TimeZoneTab {
-                  ls_continents: ls_view_con.clone(),
-                  selected_continent: selected_con,
-                  ls_tz: ls_tz.clone(),
-                  filtered_ls_tz: ls_tz.clone(),
-                  ..TimeZoneTab::default()
+            match LocaleManager::new() {
+               Ok(locale_mn) => {
+                  let mut ls_continents = dt_mn.list_timezones().keys().map(ToString::to_string).collect::<Vec<String>>();
+                  ls_continents.sort();
+                  let ls_view_con = ls_continents.into_iter().map(move |con| (con, button::State::new())).collect::<Vec<(String, button::State)>>();
+                  let selected_tz = dt_mn.timezone().to_string();
+                  let selected_con = dt_mn.list_timezones().iter().find_map(|(key, val)| if val.contains(&selected_tz.split('/').collect::<Vec<&str>>().last().unwrap().to_string()) { Some(key.to_string()) } else { None });
+                  let ls_tz = match &selected_con {
+                     Some(selected) => dt_mn.list_timezones().get(selected).unwrap().iter().map(|tz| (tz.to_string(), button::State::new())).collect(),
+                     None => Vec::new()
+                  };
+      
+                  Self {
+                     tabbar_state: tabs,
+                     selected_tz: Some(selected_tz.clone()),
+                     datetime_tab: DateTimeTab::default(),
+                     timezone_tab: TimeZoneTab {
+                        ls_continents: ls_view_con.clone(),
+                        selected_continent: selected_con,
+                        ls_tz: ls_tz.clone(),
+                        filtered_ls_tz: ls_tz.clone(),
+                        ..TimeZoneTab::default()
+                     },
+                     datetime_manager: dt_mn,
+                     locale_manager: locale_mn,
+                     ..Self::default()
+                  }
                },
-               datetime_manager: dt_mn,
-               ..Self::default()
+               Err(err) => {
+                  eprintln!("{}", err); // error handling here
+                  Self {
+                     tabbar_state: tabs,
+                     ..Self::default()
+                  }
+               }
             }
          },
          Err(err) => {
@@ -93,8 +104,8 @@ impl DateTimePage {
          AutoDateTimeToggled(is_checked) => {
             self.set_ntp(is_checked);
             if !(*self.datetime_manager.ntp()) {
-               self.datetime_tab.temp_date_val = self.datetime_tab.clock.now.format(DATE_FMT).to_string();
-               self.datetime_tab.temp_time_val = self.datetime_tab.clock.now.format(TIME_FMT).to_string();
+               self.datetime_tab.temp_date_val = self.datetime_tab.clock.now.format(self.locale_manager.time_details().d_fmt.as_str()).to_string();
+               self.datetime_tab.temp_time_val = self.datetime_tab.clock.now.format(self.locale_manager.time_details().t_fmt.as_str()).to_string();
             }
          },
          TxtTimeChanged(val) => {
@@ -113,7 +124,7 @@ impl DateTimePage {
                self.datetime_tab.clock.clock.clear();
             }
          }
-         DefaultsClicked => {
+         DefaultsClicked | ResetClicked => {
             let current_tab = self.current_tab_idx;
             *self = Self::new();
             self.current_tab_idx = current_tab;
@@ -123,10 +134,10 @@ impl DateTimePage {
                0 => {
                   let timezone = self.datetime_tab.clock.now.format(TZ_FMT).to_string();
                   let datetime = format!("{} {} {}", self.datetime_tab.temp_date_val, self.datetime_tab.temp_time_val, timezone);
-                  match DateTime::parse_from_str(datetime.as_str(), format!("{} {} {}", DATE_FMT, TIME_FMT, TZ_FMT).as_str()) {
+                  match DateTime::parse_from_str(datetime.as_str(), format!("{} {} {}", self.locale_manager.time_details().d_fmt.as_str(), self.locale_manager.time_details().t_fmt.as_str(), TZ_FMT).as_str()) {
                      Ok(now) => {
                         self.datetime_tab.clock.now = now.into();
-                        match self.datetime_manager.set_datetime(&self.datetime_tab.clock.now.format(DATETIME_FMT).to_string()) {
+                        match self.datetime_manager.set_datetime(&self.datetime_tab.clock.now.format(self.locale_manager.time_details().d_t_fmt.as_str()).to_string()) {
                            Ok(res) => {
                               if res {
                                  self.datetime_tab.is_date_change = false;
@@ -199,29 +210,20 @@ impl DateTimePage {
    pub fn view(&mut self) -> Element<DateTimeMessage> {
       let DateTimePage {
          datetime_manager,
+         locale_manager,
          tabbar_state,
          current_tab_idx,
          datetime_tab,
          timezone_tab, 
          selected_tz,
-         defaults_state,
-         appply_state,
+         btn_defaults_state,
+         btn_reset_state,
+         btn_ok_state,
          is_changed,
       } = self;
 
       // របារផ្ទាំង
-      let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
-      for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-         let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(DateTimeMessage::TabChanged(idx));
-         if *current_tab_idx == idx {
-            btn = btn.style(CustomButton::SelectedTab);
-         } else {
-            btn = btn.style(CustomButton::Tab);
-         }
-         tabbar = tabbar.push(btn);
-      }
-      let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
-      let tabbar_section = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
+      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, |idx| DateTimeMessage::TabChanged(idx));
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -237,13 +239,13 @@ impl DateTimePage {
             } = datetime_tab;
 
             let chb_auto_datetime = Checkbox::new(*datetime_manager.ntp(), "Set date and time automatically", DateTimeMessage::AutoDateTimeToggled).spacing(10).style(CustomCheckbox::Default);
-            let date = clock.now.date().format(DATE_FMT).to_string();
+            let date = clock.now.date().format(locale_manager.time_details().d_fmt.as_str()).to_string();
             let txt_date: Element<_> = if *datetime_manager.ntp() {
                Text::new(date).into()
             } else {
                TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, DateTimeMessage::TxtDateChanged).padding(7).width(Length::Units(70)).style(CustomTextInput::Default).into()
             };
-            let time = clock.now.time().format(TIME_FMT).to_string();
+            let time = clock.now.time().format(locale_manager.time_details().t_fmt.as_str()).to_string();
             let txt_time: Element<_> = if *datetime_manager.ntp() {
                Text::new(time).size(14).into()
             } else {
@@ -295,7 +297,7 @@ impl DateTimePage {
 
             let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, DateTimeMessage::SearchTZChanged).padding(10).style(CustomTextInput::Default);
             let scrollable_continent = ls_continents.iter_mut().fold(Scrollable::new(scroll_continent).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (con, state)| {
-               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(con.as_str()))).width(Length::Fill).style(
+               let mut btn = Button::new(state, Text::new(con.as_str())).width(Length::Fill).style(
                   if let Some(selected) = selected_continent {
                      if selected == con {CustomButton::Selected}
                      else {CustomButton::Text}
@@ -316,7 +318,7 @@ impl DateTimePage {
             ).height(Length::Fill).width(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             let scrollable_tz = filtered_ls_tz.iter_mut().fold(Scrollable::new(scroll_tz).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (tz, state)| {
-               let mut btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Text::new(tz.as_str()))).width(Length::Fill).style(
+               let mut btn = Button::new(state, Text::new(tz.as_str())).width(Length::Fill).style(
                   if let Some(selected_con) = selected_continent {
                      if datetime_manager.timezone() == &format!("{}/{}", selected_con, tz) {CustomButton::Selected} 
                      else if let Some(selected_tz) = selected_tz {
@@ -362,21 +364,24 @@ impl DateTimePage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = Button::new(defaults_state, Text::new("  Defaults  ")).on_press(DateTimeMessage::DefaultsClicked).style(CustomButton::Default);
-      let mut btn_apply = Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
+      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DateTimeMessage::DefaultsClicked).style(CustomButton::Default);
+      let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
+      let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
       if *is_changed {
-         btn_apply = btn_apply.on_press(DateTimeMessage::ApplyClicked);
+         btn_ok = btn_ok.on_press(DateTimeMessage::ApplyClicked);
+         btn_reset = btn_reset.on_press(DateTimeMessage::ResetClicked);
       }
       let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
          .push(btn_defaults)
+         .push(btn_reset)
          .push(Space::with_width(Length::Fill))
-         .push(btn_apply);
+         .push(btn_ok);
       let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
       // មាតិកា
       let content = Column::new().width(Length::Fill).align_items(Align::Center)
-         .push(tabbar_section)
-         .push(tabview.height(Length::Fill).padding(25).style(CustomContainer::ForegroundGray))
+         .push(tabbar_sec)
+         .push(tabview.height(Length::Fill).padding(20).style(CustomContainer::ForegroundGray))
          .push(bottom_section);
 
       Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
@@ -394,98 +399,4 @@ impl DateTimePage {
          Err(err) => eprintln!("{}", err)
       }
    }
-}
-
-#[derive(Debug, Default)]
-pub struct DateTimeTab {
-   // auto_datetime: bool,
-   clock: Clock,
-   txt_time_state: text_input::State,
-   temp_time_val: String,
-   is_time_change: bool,
-   txt_date_state: text_input::State,
-   temp_date_val: String,
-   is_date_change: bool,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct TimeZoneTab {
-   // auto_tz: bool,
-   search_state: text_input::State,
-   search_val: String,
-   ls_continents: Vec<(String, button::State)>,
-   ls_tz: Vec<(String, button::State)>,
-   filtered_ls_tz: Vec<(String, button::State)>,
-   selected_continent: Option<String>,
-   scroll_tz: scrollable::State,
-   scroll_continent: scrollable::State,
-}
-
-#[derive(Debug)]
-struct Clock {
-   now: DateTime<Local>,
-   clock: Cache,
-}
-
-impl Default for Clock {
-   fn default() -> Self {
-      Self {
-         now: Local::now(),
-         clock: Default::default(),
-      }
-   }
-}
-
-impl canvas::Program<DateTimeMessage> for Clock {
-   fn draw(&self, bounds: Rectangle, _cursor: Cursor) -> Vec<Geometry> {
-      let clock = self.clock.draw(bounds.size(), |frame| {
-         let center = frame.center();
-         let radius = frame.width().min(frame.height()) / 2.0;
-
-         let background = Path::circle(center, radius);
-         let foreground = Path::circle(center, radius * 0.9);
-         frame.fill(&background, Color {a: 0.7, ..HOVERED});
-         frame.fill(&foreground, Color::WHITE);
-         let circle_center = Path::circle(center, radius * 0.05);
-         frame.fill(&circle_center, Color::BLACK);
-
-         let short_hand = Path::line(Point::ORIGIN, Point::new(0.0, -0.5 * radius));
-         let long_hand = Path::line(Point::ORIGIN, Point::new(0.0, -0.8 * radius));
-         let thin_stroke = Stroke {
-            width: 1.0,
-            color: ERROR,
-            line_cap: LineCap::Round,
-            ..Stroke::default()
-         };
-         let wide_stroke = Stroke {
-            width: thin_stroke.width * 2.5,
-            color: Color::BLACK,
-            ..thin_stroke
-         };
-         frame.translate(Vector::new(center.x, center.y));
-
-         frame.with_save(|frame| {
-            frame.rotate(hand_rotation(self.now.hour(), 12));
-            frame.stroke(&short_hand, wide_stroke);
-         });
-
-         frame.with_save(|frame| {
-            frame.rotate(hand_rotation(self.now.minute(), 60));
-            frame.stroke(&long_hand, wide_stroke);
-         });
-
-         frame.with_save(|frame| {
-            frame.rotate(hand_rotation(self.now.second(), 60));
-            frame.stroke(&long_hand, thin_stroke);
-         });
-      });
-
-      vec![clock]
-   }
-}
-
-fn hand_rotation(n: u32, total: u32) -> f32 {
-   let turns = n as f32 / total as f32;
-
-   2.0 * std::f32::consts::PI * turns
 }
