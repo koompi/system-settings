@@ -103,6 +103,7 @@ impl ConfigInputSrcSec {
 
       Container::new(
          Column::new().spacing(15).width(Length::Fill).align_items(Align::Center)
+         .push(Space::with_height(Length::Fill))
          .push(content)
          .push(Space::with_height(Length::Fill))
          .push(
