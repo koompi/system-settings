@@ -24,6 +24,7 @@ pub struct BluetoothPage {
    dev_name_val: String,
    bluetooth_settings: BluetoothSettings,
    btn_refresh: button::State,
+   bluedata: blue_backend::BluetoothData,
    vector_bluetooths: Vec<(BluetoothDevType, String, BluetoothStatus)>,
    scroll_area: scrollable::State,
 }
@@ -73,11 +74,13 @@ impl BluetoothPage {
       let simpler_code = |b_type: BluetoothDevType, b_ssid: &str, b_status: BluetoothStatus| {
          (b_type, b_ssid.to_string(), b_status)
       };
+      let mut data = blue_backend::BluetoothData::new();
+      let list_address = data.get_address().unwrap();
       let mut init_vec_state: Vec<(BluetoothDevType, String, BluetoothStatus)> = Vec::new();
-      for _i in 1..=10 {
-         init_vec_state.push(simpler_code(
+      for new_data in list_address {
+         init_vec_state.push((
             BluetoothDevType::Computer,
-            "Mi Smart Band 5",
+            format!("{} {}", new_data.0, new_data.1),
             BluetoothStatus::NoConnected,
          ));
       }
@@ -85,6 +88,7 @@ impl BluetoothPage {
          vector_bluetooths: init_vec_state,
          is_input: false,
          device_name: "sna-koompi".to_string(),
+         bluedata: data,
          bluetooth_settings: BluetoothSettings::new(),
          ..BluetoothPage::default()
       }
@@ -94,6 +98,7 @@ impl BluetoothPage {
       match message {
          DevEnabled(is_enable) => {
             self.is_enable = is_enable;
+            self.bluedata.turn_on_or_off(is_enable);
          }
          DevAllowed(is_allow) => {
             self.is_allowed = is_allow;
@@ -117,23 +122,25 @@ impl BluetoothPage {
          DevEdited => {
             self.is_input = !self.is_input;
          }
-         DevRefreshed => {}
+         DevRefreshed => {
+            self.bluedata.get_data().clear();
+            let list_address = self.bluedata.get_address().unwrap();
+            let length = self.vector_bluetooths.len();
+            for _ in 0..=length - 1 {
+               self.vector_bluetooths.pop();
+            }
+
+            for new_data in list_address {
+               self.vector_bluetooths.push((
+                  BluetoothDevType::Computer,
+                  format!("{} {}", new_data.0, new_data.1),
+                  BluetoothStatus::NoConnected,
+               ));
+            }
+         }
          DevEditedVal(val) => {
             self.dev_name_val = val;
-         } // WindowResize((w, h)) => {
-           //    println!("width: {} & height: {}", w, h);
-           //    if w <= 603 {
-           //    } else {
-           //    }
-           // }
-           // FileDrop(path) => {
-           //    println!("path: {:?}", path.as_path());
-           // }
-
-           // Escape => {
-           //    println!("Escape key pressed: ");
-           //    self.is_shown_settings = !self.is_shown_settings;
-           // }
+         }
       }
    }
    // fn subscription(&self) -> Subscription<BluetoothMessage> {
@@ -259,6 +266,7 @@ impl BluetoothPage {
          .push(Text::new("Other Devices").size(24))
          .push(
             Row::new()
+               .padding(10)
                .push(Checkbox::new(
                   self.is_shown,
                   "Show Bluetooth devices without names",
@@ -449,5 +457,85 @@ impl BluetoothSettings {
          .width(Length::FillPortion(1))
          .style(ContainerStyle::LightGrayCircle)
          .into()
+   }
+}
+
+mod blue_backend {
+   use blurz::bluetooth_adapter::BluetoothAdapter as Adapter;
+   use blurz::bluetooth_device::BluetoothDevice as Device;
+   use blurz::bluetooth_discovery_session::BluetoothDiscoverySession as DiscoverySession;
+   use blurz::bluetooth_session::BluetoothSession as Session;
+   use std::thread;
+   use std::time::Duration;
+   #[derive(Default, Debug, Clone)]
+   pub struct BluetoothData {
+      data: Vec<(String, String)>,
+      is_trusted: bool,
+      is_paired: bool,
+      is_connected: bool,
+   }
+   impl BluetoothData {
+      pub fn new() -> Self {
+         Self {
+            ..Default::default()
+         }
+      }
+      pub fn get_data(&mut self) -> &mut Vec<(String, String)> {
+         &mut self.data
+      }
+      pub fn turn_on_or_off(&mut self, status: bool) -> Result<bool, Box<dyn std::error::Error>> {
+         let bt_session = &Session::create_session(None)?;
+         let adapter: Adapter = Adapter::init(bt_session)?;
+         if status {
+            adapter.set_powered(true)?;
+         } else {
+            adapter.set_powered(false)?;
+         }
+         Ok(true)
+      }
+      pub fn get_address(&mut self) -> Result<&Vec<(String, String)>, Box<dyn std::error::Error>> {
+         let bt_session = &Session::create_session(None)?;
+         let adapter: Adapter = Adapter::init(bt_session)?;
+         adapter.set_powered(true)?;
+         let session = DiscoverySession::create_session(&bt_session, adapter.get_id()).unwrap();
+         thread::sleep(Duration::from_millis(200));
+         session.start_discovery().unwrap();
+         thread::sleep(Duration::from_millis(200));
+         let devices = adapter.get_device_list().unwrap();
+         println!("{} device(s) found", devices.len());
+         for d in devices {
+            let device = Device::new(bt_session, d);
+            println!(
+               "{:?} name: {:?} is trust: {:?}",
+               device.get_address(),
+               device.get_name(),
+               device.is_trusted(),
+            );
+            self.data.push((String::from(""), device.get_address()?));
+            match device.get_name() {
+               Ok(name) => {
+                  self.data.push((name, String::from("")));
+               }
+               Err(e) => println!("Error: {}", e),
+            }
+            // adapter.remove_device(device.get_id()).unwrap();
+         }
+         session.stop_discovery().unwrap();
+         Ok(&self.data)
+      }
+   }
+}
+
+#[cfg(test)]
+mod tests {
+   use super::blue_backend::BluetoothData;
+   #[test]
+   fn testbluetooth() {
+      let mut blue = BluetoothData::new();
+      match blue.get_address() {
+         Ok(data) => println!("data: {:?}", data),
+         Err(e) => print!("error: {}", e),
+      }
+      assert_eq!(2, 1);
    }
 }

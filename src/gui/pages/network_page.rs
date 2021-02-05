@@ -1645,9 +1645,7 @@ impl NetSettings {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn sound_test() {
-        assert_eq!(2 + 2, 3);
-    }
+    fn test_connection() {}
 }
 
 // helper functions
