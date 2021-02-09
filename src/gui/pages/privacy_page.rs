@@ -14,7 +14,7 @@ pub enum PrivacyMessage {
    ReqPWDurChanged(ReqPWDuration),
    ShowMsgScreenLockToggled(bool),
    LogoutAfterToggled(bool),
-   LogoutAfterDurChanged(f32),
+   LogoutAfterDurChanged(u8),
    ReqAdminPWToggled(bool),
    PrivacyTabSelected(usize),
    EnablePrivacyToggled(bool),
@@ -116,9 +116,8 @@ impl PrivacyPage {
                set_lock_msg_state,
                logout_after,
                logout_after_dur_state: DurationState {
-                  dec_state,
+                  dur_state,
                   dur_val, 
-                  inc_state
                },
                req_admin_pw_sys_pref,
             } = general_tab;
@@ -147,7 +146,7 @@ impl PrivacyPage {
                .push(btn_set_lock_msg)
             );
             let chb_logout_after = Checkbox::new(*logout_after, "Log out after", PrivacyMessage::LogoutAfterToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_logout_after_dur = Stepper::new(*dur_val, dec_state, inc_state, PrivacyMessage::LogoutAfterDurChanged);
+            let pl_logout_after_dur = Stepper::new(dur_state, *dur_val, 100, PrivacyMessage::LogoutAfterDurChanged);
             let lb_min_inactivity = Text::new("minutes of inactivity");
             let logout_after_dur_sec = Container::new(
                Row::new().spacing(10).align_items(Align::Center)
@@ -435,8 +434,7 @@ impl std::fmt::Display for ReqPWDuration {
 
 #[derive(Debug, Clone, SmartDefault)]
 pub struct DurationState {
-   dec_state: stepper::State,
-   #[default(60.0)]
-   dur_val: f32,
-   inc_state: stepper::State,
+   dur_state: stepper::State,
+   #[default(60)]
+   dur_val: u8,
 }
