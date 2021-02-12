@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-iced = { version = "0.2", features = ["debug", "svg", "canvas", "tokio"] }
+iced = { version = "0.2", features = ["debug", "svg", "canvas", "tokio", "image"] }
 iced_style = "0.2"
 iced_custom_widget = { git="https://github.com/koompi/iced_custom_widget.git", branch="master" }
 vedas_core = { git="https://github.com/koompi/vedas", branch="dev" }
@@ -25,3 +25,4 @@ num-format = { version = "0.4", features = ["with-system-locale"] }
 tauri-dialog = "0.1.0"
 sdl2 = "0.34.3"
 dirs = "3.0.1"
+users = "0.11.0"

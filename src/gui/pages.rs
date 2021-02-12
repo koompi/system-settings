@@ -17,7 +17,8 @@ mod sound_page;
 mod sys_info_page;
 mod touchpad_page;
 mod update_page;
-mod user_page;
+mod user_group;
+
 use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
 use bluetooth_page::{BluetoothMessage, BluetoothPage};
@@ -37,8 +38,9 @@ use sound_page::{SoundMessage, SoundPage};
 use sys_info_page::{InfoMessage, InfoPage};
 use touchpad_page::{TouchpadMessage, TouchpadPage};
 use update_page::{SoftUpdateMsg, SoftwareUpdate};
-use user_page::{UserPage, UserPageMsg};
+use user_group::{UserGroupPage, UserGroupMsg};
 
+#[derive(Default)]
 pub struct Pages {
    pages: Vec<PageModel>,
    current: usize,
@@ -57,7 +59,7 @@ pub enum PagesMessage {
    DisplayMessage(DisplayMessage),
    BatteryMessage(BatteryMessage),
    InfoMessage(InfoMessage),
-   UserPageMsg(UserPageMsg),
+   UserGroupMsg(UserGroupMsg),
    DateTimeMessage(DateTimeMessage),
    LangRegionMessage(LangRegionMessage),
    NotifyMsg(NotifyMsg),
@@ -72,7 +74,7 @@ pub enum PageModel {
    GeneralPage { general_page: General },
    DateTimePageModel { datetime_page: DateTimePage },
    LanguagePageModel { lang_region_page: LangRegionPage },
-   UsersPageModel { user_page: UserPage },
+   UserGroupPageModel { user_group_page: UserGroupPage },
    AccessPageModel { access_page: AccessPage },
    DesktopPageModel { desktop_page: DesktopPage },
    NotificationsModel { noti_page: NotifyPage },
@@ -105,8 +107,8 @@ impl Pages {
             LanguagePageModel {
                lang_region_page: LangRegionPage::new(),
             },
-            UsersPageModel {
-               user_page: UserPage::new(),
+            UserGroupPageModel {
+               user_group_page: UserGroupPage::new(),
             },
             AccessPageModel {
                access_page: AccessPage::new(),
@@ -154,7 +156,7 @@ impl Pages {
                info_page: InfoPage::new(),
             },
          ],
-         current: 0,
+         ..Self::default()
       }
    }
 
@@ -239,9 +241,9 @@ impl PageModel {
                info_page.update(msg);
             }
          }
-         UserPageMsg(msg) => {
-            if let UsersPageModel { user_page } = self {
-               user_page.update(msg);
+         UserGroupMsg(msg) => {
+            if let UserGroupPageModel { user_group_page } = self {
+               user_group_page.update(msg);
             }
          }
          DateTimeMessage(msg) => {
@@ -308,9 +310,9 @@ impl PageModel {
          LanguagePageModel { lang_region_page } => lang_region_page
             .view()
             .map(move |msg| PagesMessage::LangRegionMessage(msg)),
-         UsersPageModel { user_page } => user_page
+         UserGroupPageModel { user_group_page } => user_group_page
             .view()
-            .map(move |msg| PagesMessage::UserPageMsg(msg)),
+            .map(move |msg| PagesMessage::UserGroupMsg(msg)),
          UpdatePageModel { update_page } => update_page
             .view()
             .map(move |msg| PagesMessage::SoftUpdateMsg(msg)),
@@ -366,7 +368,7 @@ impl PageModel {
          GeneralPage { .. } => "General",
          DateTimePageModel { .. } => "Date & Time",
          LanguagePageModel { .. } => "Language & Region",
-         UsersPageModel { .. } => "Users & Groups",
+         UserGroupPageModel { .. } => "Users & Groups",
          AccessPageModel { .. } => "Accessibility",
          DesktopPageModel { .. } => "Desktop & Screeen Saver",
          NotificationsModel { .. } => "Notifications",

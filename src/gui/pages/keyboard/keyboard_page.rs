@@ -67,10 +67,10 @@ impl KeyboardPage {
    pub fn new() -> Self {
       Self {
          tabbar_state: vec![
-            ("  Keyboard  ", button::State::new()),
-            ("  Shortcuts  ", button::State::new()),
-            ("  Input Sources  ", button::State::new()),
-            ("  Global Options  ", button::State::new()),
+            ("Keyboard", button::State::new()),
+            ("Shortcuts", button::State::new()),
+            ("Input Sources", button::State::new()),
+            ("Global Options", button::State::new()),
          ],
          current_tab_idx: 0,
          keyboard: Keyboard::new(),

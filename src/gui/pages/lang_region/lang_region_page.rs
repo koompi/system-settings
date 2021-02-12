@@ -60,8 +60,8 @@ pub struct LangRegionPage {
 impl LangRegionPage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  General  ", button::State::new()),
-         ("  Apps  ", button::State::new()),
+         ("General", button::State::new()),
+         ("Apps", button::State::new()),
       ];
 
       match LocaleManager::new() {

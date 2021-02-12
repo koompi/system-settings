@@ -44,8 +44,8 @@ pub struct DateTimePage {
 impl DateTimePage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  Date & Time  ", button::State::new()),
-         ("  Time Zone  ", button::State::new()),
+         ("Date & Time", button::State::new()),
+         ("Time Zone", button::State::new()),
       ];
 
       match DateTimeManager::new() {
