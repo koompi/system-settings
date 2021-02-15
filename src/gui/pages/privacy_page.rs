@@ -2,7 +2,7 @@ use iced::{
    pick_list, button, scrollable, Element, Align, Space, Length, 
    Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList,
 };
-use iced_custom_widget::{Icon, IconBrand, stepper, Stepper};
+use iced_custom_widget::{Icon, IconBrand, number_input, NumberInput};
 use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 
@@ -146,7 +146,7 @@ impl PrivacyPage {
                .push(btn_set_lock_msg)
             );
             let chb_logout_after = Checkbox::new(*logout_after, "Log out after", PrivacyMessage::LogoutAfterToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_logout_after_dur = Stepper::new(dur_state, *dur_val, 100, PrivacyMessage::LogoutAfterDurChanged);
+            let pl_logout_after_dur = NumberInput::new(dur_state, *dur_val, 100, PrivacyMessage::LogoutAfterDurChanged).width(Length::Units(50));
             let lb_min_inactivity = Text::new("minutes of inactivity");
             let logout_after_dur_sec = Container::new(
                Row::new().spacing(10).align_items(Align::Center)
@@ -434,7 +434,7 @@ impl std::fmt::Display for ReqPWDuration {
 
 #[derive(Debug, Clone, SmartDefault)]
 pub struct DurationState {
-   dur_state: stepper::State,
+   dur_state: number_input::State,
    #[default(60)]
    dur_val: u8,
 }

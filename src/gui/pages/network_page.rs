@@ -7,9 +7,9 @@ use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Tab;
 use icw::components::Toggler;
-use icw::styles::{
-    buttons::ButtonStyle, containers::ContainerStyle, pick_list::PickListStyle, rules::RuleStyle,
-    text_input::InputStyle,
+use crate::gui::styles::{
+    buttons::ButtonStyle, containers::ContainerStyle, picklist::PickListStyle, rules::RuleStyle,
+    textinput::InputStyle,
 };
 use std::fmt;
 /// # use iced_native::{renderer::Null, Element, Grid as NativeGrid, Text};
