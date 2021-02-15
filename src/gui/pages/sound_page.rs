@@ -630,8 +630,8 @@ use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Tab;
 use icw::components::Toggler;
-use icw::styles::{
-   buttons::ButtonStyle, containers::ContainerStyle, pick_list::PickListStyle, slider::SliderStyle,
+use crate::gui::styles::{
+   buttons::ButtonStyle, containers::ContainerStyle, picklist::PickListStyle, sliders::SliderStyle,
 };
 
 use std::collections::HashMap;

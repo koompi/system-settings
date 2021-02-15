@@ -5,7 +5,7 @@ use iced::{
 pub const BACKGROUND: Color = Color::from_rgb(238.0 / 255.0, 238.0 / 255.0, 238.0 / 255.0);
 pub const FOREGROUND: Color = Color::from_rgb(224.0 / 255.0, 224.0 / 255.0, 224.0 / 255.0);
 pub const HOVERED: Color = Color::from_rgb(129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0);
-pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 86.0 / 255.0, 179.0 / 255.0);
+pub const ACCENT: Color = Color::from_rgb(15.0 / 255.0, 85.0 / 255.0, 179.0 / 255.0);
 pub const SUCCESS: Color = Color::from_rgb(31.0 / 255.0, 139.0 / 255.0, 36.0 / 255.0);
 pub const WARNING: Color = Color::from_rgb(212.0 / 255.0, 176.0 / 255.0, 17.0 / 255.0);
 pub const ERROR: Color = Color::from_rgb(218.0 / 255.0, 16.0 / 255.0, 11.0 / 255.0);
@@ -430,5 +430,275 @@ impl checkbox::StyleSheet for CustomCheckbox {
 
    fn hovered(&self, is_checked: bool) -> checkbox::Style {
       self.active(is_checked)
+   }
+}
+
+pub mod buttons {
+   use iced::{button, Color, Background, Vector};
+   pub enum ButtonStyle {
+      Default,
+      Circular(u8, u8, u8, f32),
+      BigCircular(u8, u8, u8, f32),
+      CircleRadius(u8, u8, u8, f32, f32, Color),
+      Transparent,
+   }
+   
+   impl button::StyleSheet for ButtonStyle {
+      fn active(&self) -> button::Style {
+         button::Style {
+               shadow_offset: Vector::new(0.0, 0.0),
+               background: match self {
+                  ButtonStyle::Default => Some(Background::Color([0.87, 0.87, 0.87].into())),
+                  ButtonStyle::Circular(c1, c2, c3, p)
+                  | ButtonStyle::CircleRadius(c1, c2, c3, p, _, _)
+                  | ButtonStyle::BigCircular(c1, c2, c3, p) => {
+                     Some(Background::Color(Color::from_rgba8(*c1, *c2, *c3, *p)))
+                  }
+                  ButtonStyle::Transparent => Some(Background::Color(Color::TRANSPARENT)),
+               },
+               border_radius: match self {
+                  ButtonStyle::Default | ButtonStyle::Circular(_, _, _, _) => 4.0,
+                  ButtonStyle::BigCircular(_, _, _, _) => 25.0,
+                  ButtonStyle::Transparent => 0.0,
+                  ButtonStyle::CircleRadius(_, _, _, _, r, _) => *r,
+               },
+               border_width: 0.0,
+               border_color: [0.7, 0.7, 0.7].into(),
+               text_color: match self {
+                  ButtonStyle::Default
+                  | ButtonStyle::BigCircular(_, _, _, _)
+                  | ButtonStyle::Circular(_, _, _, _) => Color::WHITE,
+                  ButtonStyle::Transparent => Color::BLACK,
+                  ButtonStyle::CircleRadius(_, _, _, _, _, color) => *color,
+               },
+         }
+      }
+   }
+}
+
+pub mod containers {
+   use iced::{container, Color, Background};
+   pub enum ContainerStyle {
+      Custom,
+      InkColor,
+      LightGray,
+      White,
+      LightGrayCircle,
+      Black,
+   }
+   impl container::StyleSheet for ContainerStyle {
+      fn style(&self) -> container::Style {
+         container::Style {
+            text_color: None,
+            background: match self {
+                  ContainerStyle::Custom => {
+                     Some(Background::Color(Color::from_rgba8(223, 228, 234, 1.0)))
+                  }
+                  ContainerStyle::InkColor => {
+                     Some(Background::from(Color::from_rgba8(206, 214, 224, 1.0)))
+                  }
+                  ContainerStyle::LightGray => {
+                     Some(Background::from(Color::from_rgba8(215, 219, 221, 1.0)))
+                  }
+                  ContainerStyle::White => {
+                     Some(Background::from(Color::from_rgba8(255, 255, 255, 1.0)))
+                  }
+                  ContainerStyle::LightGrayCircle => {
+                     Some(Background::from(Color::from_rgba8(215, 219, 221, 0.5)))
+                  }
+                  ContainerStyle::Black => Some(Background::from(Color::BLACK)),
+            },
+            border_radius: match self {
+                  ContainerStyle::Custom
+                  | ContainerStyle::LightGrayCircle
+                  | ContainerStyle::White
+                  | ContainerStyle::InkColor
+                  | ContainerStyle::Black => 10.0,
+                  ContainerStyle::LightGray => 0.0,
+            },
+            border_width: 0.0,
+            border_color: Color::from_rgba8(255, 255, 255, 1.0),
+         }
+      }
+   }
+}
+
+pub mod rules {
+   use iced::{rule, Color};
+   pub struct RuleStyle;
+
+   impl rule::StyleSheet for RuleStyle {
+       fn style(&self) -> rule::Style {
+           rule::Style {
+               color: Color::WHITE,
+               width: 1,
+               radius: 0.0,
+               fill_mode: rule::FillMode::Percent(100.0),
+           }
+       }
+   }
+
+}
+
+pub mod textinput {
+   use iced::{text_input, Color, Background};
+   pub enum InputStyle {
+      Default,
+      CircularBorder,
+      InkBorder,
+   }
+
+   impl text_input::StyleSheet for InputStyle {
+      fn active(&self) -> text_input::Style {
+         text_input::Style {
+            background: Background::Color(Color::from_rgba8(215, 219, 221, 0.5)),
+            border_radius: 8.0,
+            border_width: 0.0,
+            border_color: Color::from_rgb(0.7, 0.7, 0.7),
+         }
+      }
+
+      fn focused(&self) -> text_input::Style {
+         text_input::Style {
+            border_color: Color::from_rgb(0.5, 0.5, 0.5),
+            background: Background::from(Color::from_rgba8(215, 219, 221, 0.5)),
+            border_width: match self {
+                  InputStyle::Default => 1.0,
+                  InputStyle::CircularBorder | InputStyle::InkBorder => 2.0,
+            },
+            ..self.active()
+         }
+      }
+
+      fn placeholder_color(&self) -> Color {
+         Color::from_rgb(0.7, 0.7, 0.7)
+      }
+
+      fn value_color(&self) -> Color {
+         Color::from_rgba8(86, 101, 115, 1.0)
+      }
+
+      fn selection_color(&self) -> Color {
+         Color::from_rgba(1.0, 1.0, 1.0, 1.0)
+      }
+   }    
+}
+
+pub mod progressbar {
+   use iced::{progress_bar, Color, Background};
+   pub enum SliderStyle {
+      Default,
+      Circle(u8, u8, u8, f32, f32),
+      BigCircle(u8, u8, u8, f32, f32),
+      WhiteGrayCircle(u8, u8, u8, f32, f32),
+   }
+
+   impl progress_bar::StyleSheet for SliderStyle {
+      fn style(&self) -> progress_bar::Style {
+         progress_bar::Style {
+            background: Background::Color(Color::from_rgb(0.6, 0.6, 0.6)),
+            bar: match self {
+                  SliderStyle::WhiteGrayCircle(r, b, g, alpha, _)
+                  | SliderStyle::Circle(r, b, g, alpha, _)
+                  | SliderStyle::BigCircle(r, b, g, alpha, _) => {
+                     Background::Color(Color::from_rgba8(*r, *b, *g, *alpha))
+                  }
+                  SliderStyle::Default => Background::Color(Color::from_rgb(0.3, 0.9, 0.3)),
+            },
+            border_radius: match self {
+                  SliderStyle::WhiteGrayCircle(_, _, _, _, r)
+                  | SliderStyle::BigCircle(_, _, _, _, r)
+                  | SliderStyle::Circle(_, _, _, _, r) => *r,
+                  SliderStyle::Default => 5.0,
+            },
+         }
+      }
+   }
+}
+
+pub mod picklist {
+   use iced::{pick_list::{self, Menu}, Color, Background};
+   pub struct PickListStyle;
+
+   impl pick_list::StyleSheet for PickListStyle {
+      fn menu(&self) -> Menu {
+         Menu {
+               text_color: Color::BLACK,
+               background: Background::Color(Color::from_rgba8(215, 219, 221, 1.0)),
+               border_width: 0.5,
+               border_color: [0.7, 0.7, 0.7].into(),
+               selected_text_color: Color::WHITE,
+               selected_background: Background::Color(Color::from_rgba8(86, 101, 115, 1.0)),
+         }
+      }
+      fn active(&self) -> pick_list::Style {
+         pick_list::Style {
+               text_color: Color::BLACK,
+               background: Background::Color(Color::from_rgba8(215, 219, 221, 0.5)),
+               border_radius: 10.0,
+               border_width: 0.0,
+               border_color: Color::from_rgba(1.0, 1.0, 1.0, 1.0),
+               icon_size: 0.5,
+         }
+      }
+
+      fn hovered(&self) -> pick_list::Style {
+         pick_list::Style {
+               border_color: Color::BLACK,
+               ..self.active()
+         }
+      }
+   }
+}
+
+pub mod sliders {
+   use iced::{slider::{self, Handle, HandleShape}, Color, Background};
+   pub enum SliderStyle {
+      Default,
+      Circle,
+   }
+
+   impl slider::StyleSheet for SliderStyle {
+      fn active(&self) -> slider::Style {
+         slider::Style {
+            rail_colors: (
+                  Color::from_rgba8(128, 139, 150, 1.0),
+                  Color::from_rgba8(128, 139, 150, 1.0),
+            ),
+            handle: Handle {
+                  shape: match self {
+                     SliderStyle::Default => HandleShape::Rectangle {
+                        width: 24,
+                        border_radius: 8.0,
+                     },
+                     SliderStyle::Circle => HandleShape::Circle { radius: 12.0 },
+                  },
+                  color: Color::from_rgba8(128, 139, 150, 1.5),
+                  border_color: Color::from_rgba8(44, 62, 80, 1.0),
+                  border_width: 1.0,
+            },
+         }
+      }
+      fn hovered(&self) -> slider::Style {
+         let active = self.active();
+         slider::Style {
+            handle: Handle {
+                  color: Color::from_rgba8(205, 213, 203, 1.0),
+                  ..active.handle
+            },
+            ..active
+         }
+      }
+      fn dragging(&self) -> slider::Style {
+         let active = self.active();
+
+         slider::Style {
+            handle: Handle {
+                  color: Color::from_rgba8(205, 213, 203, 1.0),
+                  ..active.handle
+            },
+            ..active
+         }
+      }
    }
 }

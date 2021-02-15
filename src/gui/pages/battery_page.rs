@@ -3,7 +3,7 @@ use iced::{
    button, pick_list, slider, Align, Button, Checkbox, Column, Container, Element, Length,
    PickList, Row, Slider, Space, Svg, Text,
 };
-use iced_custom_widget::{stepper, Icon, Stepper};
+use iced_custom_widget::{number_input, Icon, NumberInput};
 
 use super::super::styles::{
    CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider,
@@ -31,12 +31,12 @@ pub enum BatteryMessage {
    RestoreDefaultPowerClicked,
    StartUpToggled(bool),
    StartUpRepeatChanged(RepeatDays),
-   StartUpHourChanged(f32),
-   StartUpMinuteChanged(f32),
+   StartUpHourChanged(u8),
+   StartUpMinuteChanged(u8),
    SleepToggled(bool),
    SleepRepeatChanged(RepeatDays),
-   SleepHourChanged(f32),
-   SleepMinuteChanged(f32),
+   SleepHourChanged(u8),
+   SleepMinuteChanged(u8),
    RestorePrevClicked,
    ApplyScheduleClicked,
 }
@@ -620,20 +620,18 @@ impl BatteryPage {
                BatteryMessage::StartUpRepeatChanged,
             )
             .style(CustomSelect::Primary);
-            let sp_startup_hour = Stepper::new(
+            let sp_startup_hour = NumberInput::new(
+               &mut startup_time_state.hour_state,
                startup_time_state.hour_val,
-               &mut startup_time_state.dec_hour_state,
-               &mut startup_time_state.inc_hour_state,
+               24,
                BatteryMessage::StartUpHourChanged,
-            )
-            .max(24.0);
-            let sp_startup_minute = Stepper::new(
+            ).width(Length::Units(50));
+            let sp_startup_minute = NumberInput::new(
+               &mut startup_time_state.minute_state,
                startup_time_state.minute_val,
-               &mut startup_time_state.dec_minute_state,
-               &mut startup_time_state.inc_minute_state,
+               60,
                BatteryMessage::StartUpMinuteChanged,
-            )
-            .max(60.0);
+            ).width(Length::Units(50));
             let txt_startup_hint = Text::new("Scheduled start up will only occur when a power adapter is connected to your computer.");
             let startup_hint_con = Container::new(if *startup {
                txt_startup_hint
@@ -669,20 +667,18 @@ impl BatteryPage {
                BatteryMessage::SleepRepeatChanged,
             )
             .style(CustomSelect::Primary);
-            let sp_sleep_hour = Stepper::new(
+            let sp_sleep_hour = NumberInput::new(
+               &mut sleep_time_state.hour_state,
                sleep_time_state.hour_val,
-               &mut sleep_time_state.dec_hour_state,
-               &mut sleep_time_state.inc_hour_state,
+               24,
                BatteryMessage::SleepHourChanged,
-            )
-            .max(24.0);
-            let sp_sleep_minute = Stepper::new(
+            ).width(Length::Units(50));
+            let sp_sleep_minute = NumberInput::new(
+               &mut sleep_time_state.minute_state,
                sleep_time_state.minute_val,
-               &mut sleep_time_state.dec_minute_state,
-               &mut sleep_time_state.inc_minute_state,
+               60,
                BatteryMessage::SleepMinuteChanged,
-            )
-            .max(60.0);
+            ).width(Length::Units(50));
             let sleep_con = Container::new(
                Row::new()
                   .spacing(7)
@@ -830,23 +826,21 @@ pub struct Schedule {
 
 #[derive(Debug, Clone, Default)]
 struct TimeState {
-   inc_hour_state: stepper::State,
-   hour_val: f32,
-   dec_hour_state: stepper::State,
-   inc_minute_state: stepper::State,
-   minute_val: f32,
-   dec_minute_state: stepper::State,
+   hour_state: number_input::State,
+   hour_val: u8,
+   minute_state: number_input::State,
+   minute_val: u8,
 }
 
 impl Schedule {
    pub fn new() -> Self {
       Self {
          startup_time_state: TimeState {
-            hour_val: 12.0,
+            hour_val: 12,
             ..Default::default()
          },
          sleep_time_state: TimeState {
-            hour_val: 12.0,
+            hour_val: 12,
             ..Default::default()
          },
          ..Default::default()

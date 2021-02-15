@@ -44,8 +44,8 @@ pub struct DateTimePage {
 impl DateTimePage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  Date & Time  ", button::State::new()),
-         ("  Time Zone  ", button::State::new()),
+         ("Date & Time", button::State::new()),
+         ("Time Zone", button::State::new()),
       ];
 
       match DateTimeManager::new() {
@@ -243,13 +243,13 @@ impl DateTimePage {
             let txt_date: Element<_> = if *datetime_manager.ntp() {
                Text::new(date).into()
             } else {
-               TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, DateTimeMessage::TxtDateChanged).padding(7).width(Length::Units(70)).style(CustomTextInput::Default).into()
+               TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, DateTimeMessage::TxtDateChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
             };
             let time = clock.now.time().format(locale_manager.time_details().t_fmt.as_str()).to_string();
             let txt_time: Element<_> = if *datetime_manager.ntp() {
                Text::new(time).size(14).into()
             } else {
-               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, DateTimeMessage::TxtTimeChanged).padding(7).width(Length::Units(75)).style(CustomTextInput::Default).into()
+               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, DateTimeMessage::TxtTimeChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
             };
             let calendar_con = Container::new(Text::new("Calendar")).width(Length::Units(127)).height(Length::Units(127)).center_x().center_y().style(CustomContainer::ForegroundWhite);
             let calendar_sec = Container::new(

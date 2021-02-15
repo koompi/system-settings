@@ -46,6 +46,12 @@ pub struct GeneralTab {
    pub btn_cancel_state: button::State,
 }
 
+impl GeneralTab {
+   pub(super) fn get_formatted_prefered_lang(&self) -> String {
+      self.prefered_langs.iter().map(|(prefered_lang, ..)| *prefered_lang.key.split(".").collect::<Vec<&str>>().first().unwrap()).collect::<Vec<&str>>().join(":").to_owned()
+   }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct AppsTab {
    pub app_list: Vec<(char, String, pick_list::State<String>, String, button::State)>,
@@ -64,7 +70,7 @@ pub struct LCKeyVal {
 }
 
 impl LCKeyVal {
-   pub fn new<T: Into<String>>(key_val: (T, T)) -> Self {
+   pub(super) fn new<T: Into<String>>(key_val: (T, T)) -> Self {
       Self {
          key: key_val.0.into(),
          val: key_val.1.into(),

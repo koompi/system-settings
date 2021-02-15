@@ -8,7 +8,7 @@ use iced::{
    button, pick_list, Align, Length, Space, Button, Checkbox, Column, Container, Element, Row, Scrollable, Text, PickList, Svg, TextInput,
 };
 use iced_custom_widget::{Icon, IconBrand};
-use libkoompi::system_settings::locale::{LocaleManager, LocaleConf, LS_MEASURE_UNITS};
+use libkoompi::system_settings::locale::{LocaleManager, LC_Keywords, LS_MEASURE_UNITS};
 use tauri_dialog::{DialogBuilder, DialogButtons, DialogSelection, DialogStyle};
 
 #[derive(Debug, Clone)]
@@ -26,10 +26,6 @@ pub enum LangRegionMessage {
    NumFormatChanged(LCKeyVal),
    CurrencyFormatChanged(LCKeyVal),
    MeasureFormatChanged(LCKeyVal),
-   // ShortDateFormatChanged(String),
-   // LongDateFormatChanged(String),
-   // ShortTimeFormatChanged(String),
-   // LongTimeFormatChanged(String),
    BtnAddAppClicked,
    BtnRemoveAppClicked,
    AppSelected(usize),
@@ -44,7 +40,7 @@ pub enum LangRegionMessage {
 pub enum AddLangMessage {
    SearchPreferedLang(String),
    AddLangChanged(PreferedLang),
-   OkayClicked,
+   AddClicked,
    CancelClicked,
 }
 
@@ -64,13 +60,13 @@ pub struct LangRegionPage {
 impl LangRegionPage {
    pub fn new() -> Self {
       let tabs = vec![
-         ("  General  ", button::State::new()),
-         ("  Apps  ", button::State::new()),
+         ("General", button::State::new()),
+         ("Apps", button::State::new()),
       ];
 
       match LocaleManager::new() {
          Ok(locale_mn) => {
-            let ls_lang_regions = locale_mn.list_langs_regions().iter().map(|(key, lang_reg)| {
+            let mut ls_lang_regions = locale_mn.list_langs_regions().iter().map(|(key, lang_reg)| {
                let ls_lang = lang_reg.split("(").collect::<Vec<&str>>()[0].split("—").map(|i| i.trim().to_string()).collect::<Vec<String>>();
                let lang = ls_lang.first().unwrap();
                if let Some(reg) = ls_lang.last() {
@@ -79,6 +75,7 @@ impl LangRegionPage {
                   PreferedLang::new(key, lang, lang)
                }
             }).collect::<Vec<PreferedLang>>();
+            ls_lang_regions.sort();
             let ls_prefered_langs = locale_mn.list_prefered_langs().iter().map(|(key, lang_reg)| {
                let ls_lang = lang_reg.split("—").map(|i| i.trim().to_string()).collect::<Vec<String>>();
                let lang = ls_lang.first().unwrap();
@@ -129,42 +126,85 @@ impl LangRegionPage {
       match msg {
          TabChanged(idx) => self.current_tab_idx = idx,
          BtnAddClicked => {
-            // self.general_tab.prefered_langs.push((String::from("Other"), String::from("Other"), button::State::new()));
-            self.general_tab.is_adding = true;
+            if !self.general_tab.is_adding {
+               self.general_tab.is_adding = true;
+            }
          },
          BtnRemoveClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
                self.general_tab.prefered_langs.remove(selected_idx);
                self.general_tab.selected_lang = None;
-               self.is_changed = true;
+               match self.locale_mn.set_locale(LC_Keywords::LANGUAGE, &self.general_tab.get_formatted_prefered_lang()) {
+                  Ok(()) => self.is_changed = true,
+                  Err(err) => eprintln!("{:?}", err),
+               }
             }
          }
          BtnUpClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
                self.general_tab.prefered_langs.swap(selected_idx, selected_idx - 1);
                self.general_tab.selected_lang = Some(selected_idx - 1);
-               self.is_changed = true;
+               match self.locale_mn.set_locale(LC_Keywords::LANGUAGE, &self.general_tab.get_formatted_prefered_lang()) {
+                  Ok(()) => self.is_changed = true,
+                  Err(err) => eprintln!("{:?}", err),
+               }
             }
          }
          BtnDownClicked => {
             if let Some(selected_idx) = self.general_tab.selected_lang {
                self.general_tab.prefered_langs.swap(selected_idx, selected_idx + 1);
                self.general_tab.selected_lang = Some(selected_idx + 1);
-               self.is_changed = true;
+               match self.locale_mn.set_locale(LC_Keywords::LANGUAGE, &self.general_tab.get_formatted_prefered_lang()) {
+                  Ok(()) => self.is_changed = true,
+                  Err(err) => eprintln!("{:?}", err),
+               }
             }
          }
          LangSelected(idx) => self.general_tab.selected_lang = Some(idx),
-         RegionChanged(val) => {self.general_tab.selected_region = Some(val); self.is_changed = true;},
-         FirstDayChanged(val) => {self.general_tab.selected_firstday = Some(val); self.is_changed = true;},
-         TimeChanged(val) => {self.general_tab.selected_time_format = Some(val); self.is_changed = true;},
+         RegionChanged(val) => {
+            self.general_tab.selected_region = Some(val.clone()); 
+            match self.locale_mn.set_locale(LC_Keywords::LANG, &val.key) {
+               Ok(()) => self.is_changed = true,
+               Err(err) => eprintln!("{:?}", err),
+            }
+         },
+         FirstDayChanged(val) => {
+            self.general_tab.selected_firstday = Some(val);
+            self.is_changed = true;
+         },
+         TimeChanged(val) => {
+            self.general_tab.selected_time_format = Some(val.clone()); 
+            match self.locale_mn.set_locale(LC_Keywords::LC_TIME, &val.key) {
+               Ok(()) => {
+                  self.general_tab.selected_firstday = Some(Self::get_first_day(&self.locale_mn));
+                  self.is_changed = true
+               },
+               Err(err) => eprintln!("{:?}", err),
+            }
+         },
          TimeFormatToggled(is_checked) => {self.general_tab.is_24_hours_format = is_checked; self.is_changed = true;},
-         NumFormatChanged(val) => {self.general_tab.selected_num_format = Some(val); self.is_changed = true;},
-         CurrencyFormatChanged(val) => {self.general_tab.selected_currency_format = Some(val); self.is_changed = true;},
-         MeasureFormatChanged(val) => {self.general_tab.selected_measure_format = Some(val); self.is_changed = true;},
-         // ShortDateFormatChanged(val) => {self.formats_tab.selected_short_date_format = val; self.is_changed = true;},
-         // LongDateFormatChanged(val) => {self.formats_tab.selected_long_date_format = val; self.is_changed = true;},
-         // ShortTimeFormatChanged(val) => {self.formats_tab.selected_short_time_format = val; self.is_changed = true;},
-         // LongTimeFormatChanged(val) => {self.formats_tab.selected_long_time_format = val; self.is_changed = true;},
+         NumFormatChanged(val) => {
+            self.general_tab.selected_num_format = Some(val.clone());
+            match self.locale_mn.set_locale(LC_Keywords::LC_NUMERIC, &val.key) {
+               Ok(()) => self.is_changed = true,
+               Err(err) => eprintln!("{:?}", err),
+            }
+         },
+         CurrencyFormatChanged(val) => {
+            self.general_tab.selected_currency_format = Some(val.clone()); 
+            match self.locale_mn.set_locale(LC_Keywords::LC_MONETARY, &val.key) {
+               Ok(()) => self.is_changed = true,
+               Err(err) => eprintln!("{:?}", err),
+            }
+         },
+         MeasureFormatChanged(val) => {
+            let map_measurement: HashMap<String, String> = LS_MEASURE_UNITS.iter().map(|(key, lang)| (key.to_string(), lang.to_string())).collect();
+            self.general_tab.selected_measure_format = Some(val); 
+            match self.locale_mn.set_locale(LC_Keywords::LC_MEASUREMENT, map_measurement.get_key_value(&self.general_tab.selected_measure_format.clone().unwrap().key).unwrap().0) {
+               Ok(()) => self.is_changed = true,
+               Err(err) => eprintln!("{:?}", err),
+            }
+         },
          BtnAddAppClicked => {
             self.apps_tab.app_list.push((
                '\u{f120}',
@@ -190,17 +230,7 @@ impl LangRegionPage {
             }
          }
          OKClicked => {
-            let map_measurement: HashMap<String, String> = LS_MEASURE_UNITS.iter().map(|(key, lang)| (key.to_string(), lang.to_string())).collect();
-            let lc_conf = LocaleConf {
-               lang: self.locale_mn.list_langs_regions().get_key_value(&self.general_tab.selected_region.clone().unwrap().key).unwrap().0.to_string(),
-               language: self.general_tab.prefered_langs.iter().map(|(prefered_lang, ..)| *prefered_lang.key.split(".").collect::<Vec<&str>>().first().unwrap()).collect::<Vec<&str>>().join(":").clone(),
-               lc_numeric: self.locale_mn.list_langs_regions().get_key_value(&self.general_tab.selected_num_format.clone().unwrap().key).unwrap().0.to_string(),
-               lc_time: self.locale_mn.list_langs_regions().get_key_value(&self.general_tab.selected_time_format.clone().unwrap().key).unwrap().0.to_string(),
-               lc_monetary: self.locale_mn.list_langs_regions().get_key_value(&self.general_tab.selected_currency_format.clone().unwrap().key).unwrap().0.to_string(),
-               lc_measurement: map_measurement.get_key_value(&self.general_tab.selected_measure_format.clone().unwrap().key).unwrap().0.to_string(),
-            };
-
-            match self.locale_mn.set_locale(lc_conf) {
+            match self.locale_mn.write_conf() {
                Ok(()) => {
                   DialogBuilder::new()
                      .message("These changes will take effect after the next login.")
@@ -239,19 +269,20 @@ impl LangRegionPage {
             match add_lang_msg {
                AddLangMessage::SearchPreferedLang(val) => {
                   self.general_tab.search_prefered_lang_val = val;
-                  self.general_tab.filtered_add_langs = self.general_tab.add_langs.iter()
-                     .filter(|lang| lang.0.key.to_lowercase().contains(&self.general_tab.search_prefered_lang_val.to_lowercase()) || 
-                                    lang.0.to_string().to_lowercase().contains(&self.general_tab.search_prefered_lang_val.to_lowercase()))
-                     .cloned()
-                     .collect();
+                  self.filter_ls_add_lang();
                },
                AddLangMessage::AddLangChanged(val) => self.general_tab.selected_add_lang = Some(val),
-               AddLangMessage::OkayClicked => {
+               AddLangMessage::AddClicked => {
                   if let Some(selected) = &self.general_tab.selected_add_lang {
                      self.general_tab.prefered_langs.push((selected.clone(), button::State::new()));
+                     self.general_tab.add_langs.retain(|lang| lang.0.key != selected.key);
+                     self.filter_ls_add_lang();
                      self.general_tab.selected_add_lang = None;
                      self.general_tab.is_adding = false;
-                     self.is_changed = true;
+                     match self.locale_mn.set_locale(LC_Keywords::LANGUAGE, &self.general_tab.get_formatted_prefered_lang()) {
+                        Ok(()) => self.is_changed = true,
+                        Err(err) => eprintln!("{:?}", err),
+                     }
                   }
                },
                AddLangMessage::CancelClicked => {
@@ -414,7 +445,7 @@ impl LangRegionPage {
                let txt_first_day = Text::new(Self::get_first_day(&locale_mn));
                let txt_num = Text::new(number_formatted.as_str());
                let txt_currency = Text::new(format!("{} {}", currency_formatted.as_str(), locale_mn.monetary_details().currency_symbol.as_str()));
-               let txt_measure_unit = Text::new(LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap().1.clone());
+               let txt_measure_unit = Text::new(LS_MEASURE_UNITS.get(locale_mn.measurement_details().measurement-1).unwrap_or(&("", "")).1.clone());
                let label_txt = |label: Text, txt: Text| { Row::new().spacing(10).push(label).push(txt) };
                let example_sec = Container::new(
                   Column::new().spacing(15)
@@ -457,7 +488,7 @@ impl LangRegionPage {
                let mut btn_add_lang = icon_btn(btn_okay_state, '\u{f067}', "Add", None).style(CustomButton::Primary);
                let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(LangRegionMessage::AddLangMsg(AddLangMessage::CancelClicked)).style(CustomButton::Hovered);
                if selected_add_lang.is_some() {
-                  btn_add_lang = btn_add_lang.on_press(LangRegionMessage::AddLangMsg(AddLangMessage::OkayClicked));
+                  btn_add_lang = btn_add_lang.on_press(LangRegionMessage::AddLangMsg(AddLangMessage::AddClicked));
                }
                Container::new(
                   Row::new()
@@ -566,6 +597,14 @@ impl LangRegionPage {
 
 impl LangRegionPage {
    fn get_first_day(locale_mn: &LocaleManager) -> String {
-      locale_mn.time_details().list_days()[(locale_mn.time_details().first_weekday - 1) as usize].clone()
+      locale_mn.time_details().list_days().get((locale_mn.time_details().first_weekday - 1) as usize).unwrap_or(&String::from("")).clone()
+   }
+
+   fn filter_ls_add_lang(&mut self) {
+      self.general_tab.filtered_add_langs = self.general_tab.add_langs.iter()
+      .filter(|lang| lang.0.key.to_lowercase().contains(&self.general_tab.search_prefered_lang_val.to_lowercase()) || 
+                     lang.0.to_string().to_lowercase().contains(&self.general_tab.search_prefered_lang_val.to_lowercase()))
+      .cloned()
+      .collect();
    }
 }
