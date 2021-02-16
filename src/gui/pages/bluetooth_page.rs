@@ -6,8 +6,8 @@ use iced_custom_widget as icw;
 // use iced_native::window::Event;
 // use iced_native::Event::Window;
 use icw::components::{Icon, Toggler};
-use icw::styles::{
-   buttons::ButtonStyle, containers::ContainerStyle, rules::RuleStyle, text_input::InputStyle,
+use crate::gui::styles::{
+   buttons::ButtonStyle, containers::ContainerStyle, rules::RuleStyle, textinput::InputStyle,
 };
 #[derive(Default, Debug, Clone)]
 pub struct BluetoothPage {
