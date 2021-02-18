@@ -2,10 +2,7 @@ use super::pages::{Pages, PagesMessage};
 use super::pref::{Category, Pref, PrefMessage};
 use super::styles::{CustomButton, CustomContainer, CustomTextInput};
 use crate::helpers::ROOT_PATH;
-use iced::{
-   button, executor, scrollable, text_input, window, Align, Application, Button, Column, Command,
-   Container, Element, Length, Row, Scrollable, Settings, Space, Subscription, Text, TextInput,
-};
+use iced::{button, executor, scrollable, text_input, window, Align, Application, Button, Column, Command, Container, Element, Length, Row, Scrollable, Settings, Space, Subscription, Text, TextInput};
 use iced_custom_widget::{Grid, Icon};
 
 pub struct SystemSetting {
@@ -35,13 +32,7 @@ impl Application for SystemSetting {
 
    fn new(_flags: ()) -> (Self, Command<Self::Message>) {
       use Category::*;
-      let pref = |file_name: &str, name: &str, category: Category| {
-         Pref::new(
-            format!("{}/assets/images/{}.svg", ROOT_PATH(), file_name),
-            String::from(name),
-            category,
-         )
-      };
+      let pref = |file_name: &str, name: &str, category: Category| Pref::new(format!("{}/assets/images/{}.svg", ROOT_PATH(), file_name), String::from(name), category);
       let prefs = vec![
          pref("window", "General", System),
          pref("time", "Date & Time", System),
@@ -121,115 +112,60 @@ impl Application for SystemSetting {
    }
 
    fn view(&mut self) -> Element<Self::Message> {
-      let search = TextInput::new(
-         &mut self.input_search,
-         "Search",
-         &mut self.search_text,
-         Self::Message::SearchChanged,
-      )
-      .padding(10)
-      .max_width(800)
-      .width(Length::Units(500))
-      .size(17)
-      .style(CustomTextInput::Default)
-      .on_submit(Self::Message::ActionSearch);
-      let search_section = Container::new(search)
-         .center_x()
-         .center_y()
-         .width(Length::Fill);
+      let search = TextInput::new(&mut self.input_search, "Search", &mut self.search_text, Self::Message::SearchChanged)
+         .padding(10)
+         .max_width(800)
+         .width(Length::Units(500))
+         .size(17)
+         .style(CustomTextInput::Default)
+         .on_submit(Self::Message::ActionSearch);
+      let search_section = Container::new(search).center_x().center_y().width(Length::Fill);
       let mut search_bar = Row::new().spacing(20).padding(30);
       if self.selected_pref.is_some() {
-         search_bar = search_bar.push(
-            Button::new(&mut self.back_btn_state, Icon::new('\u{f0ce}').size(20))
-               .on_press(SystemMessage::NavigateBack)
-               .padding(7)
-               .style(CustomButton::Text),
-         );
+         search_bar = search_bar.push(Button::new(&mut self.back_btn_state, Icon::new('\u{f0ce}').size(20)).on_press(SystemMessage::NavigateBack).padding(7).style(CustomButton::Text));
       }
       search_bar = search_bar.push(search_section);
 
       let sidebar = if let Some(selected_pref) = &self.selected_pref {
-         let (personal_prefs, device_prefs) = self.prefs.iter_mut().enumerate().fold(
-            (Column::new().spacing(10), Column::new().spacing(10)),
-            |(personal_prefs, device_prefs), (idx, pref)| match pref.category {
-               Category::System => (
-                  personal_prefs.push(
-                     pref
-                        .view_sidebar(idx == *selected_pref)
-                        .map(move |message| SystemMessage::PrefMessage(idx, message)),
-                  ),
-                  device_prefs,
-               ),
-               Category::Hardware => (
-                  personal_prefs,
-                  device_prefs.push(
-                     pref
-                        .view_sidebar(idx == *selected_pref)
-                        .map(move |message| SystemMessage::PrefMessage(idx, message)),
-                  ),
-               ),
-            },
-         );
+         let (personal_prefs, device_prefs) = self
+            .prefs
+            .iter_mut()
+            .enumerate()
+            .fold((Column::new().spacing(10), Column::new().spacing(10)), |(personal_prefs, device_prefs), (idx, pref)| match pref.category {
+               Category::System => (personal_prefs.push(pref.view_sidebar(idx == *selected_pref).map(move |message| SystemMessage::PrefMessage(idx, message))), device_prefs),
+               Category::Hardware => (personal_prefs, device_prefs.push(pref.view_sidebar(idx == *selected_pref).map(move |message| SystemMessage::PrefMessage(idx, message)))),
+            });
          let personal_section = Column::new()
             .width(Length::Fill)
             .spacing(15)
             .align_items(Align::Center)
-            .push(
-               Container::new(Text::new("System").size(15))
-                  .padding(7)
-                  .style(CustomContainer::FadedBrightForeground),
-            )
+            .push(Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             .push(personal_prefs);
          let device_section = Column::new()
             .width(Length::Fill)
             .spacing(15)
             .align_items(Align::Center)
-            .push(
-               Container::new(Text::new("Hardware").size(15))
-                  .padding(7)
-                  .style(CustomContainer::FadedBrightForeground),
-            )
+            .push(Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground))
             .push(device_prefs);
-         Container::new(
-            Scrollable::new(&mut self.sidebar_scroll)
-               .padding(15)
-               .spacing(20)
-               .scroller_width(3)
-               .scrollbar_width(3)
-               .push(personal_section)
-               .push(device_section),
-         )
-         .width(Length::Units(127))
-         .style(CustomContainer::Background)
+         Container::new(Scrollable::new(&mut self.sidebar_scroll).padding(15).spacing(20).scroller_width(3).scrollbar_width(3).push(personal_section).push(device_section))
+            .width(Length::Units(127))
+            .style(CustomContainer::Background)
       } else {
-         let (personal_prefs, device_prefs) = self.prefs.iter_mut().enumerate().fold(
-            (Grid::new().column_width(125), Grid::new().column_width(125)),
-            |(personal_prefs, device_prefs), (idx, pref)| match pref.category {
-               Category::System => (
-                  personal_prefs.push(
-                     pref
-                        .view_main()
-                        .map(move |message| SystemMessage::PrefMessage(idx, message)),
-                  ),
-                  device_prefs,
-               ),
-               Category::Hardware => (
-                  personal_prefs,
-                  device_prefs.push(
-                     pref
-                        .view_main()
-                        .map(move |message| SystemMessage::PrefMessage(idx, message)),
-                  ),
-               ),
-            },
-         );
+         let (personal_prefs, device_prefs) = self
+            .prefs
+            .iter_mut()
+            .enumerate()
+            .fold((Grid::new().column_width(125), Grid::new().column_width(125)), |(personal_prefs, device_prefs), (idx, pref)| match pref.category {
+               Category::System => (personal_prefs.push(pref.view_main().map(move |message| SystemMessage::PrefMessage(idx, message))), device_prefs),
+               Category::Hardware => (personal_prefs, device_prefs.push(pref.view_main().map(move |message| SystemMessage::PrefMessage(idx, message)))),
+            });
          let personal_section = Container::new(
             Column::new()
                .spacing(15)
                .push(
-                  Row::new().push(Space::with_width(Length::Units(20))).push(
-                     Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground),
-                  ),
+                  Row::new()
+                     .push(Space::with_width(Length::Units(20)))
+                     .push(Container::new(Text::new("System").size(15)).padding(7).style(CustomContainer::FadedBrightForeground)),
                )
                .push(personal_prefs),
          )
@@ -239,38 +175,26 @@ impl Application for SystemSetting {
             Column::new()
                .spacing(15)
                .push(
-                  Row::new().push(Space::with_width(Length::Units(20))).push(
-                     Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground),
-                  ),
+                  Row::new()
+                     .push(Space::with_width(Length::Units(20)))
+                     .push(Container::new(Text::new("Hardware").size(15)).padding(7).style(CustomContainer::FadedBrightForeground)),
                )
                .push(device_prefs),
          )
          .width(Length::Fill)
          .center_x();
-         Container::new(
-            Scrollable::new(&mut self.scroll).spacing(30).width(Length::Fill).align_items(Align::Center)
-               .push(personal_section)
-               .push(device_section),
-         )
-         .width(Length::Fill)
+         Container::new(Scrollable::new(&mut self.scroll).spacing(30).width(Length::Fill).align_items(Align::Center).push(personal_section).push(device_section)).width(Length::Fill)
       };
 
       let content = self.pages.view().map(SystemMessage::PagesMessage);
 
-      Container::new(
-         Column::new().spacing(15).width(Length::Fill)
-            .push(search_bar)
-            .push(Row::new().spacing(27).push(sidebar).push(content)),
-      )
-      .into()
+      Container::new(Column::new().spacing(15).width(Length::Fill).push(search_bar).push(Row::new().spacing(27).push(sidebar).push(content))).into()
    }
 }
 
 impl SystemSetting {
    pub fn init() -> iced::Result {
-      let image = image::open(format!("{}/assets/images/icon.png", ROOT_PATH()))
-         .expect("Failed to open icon path")
-         .into_rgba8();
+      let image = image::open(format!("{}/assets/images/icon.png", ROOT_PATH())).expect("Failed to open icon path").into_rgba8();
       let (width, height) = image.dimensions();
       let rgba = image.into_raw();
 

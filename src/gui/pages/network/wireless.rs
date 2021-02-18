@@ -1,10 +1,11 @@
 use super::netsettings::{NetSettings, NetSettingsMsg};
 use crate::gui::styles::{buttons::ButtonStyle, rules::RuleStyle};
+use async_std::task;
 use iced::{button, scrollable, text_input, Align, Button, Column, Container, Element, Length, Row, Rule, Scrollable, Space, Text, TextInput};
 use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Toggler;
-use libkoompi::system_settings::network::{get_accesspoints, wifi::WifiInterface, AccessPoint, Wifi};
+use libkoompi::system_settings::network::{get_accesspoints, wifi::Connectivity, wifi::WifiInterface, AccessPoint, Wifi};
 #[derive(Default, Debug, Clone)]
 pub struct Wireless {
     is_active: bool,
@@ -26,6 +27,7 @@ pub struct Wireless {
     connect_status: String,
     is_connect: bool,
     is_shown_passwd: bool,
+    is_found: bool,
     passwd: String,
 }
 #[derive(Default, Debug, Clone)]
@@ -39,10 +41,40 @@ struct WifiProperty {
     pub input_passwd: text_input::State,
     pub show_passwd_btn: button::State,
     pub is_shown: bool,
+    pub password: String,
+    pub is_pressed: bool,
+    pub is_disable: bool,
+    pub number_clicked: usize,
+    pub is_connecting: bool,
+    pub button_string: String,
+    pub con_state: ConnectionState,
+}
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConnectionState {
+    Started,
+    Activated,
+    Deactivated,
+    Activating,
+    Deactivating,
+    Finished,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NetworkState {
+    Known,
+    Unknown,
+}
+impl Default for ConnectionState {
+    fn default() -> Self {
+        ConnectionState::Started
+    }
 }
 impl WifiProperty {
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            button_string: "Connect".to_string(),
+            ..Default::default()
+        }
     }
 }
 fn get_list_ssid() -> Vec<WifiProperty> {
@@ -70,11 +102,20 @@ fn get_list_ssid() -> Vec<WifiProperty> {
 }
 impl Wireless {
     pub fn new() -> Self {
+        // let result = task::spawn(async {
+        //     let handle = task::spawn(async move {
+        //         return get_list_ssid();
+        //     });
+        //     handle.await;
+        // });
+        // println!("Result: {:?}", result);
         Self {
             ssid_vector: get_list_ssid(),
             is_shown: false,
+            is_active: Wifi::is_wifi_enabled().unwrap(),
             search_vector: get_list_ssid(),
             network_settings: NetSettings::new(),
+            is_found: true,
             ..Self::default()
         }
     }
@@ -90,23 +131,76 @@ impl Wireless {
             }
             WirelessMsg::ConnectButton(ssid) => {
                 self.is_shown_passwd = !self.is_shown_passwd;
-                self.ssid_vector.iter_mut().filter(|v| v.ssid.to_lowercase().contains(&ssid.to_lowercase())).for_each(|v| v.is_shown = !v.is_shown);
-                println!("You cannect with {:?}", ssid);
+
+                let new_owner = self.ssid_vector.iter_mut().filter(|v| v.ssid.to_lowercase().contains(&ssid.to_lowercase()));
+                for v in new_owner {
+                    println!("Button String: {:?}", v.button_string);
+                    match v.con_state {
+                        ConnectionState::Activated => {
+                            println!("Disconnect running.");
+                            Wifi::disconnect(ssid.clone());
+                            v.button_string = String::from("Connect");
+                            v.con_state = ConnectionState::Started;
+                        }
+                        ConnectionState::Started => {
+                            v.is_shown = !v.is_shown;
+                            v.is_pressed = !v.is_pressed;
+                            v.number_clicked += 1;
+                            if v.number_clicked <= 1 {
+                                v.is_disable = !v.is_disable;
+                            // we should do the actual count on the connection that open.
+                            } else {
+                                let s = ssid.clone();
+                                let p = v.password.clone();
+                                task::spawn(async {
+                                    let handle = task::spawn(async move {
+                                        // test(s, p);
+                                        let result = Wifi::connect(s, p).unwrap();
+                                        result
+                                    });
+                                    handle.await
+                                });
+                                // v.is_connecting = true;
+                                self.is_connect = true;
+                                v.con_state = ConnectionState::Activated;
+                                if v.con_state == ConnectionState::Activated {
+                                    v.button_string = String::from("Disconnect");
+                                } else {
+                                    {}
+                                }
+                                v.number_clicked = 0;
+                            }
+                            v.password = "".to_string();
+                        }
+                        _ => {}
+                    }
+                }
             }
             WirelessMsg::NothingButton => {}
             WirelessMsg::ShowSettings => {
                 self.is_shown = !self.is_shown;
             }
             WirelessMsg::Password(pwd) => {
-                self.passwd = pwd;
+                self.ssid_vector.iter_mut().filter(|v| v.is_pressed == true && v.input_passwd.is_focused()).for_each(|v| {
+                    if pwd.len() >= 8 {
+                        v.is_disable = false;
+                    } else {
+                        v.is_disable = true;
+                    }
+                    v.password = pwd.clone();
+                });
             }
             WirelessMsg::SearchWifi => self.is_shown_search = !self.is_shown_search,
             WirelessMsg::SearchAction(val) => {
-                self.ssid_vector = self.search_vector.iter().filter(|&v| v.ssid.to_lowercase().contains(&val.to_lowercase())).cloned().collect();
+                let data: Vec<WifiProperty> = self.search_vector.iter().filter(|&v| v.ssid.to_lowercase().contains(&val.to_lowercase())).cloned().collect();
+                let is_found = self.search_vector.iter().any(|v| v.ssid.to_lowercase() == val.to_lowercase());
+                self.is_found = is_found;
+                self.ssid_vector = data;
                 self.input_search_val = val;
             }
             WirelessMsg::RefreshWifi => {
                 self.ssid_vector = get_list_ssid();
+                self.search_vector = (*self.ssid_vector).to_vec();
             }
             WirelessMsg::NetSettingsMsg(msg) => {
                 self.network_settings.update(msg);
@@ -114,9 +208,12 @@ impl Wireless {
         }
     }
     pub fn view(&mut self) -> Element<WirelessMsg> {
-        let is_shown_passwd = self.is_shown_passwd;
-        let passwd = &self.passwd;
         let wireless_layout = Column::new()
+            .push(if self.is_connect {
+                Container::new(Row::new().align_items(Align::Center).spacing(10).push(Text::new("Koompi Attic")))
+            } else {
+                Container::new(Space::with_height(Length::Units(0)))
+            })
             .push(self.ssid_vector.iter_mut().fold(Column::new().width(Length::Fill).spacing(4), |column, wifi_prop| {
                 column
                     .push(
@@ -128,18 +225,17 @@ impl Wireless {
                             .push(Icon::new('\u{f1eb}').size(24))
                             .push(Text::new(wifi_prop.ssid.as_str()).size(16))
                             .push(Space::with_width(Length::Fill))
-                            .push(
-                                Button::new(
-                                    &mut wifi_prop.connect,
-                                    Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(if wifi_prop.status { "Connect" } else { "Disconnect" })),
-                                )
-                                .style(ButtonStyle::Transparent)
-                                .on_press(WirelessMsg::ConnectButton(wifi_prop.ssid.clone())),
-                            )
+                            .push(if wifi_prop.is_disable {
+                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string))).style(ButtonStyle::Transparent)
+                            } else {
+                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string)))
+                                    .style(ButtonStyle::Transparent)
+                                    .on_press(WirelessMsg::ConnectButton(wifi_prop.ssid.clone()))
+                            })
                             .push(Button::new(&mut wifi_prop.settings, Icon::new('\u{f105}')).on_press(WirelessMsg::ShowSettings).style(ButtonStyle::Transparent)),
                     )
                     .push(if wifi_prop.is_shown {
-                        Container::new(TextInput::new(&mut wifi_prop.input_passwd, "Password....", &passwd, WirelessMsg::Password).padding(10)).width(Length::Fill)
+                        Container::new(TextInput::new(&mut wifi_prop.input_passwd, "Password....", &wifi_prop.password, WirelessMsg::Password).padding(6)).width(Length::Fill)
                     } else {
                         Container::new(Space::with_height(Length::Units(0)))
                     })
@@ -173,7 +269,12 @@ impl Wireless {
                             }),
                     )
                     .spacing(10)
-                    .push(scroll_content.push(wireless_layout)),
+                    .push(scroll_content.push(wireless_layout))
+                    .push(if self.is_found {
+                        Container::new(Space::with_height(Length::Units(0)))
+                    } else {
+                        Container::new(Text::new("No Connection Found"))
+                    }),
             )
             .push(Rule::vertical(10).style(RuleStyle {}))
             .push(if self.is_shown {
@@ -195,4 +296,8 @@ pub enum WirelessMsg {
     SearchAction(String),
     ConnectButton(String),
     Password(String),
+}
+
+pub fn test(ssid: String, password: String) {
+    println!("SSID: {:?} Password: {:?}", ssid, password);
 }
