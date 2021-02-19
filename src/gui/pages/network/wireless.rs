@@ -6,6 +6,8 @@ use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Toggler;
 use libkoompi::system_settings::network::{get_accesspoints, wifi::Connectivity, wifi::WifiInterface, AccessPoint, Wifi};
+use std::rc::Rc;
+use std::sync::{mpsc, Mutex};
 #[derive(Default, Debug, Clone)]
 pub struct Wireless {
     is_active: bool,
@@ -131,7 +133,8 @@ impl Wireless {
             }
             WirelessMsg::ConnectButton(ssid) => {
                 self.is_shown_passwd = !self.is_shown_passwd;
-
+                let mut new_data = self.ssid_vector.to_owned();
+                let mut is_active: ConnectionState = ConnectionState::default();
                 let new_owner = self.ssid_vector.iter_mut().filter(|v| v.ssid.to_lowercase().contains(&ssid.to_lowercase()));
                 for v in new_owner {
                     println!("Button String: {:?}", v.button_string);
@@ -152,17 +155,33 @@ impl Wireless {
                             } else {
                                 let s = ssid.clone();
                                 let p = v.password.clone();
-                                task::spawn(async {
+                                let (tx, rx): (mpsc::Sender<bool>, mpsc::Receiver<bool>) = mpsc::channel();
+                                let handler = task::spawn(async move {
                                     let handle = task::spawn(async move {
                                         // test(s, p);
                                         let result = Wifi::connect(s, p).unwrap();
                                         result
                                     });
-                                    handle.await
+                                    let result: bool = handle.await;
+                                    tx.send(result).unwrap();
                                 });
-                                // v.is_connecting = true;
-                                self.is_connect = true;
-                                v.con_state = ConnectionState::Activated;
+                                println!("Task state: {:?}", handler.task());
+                                match rx.recv() {
+                                    Ok(data) => {
+                                        if data {
+                                            v.con_state = ConnectionState::Activated;
+                                            self.is_connect = true;
+                                        } else {
+                                            {}
+                                        }
+                                    }
+                                    Err(e) => {
+                                        println!("Error: {:?}", e)
+                                    }
+                                }
+                                println!("Run after receving message");
+                                is_active = v.con_state.clone();
+                                new_data.iter_mut().for_each(|v| v.button_string = "Connect".to_string());
                                 if v.con_state == ConnectionState::Activated {
                                     v.button_string = String::from("Disconnect");
                                 } else {
@@ -174,6 +193,35 @@ impl Wireless {
                         }
                         _ => {}
                     }
+                }
+                if is_active == ConnectionState::Activated {
+                    // let previous_con = match self.previous_connect.pop() {
+                    //     Some(data) => data,
+                    //     None => WifiProperty::new(),
+                    // };
+                    // if v.button_string == previous_con.button_string {
+                    //     v.button_string = "Connect".to_string();
+                    // } else {
+                    //     {}
+                    // } // self.ssid_vector.iter_mut().for_each(|v| {
+                    //     if v.is_shown == true {
+                    //         v.is_shown = false;
+                    //         v.is_disable = false;
+                    //     } else {
+                    //         {}
+                    //     }
+                    // });
+                    // println!("Previous Connection: {:?}", previous_con);
+                    self.ssid_vector.iter_mut().for_each(|v| {
+                        if v.is_shown == true {
+                            v.is_shown = false;
+                            v.is_disable = false;
+                        } else {
+                            {}
+                        }
+                    });
+                } else {
+                    {}
                 }
             }
             WirelessMsg::NothingButton => {}
