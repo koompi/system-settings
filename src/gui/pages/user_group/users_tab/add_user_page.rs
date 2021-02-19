@@ -90,15 +90,15 @@ impl AddUserPage {
          .push(lb_verify_pwd)
          .push(lb_pwd_hint);
       let ls_acc_types: Vec<String> = Self::ACC_TYPES.iter().map(|acc| acc.to_string()).collect();
-      let txt_fullname = TextInput::new(fullname_state, "Full name", &fullname_val, FullNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
-      let txt_username = TextInput::new(username_state, "User name", &username_val, UserNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
+      let txt_fullname = TextInput::new(fullname_state, "Full name", &fullname_val, FullNameChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
+      let txt_username = TextInput::new(username_state, "User name", &username_val, UserNameChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
       let pl_acc_type = PickList::new(acc_type_state, ls_acc_types.clone(), selected_acc_type.clone(), AccTypeChanged).style(CustomSelect::Primary);
-      let mut txt_pwd = TextInput::new(pwd_state, "Required", &pwd_val, PwdChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
+      let mut txt_pwd = TextInput::new(pwd_state, "Required", &pwd_val, PwdChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
       if !self.is_show_pwd {
          txt_pwd = txt_pwd.password();
       }
       let btn_show_pwd = Button::new(btn_show_pwd, Icon::new(if self.is_show_pwd {'\u{f09c}'} else {'\u{f023}'}).size(18)).on_press(ShowPwdToggled).style(CustomButton::Hovered);
-      let txt_verify = TextInput::new(verify_pwd_state, "Verify", &verify_pwd_val, VerifyPwdChanged).password().padding(7).width(Length::Fill).style(CustomTextInput::Default);
+      let txt_verify = TextInput::new(verify_pwd_state, "Verify", &verify_pwd_val, VerifyPwdChanged).password().padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
       let txt_hint = TextInput::new(pwd_hint_state, "(Recommended)", &pwd_hint_val, PwdHintChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let info_sec = Column::new().spacing(5)
          .push(txt_fullname)

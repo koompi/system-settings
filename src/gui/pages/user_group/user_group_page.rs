@@ -64,7 +64,7 @@ impl UserGroupPage {
       } = self;
 
       // របារផ្ទាំង
-      let tabbar_sec = tabbar(tabbar_state, self.curr_tab_idx, |idx| TabChanged(idx));
+      let tabbar_sec = tabbar(tabbar_state, self.curr_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.curr_tab_idx {

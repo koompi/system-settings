@@ -346,7 +346,7 @@ impl pick_list::StyleSheet for CustomSelect {
             icon_size: 0.5,
             border_color: ACCENT,
             border_radius: 5.0,
-            border_width: 0.0,
+            border_width: 0.,
          },
       }
    }

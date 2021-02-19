@@ -1,11 +1,12 @@
 mod add_user_page;
 mod change_pwd_page;
 mod user_info_page;
+mod change_user_info_page;
 
 use std::path::PathBuf;
 use {
    user_info_page::{UserInfoPage, UserInfoMsg}, change_pwd_page::{ChangePwdPage, ChangePwdMsg}, 
-   add_user_page::{AddUserPage, AddUserMsg},
+   add_user_page::{AddUserPage, AddUserMsg}, change_user_info_page::{ChangeInfoPage, ChangeInfoMsg},
 };
 use users::{uid_t, User, get_current_uid, all_users, os::unix::UserExt};
 use iced::{
@@ -29,6 +30,7 @@ pub struct UsersTab {
    pub user_info_page: UserInfoPage,
    pub change_pwd_page: Option<ChangePwdPage>,
    pub add_user_page: Option<AddUserPage>,
+   pub change_info_page: Option<ChangeInfoPage>,
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +41,7 @@ pub enum UsersMsg {
    UserInfoMSG(UserInfoMsg),
    ChangePwdMSG(ChangePwdMsg),
    AddUserMSG(AddUserMsg),
+   ChangeInfoMSG(ChangeInfoMsg),
 }
 
 impl UsersTab {
@@ -64,6 +67,7 @@ impl UsersTab {
          user_info_page,
          add_user_page,
          change_pwd_page,
+         change_info_page,
          ..
       } = self;
 
@@ -83,9 +87,19 @@ impl UsersTab {
          },
          UserInfoMSG(UserInfoMsg::ChangePwdClicked) => {
             self.add_user_page = None;
+            self.change_info_page = None;
             if let Some(idx) = self.selected_user {
                if let Some((user, _)) = ls_users.get(idx) {
                   self.change_pwd_page = Some(ChangePwdPage::new(self.curr_usr_uid == user.uid(), user.uid()));
+               }
+            }
+         },
+         UserInfoMSG(UserInfoMsg::ChangeInfoClicked) => {
+            self.add_user_page = None;
+            self.change_pwd_page = None;
+            if let Some(idx) = self.selected_user {
+               if let Some((user, _)) = ls_users.get(idx) {
+                  self.change_info_page = Some(ChangeInfoPage::new());
                }
             }
          },
@@ -107,6 +121,12 @@ impl UsersTab {
                add_user_page.update(add_user_msg);
             }
          },
+         ChangeInfoMSG(ChangeInfoMsg::CancelClicked) => self.change_info_page = None,
+         ChangeInfoMSG(change_info_msg) => {
+            if let Some(change_info_page) = change_info_page {
+               change_info_page.update(change_info_msg);
+            }
+         }
       }
    }
 
@@ -114,7 +134,7 @@ impl UsersTab {
       use UsersMsg::*;
       let Self {
          ls_users, selected_user, scroll_users, add_state, remove_state,
-         user_info_page, change_pwd_page, add_user_page, ..
+         user_info_page, change_pwd_page, add_user_page, change_info_page, ..
       } = self;
 
       let scrollable_users = ls_users.iter_mut().enumerate().fold(Scrollable::new(scroll_users).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (user, state))| {
@@ -152,6 +172,8 @@ impl UsersTab {
          add_user_page.view().map(|msg| AddUserMSG(msg))
       } else if let Some(change_pwd_page) = change_pwd_page {
          change_pwd_page.view().map(|msg| ChangePwdMSG(msg))
+      } else if let Some(change_info_page) = change_info_page {
+         change_info_page.view().map(|msg| ChangeInfoMSG(msg))
       } else {
          user_info_page.view().map(|msg| UserInfoMSG(msg))
       };

@@ -9,12 +9,14 @@ pub struct UserInfoPage {
    pub user: Option<User>,
    pub is_curr_usr: bool,
    pub btn_change_pwd_state: button::State,
+   pub btn_change_info_state: button::State,
    pub allow_usr_admin: bool,
 }
 
 #[derive(Debug, Clone)]
 pub enum UserInfoMsg {
    ChangePwdClicked,
+   ChangeInfoClicked,
    AllowUsrAdminToggled(bool),
 }
 
@@ -23,8 +25,8 @@ impl UserInfoPage {
       Self {
          user: get_user_by_uid(uid),
          is_curr_usr: true,
-         btn_change_pwd_state: button::State::new(),
          allow_usr_admin, 
+         ..Self::default()
       }
    }
 
@@ -37,7 +39,7 @@ impl UserInfoPage {
    pub fn update(&mut self, msg: UserInfoMsg) {
       use UserInfoMsg::*;
       match msg {
-         ChangePwdClicked => {},
+         ChangePwdClicked | ChangeInfoClicked => {},
          AllowUsrAdminToggled(is_checked) => self.allow_usr_admin = is_checked,
       }
    }
@@ -45,7 +47,7 @@ impl UserInfoPage {
    pub fn view(&mut self) -> Element<UserInfoMsg> {
       use UserInfoMsg::*;
       let Self {
-         user, is_curr_usr, btn_change_pwd_state, allow_usr_admin
+         user, is_curr_usr, btn_change_pwd_state, btn_change_info_state, allow_usr_admin
       } = self;
 
       if let Some(user) = &user {
@@ -54,16 +56,22 @@ impl UserInfoPage {
          let btn_change_pwd = Button::new(btn_change_pwd_state, Text::new(format!("  {}  ", if *is_curr_usr {"Change Password"} else {"Reset Password"})))
             .on_press(ChangePwdClicked).style(CustomButton::Default);
          let chb_allow_usr_admin = Checkbox::new(*allow_usr_admin, "Allow administrator access", AllowUsrAdminToggled).spacing(10).style(CustomCheckbox::Default);
+         let btn_change_info = Button::new(btn_change_info_state, Text::new("  Change User Info  ")).on_press(ChangeInfoClicked).style(CustomButton::Default);
          Container::new(
-            Column::new()
+            Column::new().padding(20)
             .push(
-               Row::new().padding(20).spacing(15).align_items(Align::Center)
+               Row::new().spacing(15).align_items(Align::Center)
                .push(profile)
                .push(txt_username)
                .push(Space::with_width(Length::Fill))
                .push(btn_change_pwd)
             )
-            .push(chb_allow_usr_admin)
+            .push(
+               Row::new().align_items(Align::Center)
+               .push(chb_allow_usr_admin)
+               .push(Space::with_width(Length::Fill))
+               .push(btn_change_info)
+            )
          ).width(Length::FillPortion(7)).height(Length::Fill).into()
       } else {
          Row::new().into()

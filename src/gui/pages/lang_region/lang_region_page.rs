@@ -295,6 +295,7 @@ impl LangRegionPage {
    }
 
    pub fn view(&mut self) -> Element<LangRegionMessage> {
+      use LangRegionMessage::*;
       let LangRegionPage {
          locale_mn, tabbar_state, current_tab_idx, general_tab, apps_tab, btn_defaults_state, btn_reset_state, btn_ok_state, is_changed,
          // formats_tab,
@@ -310,7 +311,7 @@ impl LangRegionPage {
       );
 
       // របារផ្ទាំង
-      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, |idx| LangRegionMessage::TabChanged(idx));
+      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -328,20 +329,20 @@ impl LangRegionPage {
             // ផ្ទាំងខាងឆ្វេង
             let lb_prefered_lang = Text::new("Preferred Languages:");
             let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).style(CustomButton::Text)
-               .on_press(LangRegionMessage::BtnAddClicked);
+               .on_press(BtnAddClicked);
             let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
             if selected_lang.is_some() && prefered_langs.len() > 1 {
-               btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveClicked);
+               btn_remove = btn_remove.on_press(BtnRemoveClicked);
             }
 
             let mut btn_up = Button::new(up_state, Icon::new('\u{f062}').size(23)).padding(2).style(CustomButton::Hovered);
             let mut btn_down = Button::new(down_state, Icon::new('\u{f063}').size(23)).padding(2).style(CustomButton::Hovered);
             if let Some(selected_idx) = selected_lang {
                if *selected_idx != 0 {
-                  btn_up = btn_up.on_press(LangRegionMessage::BtnUpClicked);
+                  btn_up = btn_up.on_press(BtnUpClicked);
                }
                if *selected_idx != (prefered_langs.len() - 1) {
-                  btn_down = btn_down.on_press(LangRegionMessage::BtnDownClicked);
+                  btn_down = btn_down.on_press(BtnDownClicked);
                }
             }
 
@@ -352,7 +353,7 @@ impl LangRegionPage {
                let content = Column::new().spacing(4)
                   .push(Text::new(format!("{} {}", prefered_lang.lang, if idx == 0 {"(Primary)"} else {""})))
                   .push(Text::new(prefered_lang.reg.as_str()).size(12).color(HOVERED));
-               let mut btn = Button::new(state, content).width(Length::Fill).on_press(LangRegionMessage::LangSelected(idx));
+               let mut btn = Button::new(state, content).width(Length::Fill).on_press(LangSelected(idx));
                btn = if let Some(selected_idx) = selected_lang {
                   btn.style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
                } else {
@@ -398,13 +399,13 @@ impl LangRegionPage {
                let mut ls_locales = locale_mn.list_langs_regions().iter().map(|item| LCKeyVal::new(item)).collect::<Vec<LCKeyVal>>();
                ls_locales.sort();
                let ls_days = locale_mn.time_details().list_days();
-               let pl_region = PickList::new(region_state, ls_locales.clone(), selected_region.clone(), LangRegionMessage::RegionChanged).style(CustomSelect::Primary);
-               let pl_first_day = PickList::new(firstday_state, ls_days, selected_firstday.clone(), LangRegionMessage::FirstDayChanged).style(CustomSelect::Primary);
-               let pl_time = PickList::new(time_format, ls_locales.clone(), selected_time_format.clone(), LangRegionMessage::TimeChanged).style(CustomSelect::Primary);
-               let chb_time_format = Checkbox::new(*is_24_hours_format, "24-Hours Format", LangRegionMessage::TimeFormatToggled).spacing(10).style(CustomCheckbox::Default);
-               let pl_num_format = PickList::new(num_format, ls_locales.clone(), selected_num_format.clone(), LangRegionMessage::NumFormatChanged).style(CustomSelect::Primary);
-               let pl_currency_format = PickList::new(currency_format, ls_locales.clone(), selected_currency_format.clone(), LangRegionMessage::CurrencyFormatChanged).style(CustomSelect::Primary);
-               let pl_measure_units = PickList::new(measure_format, LS_MEASURE_UNITS.iter().map(|item| LCKeyVal::new(item.clone())).collect::<Vec<LCKeyVal>>().clone(), selected_measure_format.clone(), LangRegionMessage::MeasureFormatChanged).style(CustomSelect::Primary);
+               let pl_region = PickList::new(region_state, ls_locales.clone(), selected_region.clone(), RegionChanged).style(CustomSelect::Primary);
+               let pl_first_day = PickList::new(firstday_state, ls_days, selected_firstday.clone(), FirstDayChanged).style(CustomSelect::Primary);
+               let pl_time = PickList::new(time_format, ls_locales.clone(), selected_time_format.clone(), TimeChanged).style(CustomSelect::Primary);
+               let chb_time_format = Checkbox::new(*is_24_hours_format, "24-Hours Format", TimeFormatToggled).spacing(10).style(CustomCheckbox::Default);
+               let pl_num_format = PickList::new(num_format, ls_locales.clone(), selected_num_format.clone(), NumFormatChanged).style(CustomSelect::Primary);
+               let pl_currency_format = PickList::new(currency_format, ls_locales.clone(), selected_currency_format.clone(), CurrencyFormatChanged).style(CustomSelect::Primary);
+               let pl_measure_units = PickList::new(measure_format, LS_MEASURE_UNITS.iter().map(|item| LCKeyVal::new(item.clone())).collect::<Vec<LCKeyVal>>().clone(), selected_measure_format.clone(), MeasureFormatChanged).style(CustomSelect::Primary);
                let info_sec = Container::new(
                   Column::new().spacing(10)
                   .push(pl_region)
@@ -469,7 +470,7 @@ impl LangRegionPage {
                )
             } else {
                let scrollable_prefered_lang = filtered_add_langs.iter_mut().fold(Scrollable::new(content_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (prefered_lang, state)| {
-                  let btn = Button::new(state, Text::new(format!("{}", prefered_lang))).width(Length::Fill).on_press(LangRegionMessage::AddLangMsg(AddLangMessage::AddLangChanged(prefered_lang.clone()))).style(
+                  let btn = Button::new(state, Text::new(format!("{}", prefered_lang))).width(Length::Fill).on_press(AddLangMsg(AddLangMessage::AddLangChanged(prefered_lang.clone()))).style(
                      if let Some(selected) = selected_add_lang {
                         if selected == prefered_lang {CustomButton::Selected}
                         else {CustomButton::Text}
@@ -486,15 +487,15 @@ impl LangRegionPage {
                   .push(scrollable_prefered_lang),
                ).height(Length::Fill).style(CustomContainer::ForegroundWhite);
                let mut btn_add_lang = icon_btn(btn_okay_state, '\u{f067}', "Add", None).style(CustomButton::Primary);
-               let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(LangRegionMessage::AddLangMsg(AddLangMessage::CancelClicked)).style(CustomButton::Hovered);
+               let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(AddLangMsg(AddLangMessage::CancelClicked)).style(CustomButton::Hovered);
                if selected_add_lang.is_some() {
-                  btn_add_lang = btn_add_lang.on_press(LangRegionMessage::AddLangMsg(AddLangMessage::AddClicked));
+                  btn_add_lang = btn_add_lang.on_press(AddLangMsg(AddLangMessage::AddClicked));
                }
                Container::new(
                   Row::new()
                   .push(
                      Column::new().width(Length::Fill).spacing(10)
-                     .push(TextInput::new(search_prefered_lang_state, "Type language name that's you wish to add", search_prefered_lang_val.as_str(), move |val| LangRegionMessage::AddLangMsg(AddLangMessage::SearchPreferedLang(val))).padding(10).style(CustomTextInput::Default))
+                     .push(TextInput::new(search_prefered_lang_state, "Type language name that's you wish to add", search_prefered_lang_val.as_str(), move |val| AddLangMsg(AddLangMessage::SearchPreferedLang(val))).padding(10).style(CustomTextInput::Default))
                      .push(prefered_lang)
                      .push(
                         Row::new().spacing(10).align_items(Align::Center)
@@ -529,10 +530,10 @@ impl LangRegionPage {
             } = apps_tab;
 
             let lb_customize = Text::new("Customize language settings for the apps below:");
-            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(LangRegionMessage::BtnAddAppClicked).style(CustomButton::Text);
+            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(BtnAddAppClicked).style(CustomButton::Text);
             let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
             if selected_app.is_some() && app_list.len() > 1 {
-               btn_remove = btn_remove.on_press(LangRegionMessage::BtnRemoveAppClicked);
+               btn_remove = btn_remove.on_press(BtnRemoveAppClicked);
             }
             let btn_group = Container::new(
                Row::new().push(btn_add).push(btn_remove)
@@ -544,8 +545,8 @@ impl LangRegionPage {
                   .push(IconBrand::new(*icon).size(30))
                   .push(Text::new(title.as_str()))
                   .push(Space::with_width(Length::Fill))
-                  .push(PickList::new(pl_state, ls_locales.clone(), Some(selected_lang.clone()), LangRegionMessage::AppLangChanged).style(CustomSelect::Primary))
-                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).padding(2).on_press(LangRegionMessage::AppSelected(idx)).style(CustomButton::Text));
+                  .push(PickList::new(pl_state, ls_locales.clone(), Some(selected_lang.clone()), AppLangChanged).style(CustomSelect::Primary))
+                  .push(Button::new(state, Icon::new('\u{f138}').size(20)).padding(2).on_press(AppSelected(idx)).style(CustomButton::Text));
                let mut con = Container::new(content).width(Length::Fill);
                con = if let Some(selected_idx) = selected_app {
                   con.style(if *selected_idx == idx {CustomContainer::FadedBrightForeground} else {CustomContainer::ForegroundWhite})
@@ -568,12 +569,12 @@ impl LangRegionPage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(LangRegionMessage::DefaultsClicked).style(CustomButton::Default);
+      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DefaultsClicked).style(CustomButton::Default);
       let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
       let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
       if *is_changed {
-         btn_ok = btn_ok.on_press(LangRegionMessage::OKClicked);
-         btn_reset = btn_reset.on_press(LangRegionMessage::ResetClicked);
+         btn_ok = btn_ok.on_press(OKClicked);
+         btn_reset = btn_reset.on_press(ResetClicked);
       }
 
       let bottom_sec = Container::new(

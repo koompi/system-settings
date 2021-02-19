@@ -72,13 +72,13 @@ impl ChangePwdPage {
          .push(lb_new_pwd)
          .push(lb_verify_pwd)
          .push(lb_pwd_hint);
-      let txt_old_pwd = TextInput::new(old_pwd_state, "", &old_pwd_val, OldPwdChanged).password().padding(7).width(Length::Fill).style(CustomTextInput::Default);
-      let mut txt_new_pwd = TextInput::new(new_pwd_state, "", &new_pwd_val, NewPwdChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
+      let txt_old_pwd = TextInput::new(old_pwd_state, "", &old_pwd_val, OldPwdChanged).password().padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
+      let mut txt_new_pwd = TextInput::new(new_pwd_state, "", &new_pwd_val, NewPwdChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
       if !self.is_show_pwd {
          txt_new_pwd = txt_new_pwd.password();
       }
       let btn_show_pwd = Button::new(btn_show_pwd, Icon::new(if self.is_show_pwd {'\u{f09c}'} else {'\u{f023}'}).size(18)).on_press(ShowPwdToggled).style(CustomButton::Hovered);
-      let txt_verify_pwd = TextInput::new(verify_pwd_state, "", &verify_pwd_val, VerifyPwdChanged).password().padding(7).width(Length::Fill).style(CustomTextInput::Default);
+      let txt_verify_pwd = TextInput::new(verify_pwd_state, "", &verify_pwd_val, VerifyPwdChanged).password().padding(7).width(Length::Units(127)).style(CustomTextInput::Default);
       let txt_pwd_hint = TextInput::new(pwd_hint_state, "(Recommended)", &pwd_hint_val, PwdHintChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let input_sec = Column::new().spacing(5)
          .push(txt_old_pwd)
