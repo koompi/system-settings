@@ -6,7 +6,7 @@ use iced::{scrollable, Align, Column, Container, Element, Length, Row, Rule, Scr
 use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Tab;
-#[derive(Default, Debug, Clone)]
+#[derive(Default)]
 pub struct SoundPage {
     choice: Choice,
     scroll_content: scrollable::State,

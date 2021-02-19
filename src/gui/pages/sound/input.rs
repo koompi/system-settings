@@ -74,6 +74,7 @@ impl SoundInput {
                         .push(Text::new("Input Devices"))
                         .push(PickList::new(&mut self.pick_in_dev, &InputDevice::ALL[..], Some(self.selected_in_dev), SoundInputMsg::SeletedIn).style(PickListStyle {})),
                 )
+                .width(Length::Fill)
                 .style(ContainerStyle::LightGrayCircle)
                 .padding(10),
             )
@@ -95,9 +96,10 @@ impl SoundInput {
                 Container::new(
                     Column::new().spacing(10).push(Text::new("Input Level")).push(
                         Row::new()
+                            .align_items(Align::Center)
                             .push(Icon::new('\u{f192}'))
                             .spacing(10)
-                            .push(Slider::new(&mut self.slider_input_level, 0.0..=100.0, self.input_level, SoundInputMsg::InputLevelChanged).step(1.0).style(SliderStyle::Default))
+                            .push(Slider::new(&mut self.slider_input_level, 0.0..=100.0, self.input_level, SoundInputMsg::InputLevelChanged).style(SliderStyle::Default).step(1.0))
                             .push(Icon::new('\u{f141}')),
                     ),
                 )

@@ -3,9 +3,10 @@ use iced::{button, pick_list, slider, Align, Button, Column, Container, Element,
 use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Toggler;
+use libkoompi::system_settings::sounds::{controllers, sound_api};
 use std::fmt;
 const FONT_SIZE: u16 = 12;
-#[derive(Default, Debug, Clone)]
+#[derive(Default)]
 pub struct SoundOutput {
     selected_out_dev: OutputDevice,
     pick_out_dev: pick_list::State<OutputDevice>,
@@ -66,77 +67,75 @@ impl SoundOutput {
         }
     }
     pub fn view(&mut self) -> Element<SoundOutputMsg> {
-        let output_content = Column::new()
-            .spacing(10)
-            .push(Text::new("Output").size(FONT_SIZE + 12))
-            .push(
-                Container::new(
-                    Row::new().align_items(Align::Center).spacing(10).push(Text::new("Output Device").size(FONT_SIZE + 10)).push(
-                        PickList::new(&mut self.pick_out_dev, &OutputDevice::ALL[..], Some(self.selected_out_dev), SoundOutputMsg::SeletedOut)
-                            .text_size(14)
-                            .style(PickListStyle {})
-                            .width(Length::Fill),
-                    ),
-                )
-                .width(Length::Fill)
-                .padding(10)
-                .style(ContainerStyle::LightGrayCircle),
-            )
-            .push(
-                Container::new(
-                    Column::new()
-                        .spacing(10)
-                        .push(
-                            Row::new()
-                                .push(Text::new("Output Volume").size(FONT_SIZE + 10))
-                                .push(Space::with_width(Length::Fill))
-                                .push(Text::new(&format!("{}%", self.out_value.to_string())).size(FONT_SIZE + 10)),
-                        )
-                        .push(
-                            Row::new()
-                                .align_items(Align::Center)
-                                .spacing(4)
-                                .push(
-                                    Button::new(&mut self.mute_out_sound, Icon::new(if self.is_muted { '\u{f026}' } else { '\u{f028}' }))
-                                        .on_press(SoundOutputMsg::MutedSound)
-                                        .style(ButtonStyle::Transparent),
-                                )
-                                .push(Slider::new(&mut self.slider_output, 0.0..=100.0, self.out_value, SoundOutputMsg::SoundOutChanged).style(SliderStyle::Circle).step(1.0).width(Length::Fill))
-                                .push(Icon::new('\u{f027}')),
+        let output_content =
+            Column::new()
+                .spacing(10)
+                .push(Text::new("Output").size(12))
+                .push(
+                    Container::new(
+                        Row::new().align_items(Align::Center).spacing(10).push(Text::new("Output Device").size(FONT_SIZE + 10)).push(
+                            PickList::new(&mut self.pick_out_dev, &OutputDevice::ALL[..], Some(self.selected_out_dev), SoundOutputMsg::SeletedOut)
+                                .text_size(14)
+                                .style(PickListStyle {})
+                                .width(Length::Fill),
                         ),
+                    )
+                    .width(Length::Fill)
+                    .padding(10)
+                    .style(ContainerStyle::LightGrayCircle),
                 )
-                .width(Length::Fill)
-                .padding(10)
-                .style(ContainerStyle::LightGrayCircle),
-            )
-            .push(
-                Container::new(
-                    Row::new()
-                        .align_items(Align::Center)
-                        .spacing(10)
-                        .push(Text::new("Volume Boost").size(FONT_SIZE + 10))
-                        .push(Space::with_width(Length::Fill))
-                        .push(Toggler::new(self.is_boost_sound, String::from(""), SoundOutputMsg::EnableBoostSound)),
+                .push(
+                    Container::new(
+                        Column::new()
+                            .spacing(10)
+                            .push(
+                                Row::new()
+                                    .push(Text::new("Output Volume").size(10))
+                                    .push(Space::with_width(Length::Fill))
+                                    .push(Text::new(&format!("{}%", self.out_value.to_string())).size(10)),
+                            )
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .spacing(4)
+                                    .push(
+                                        Button::new(&mut self.mute_out_sound, Icon::new(if self.is_muted { '\u{f026}' } else { '\u{f028}' }))
+                                            .on_press(SoundOutputMsg::MutedSound)
+                                            .style(ButtonStyle::Transparent),
+                                    )
+                                    .push(Slider::new(&mut self.slider_output, 0.0..=100.0, self.out_value, SoundOutputMsg::SoundOutChanged).style(SliderStyle::Default).step(1.0).width(Length::Fill))
+                                    .push(Icon::new('\u{f027}')),
+                            ),
+                    )
+                    .width(Length::Fill)
+                    .padding(10)
+                    .style(ContainerStyle::LightGrayCircle),
                 )
-                .padding(10)
-                .style(ContainerStyle::LightGrayCircle),
-            )
-            .push(if self.is_boost_sound {
-                Container::new(Text::new("If the volume is lounder than 100%, it may distort audio and be harmdul to your speaker").size(FONT_SIZE + 8)).padding(10)
-            } else {
-                Container::new(Space::with_height(Length::Units(0)))
-            })
-            .push(
-                Container::new(
-                    Column::new()
-                        .spacing(10)
-                        .push(Text::new("Left/Right Balance").size(FONT_SIZE + 10))
-                        .push(Slider::new(&mut self.balance_state, 0.0..=100.0, self.balance_val, SoundOutputMsg::BalanceChanged).style(SliderStyle::Default).step(1.0))
-                        .push(Row::new().push(Text::new("Left").size(FONT_SIZE + 8)).push(Space::with_width(Length::Fill)).push(Text::new("Right").size(FONT_SIZE + 8))), // .push(),
+                .push(
+                    Container::new(Row::new().align_items(Align::Center).spacing(10).push(Text::new("Volume Boost").size(10)).push(Space::with_width(Length::Fill)).push(Toggler::new(
+                        self.is_boost_sound,
+                        String::from(""),
+                        SoundOutputMsg::EnableBoostSound,
+                    )))
+                    .padding(10)
+                    .style(ContainerStyle::LightGrayCircle),
                 )
-                .padding(10)
-                .style(ContainerStyle::LightGrayCircle),
-            );
+                .push(if self.is_boost_sound {
+                    Container::new(Text::new("If the volume is lounder than 100%, it may distort audio and be harmdul to your speaker").size(8)).padding(10)
+                } else {
+                    Container::new(Space::with_height(Length::Units(0)))
+                })
+                .push(
+                    Container::new(
+                        Column::new()
+                            .spacing(10)
+                            .push(Text::new("Left/Right Balance").size(10))
+                            .push(Slider::new(&mut self.balance_state, 0.0..=100.0, self.balance_val, SoundOutputMsg::BalanceChanged).style(SliderStyle::Default).step(1.0))
+                            .push(Row::new().push(Text::new("Left").size(8)).push(Space::with_width(Length::Fill)).push(Text::new("Right").size(8))), // .push(),
+                    )
+                    .padding(10)
+                    .style(ContainerStyle::LightGrayCircle),
+                );
         output_content.into()
     }
 }
