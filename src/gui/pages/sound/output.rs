@@ -3,20 +3,23 @@ use iced::{button, pick_list, slider, Align, Button, Column, Container, Element,
 use iced_custom_widget as icw;
 use icw::components::Icon;
 use icw::components::Toggler;
+use libkoompi::system_settings::sounds::controllers::{AppControl, DeviceControl, SinkController};
 use libkoompi::system_settings::sounds::{controllers, sound_api};
+use libkoompi::system_settings::SoundCard;
 use std::fmt;
 const FONT_SIZE: u16 = 12;
 #[derive(Default)]
 pub struct SoundOutput {
     selected_out_dev: OutputDevice,
     pick_out_dev: pick_list::State<OutputDevice>,
-    out_value: f32,
+    out_value: f64,
     mute_out_sound: button::State,
     is_muted: bool,
     slider_output: slider::State,
     is_boost_sound: bool,
     balance_state: slider::State,
-    balance_val: f32,
+    balance_val: f64,
+    sink_input: SinkController,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,9 +31,9 @@ pub enum OutputDevice {
 pub enum SoundOutputMsg {
     SeletedOut(OutputDevice),
     MutedSound,
-    SoundOutChanged(f32),
+    SoundOutChanged(f64),
     EnableBoostSound(bool),
-    BalanceChanged(f32),
+    BalanceChanged(f64),
 }
 impl Default for OutputDevice {
     fn default() -> Self {
@@ -55,7 +58,36 @@ impl fmt::Display for OutputDevice {
 }
 impl SoundOutput {
     pub fn new() -> Self {
-        Self { ..Default::default() }
+        let mut handler = SinkController::create();
+        let devices = handler.list_devices().expect("Device not found");
+
+        for dev in devices.clone() {
+            println!("{:?} : {:?} : {:?}", dev.index, dev.description, dev.name);
+        }
+        let mut test_string = String::new();
+        std::io::stdin().read_line(&mut test_string).expect("Error reading string. cannot store the input string in the buffer");
+        for dev in devices.clone() {
+            if test_string.trim() == dev.index.to_string() {
+                handler.set_device_volume_by_index(dev.index, 0.10);
+                match handler.get_card_info_list() {
+                    Ok(list_cards) => {
+                        for data in list_cards.iter() {
+                            for ports in data.ports.iter() {
+                                println!("Port: {:?}", ports.description.as_ref().unwrap());
+                            }
+                            for profiles_list in data.profiles.iter() {
+                                println!("Profile: {:?}", profiles_list.description.as_ref().unwrap());
+                            }
+                        }
+                    }
+                    Err(e) => println!("Error: {:?}", e),
+                }
+            }
+        }
+        Self {
+            sink_input: SinkController::create(),
+            ..Default::default()
+        }
     }
     pub fn update(&mut self, msg: SoundOutputMsg) {
         match msg {
@@ -63,7 +95,10 @@ impl SoundOutput {
             SoundOutputMsg::EnableBoostSound(is_enable) => self.is_boost_sound = is_enable,
             SoundOutputMsg::MutedSound => {}
             SoundOutputMsg::SeletedOut(out) => self.selected_out_dev = out,
-            SoundOutputMsg::SoundOutChanged(val) => self.out_value = val,
+            SoundOutputMsg::SoundOutChanged(val) => {
+                self.out_value = val;
+                self.sink_input.set_device_volume_by_index(0, val / 100.0);
+            }
         }
     }
     pub fn view(&mut self) -> Element<SoundOutputMsg> {
@@ -103,7 +138,11 @@ impl SoundOutput {
                                             .on_press(SoundOutputMsg::MutedSound)
                                             .style(ButtonStyle::Transparent),
                                     )
-                                    .push(Slider::new(&mut self.slider_output, 0.0..=100.0, self.out_value, SoundOutputMsg::SoundOutChanged).style(SliderStyle::Default).step(1.0).width(Length::Fill))
+                                    .push(if self.is_boost_sound {
+                                        Slider::new(&mut self.slider_output, 0.0..=150.0, self.out_value, SoundOutputMsg::SoundOutChanged).style(SliderStyle::Default).step(1.0).width(Length::Fill)
+                                    } else {
+                                        Slider::new(&mut self.slider_output, 0.0..=100.0, self.out_value, SoundOutputMsg::SoundOutChanged).style(SliderStyle::Default).step(1.0).width(Length::Fill)
+                                    })
                                     .push(Icon::new('\u{f027}')),
                             ),
                     )

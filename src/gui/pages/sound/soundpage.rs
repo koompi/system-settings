@@ -13,7 +13,6 @@ pub struct SoundPage {
     output_content: SoundOutput,
     input_content: SoundInput,
     sound_effects: SndEffect,
-    window_size: (u32, u32),
 }
 impl SoundPage {
     pub fn new() -> Self {
