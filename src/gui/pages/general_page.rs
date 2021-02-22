@@ -1,10 +1,11 @@
 use super::super::styles::{CustomButton, CustomContainer, CustomRadio, CustomSelect};
-use iced::{Align, Button, Checkbox, Column, Command, Container, Element, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text, button, pick_list, scrollable};
+use iced::{Align, Button, Checkbox, Column, Command, Container, Element, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text, button, pick_list, scrollable, slider,Slider, TextInput,text_input};
 use iced_custom_widget as icw;
 use icw::components::Tab;
 use icw::components::Icon;
 use icw::styles::{
      containers::ContainerStyle};
+use serde::de::value;
 
 use crate::helpers::ROOT_PATH;
 #[macro_export]
@@ -25,7 +26,7 @@ pub struct General {
     theme: Theme,
     icon_style: IconStyle,
     // Cursor: Cursor,
-    // FontStyle: FontStyle,
+    font_style: FontStyle,
     is_active: bool,
     scroll_content: scrollable::State,
 }
@@ -47,6 +48,7 @@ pub enum GeneralMessage {
     TabSelect(Choice),
     ThemeMsg(ThemeMsg),
     IconMsg(IconMsg),
+    FontMsg(FontMsg),
 }
 
 impl General {
@@ -65,6 +67,9 @@ impl General {
             GeneralMessage::ThemeMsg(msg)=>{
                 self.theme.update(msg);
             }
+            GeneralMessage::FontMsg(msg)=>{
+                self.font_style.update(msg);
+            }
             GeneralMessage::IconMsg(msg)=>{
                 self.icon_style.update(msg);
             }
@@ -72,11 +77,12 @@ impl General {
     }
     pub fn view(&mut self) -> Element<GeneralMessage> {
         let General {
-           choice,
-           theme,
-           icon_style,
-           is_active,
-           scroll_content,
+            choice,
+            theme,
+            icon_style,
+            font_style,
+            is_active,
+            scroll_content,
         } = self;
         let row = Column::new()
             .width(Length::Fill)
@@ -130,7 +136,7 @@ impl General {
                 Choice::A => self.theme.view().map(move |msg| GeneralMessage::ThemeMsg(msg)),
                 Choice::B => Text::new("B").into(),
                 Choice::C => Text::new("C").into(),
-                Choice::D => Text::new("D").into(),
+                Choice::D => self.font_style.view().map(move |msg| GeneralMessage::FontMsg(msg)),
             });
         let netsidebar_scroll = Scrollable::new(&mut self.scroll_content)
             .push(row)
@@ -197,7 +203,7 @@ impl Theme{
             dark_btn: button::State::new(),
             selected: Some(ColorAccent::Purple),
             scroll_content: scrollable::State::new(),
-            ..Self::default()
+            ..Self::default()   
         }
         
     }
@@ -239,7 +245,7 @@ impl Theme{
         );
         let appearent = Column::new()
             .width(Length::Fill)
-            .push(
+            .push(  
             Text::new("Theme").size(24),
             )
             .push(
@@ -322,7 +328,7 @@ pub enum ColorAccent {
 }
 impl Default for ColorAccent {
     fn default() -> Self {
-        ColorAccent::Purple
+        ColorAccent::Green
     }
 }
 impl From<ColorAccent> for String {
@@ -351,12 +357,133 @@ impl ColorAccent {
         ]
     }
 }
-#[derive(Default,Debug,Clone,Copy)]
-pub struct IconStyle{
+#[derive(Default, Debug, Clone)]
+pub struct FontStyle{
+    value : f32,
+    state:slider::State,
+    selected_font: FontList,
+    font: pick_list::State<FontList>,
+    search: text_input::State,
+}
+#[derive(Debug,Clone, Copy)]
+pub enum FontMsg{
+    SliderChange(f32),
+    FontChanged(FontList),
 
+}
+impl FontStyle{
+    pub fn new() -> Self{
+        Self{
+            state:slider::State::new(),
+            selected_font: FontList::default(),
+            font: pick_list::State::default(),
+            search: text_input::State::new(),
+            ..Self::default()
+        }
+        
+    }
+    pub fn update(&mut self, msg: FontMsg){
+        match msg{
+            FontMsg::SliderChange(x) => self.value = x,   
+            FontMsg::FontChanged(font) => {
+                self.selected_font = font;
+            }
+            
+        }
+            
+    }
+    pub fn view(&mut self) -> Element<FontMsg>{
+        let FontStyle { 
+            value, 
+            state, 
+            selected_font, 
+            font,
+            search,
+        } = self;
+        let font_size=Column::new()
+            .padding(20)
+            .align_items(Align::Start)
+            .push(
+                Text::new("Size").size(24),
+            )
+            .spacing(10)
+            .push(
+                
+                Slider::new(
+                    &mut self.state,
+                    0.0..=100.0,
+                    self.value,
+                    FontMsg::SliderChange,
+                )
+                .step(0.01),
+            )
+            .spacing(20);
+        let font_choice=
+            Column::new()
+            .width(Length::Fill)
+            .padding(20)  
+            .push (Text::new("Standard Font:").size(24))
+            .spacing(20)
+            .push(
+                PickList::new(
+                    font,
+                    &FontList::ALL[..],
+                    Some(*selected_font),
+                    FontMsg::FontChanged,
+                )
+                .width(Length::Units(250))
+                // .height(Length::Units(20))
+                .text_size(18)
+                .style(CustomSelect::Default),
+            );
+         
+
+        let whole_content = Column::new()
+        .align_items(Align::Center)
+        .push(font_size)
+        .push(font_choice)
+        .padding(20)
+        .spacing(10);
+        Container::new(whole_content)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into()
+        
+    }
+}
+#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
+pub enum FontList {
+    Monospace,
+    Arial,
+    Serif,  
+}
+impl FontList {
+    const ALL: [FontList; 3] = [
+        FontList::Monospace,
+        FontList::Arial,
+        FontList::Serif,
+    ];
+}
+select_display!(FontList,
+    FontList::Monospace => "Monospace",
+    FontList::Arial => "Arial",
+    FontList::Serif => "Serif"
+);
+impl Default for FontList {
+    fn default() -> Self {
+        FontList::Monospace
+    }
+}
+
+//icon part
+
+#[derive(Default, Debug, Clone)]
+pub struct IconStyle{
+    
 }
 #[derive(Debug,Clone, Copy)]
 pub enum IconMsg{
+  
 
 }
 impl IconStyle{
@@ -371,12 +498,15 @@ impl IconStyle{
         match msg{
             
             }
-        
-    }
-    // pub fn view(&mut self) -> Element<IconMsg>{
-    //     let IconStyle {
             
-    //     } = self;
+    }
+            
+    // pub fn view(&mut self) -> Element<IconMsg>{
+    //     // let IconStyle { 
+            
+    //     // } = self;
+            
+        
         
     // }
 }
