@@ -1,78 +1,71 @@
 use iced::{
-   text_input, scrollable, Scrollable, TextInput, Text, Container, Length, Column, Row, Align, Checkbox, Element,
+   text_input, button, scrollable, Scrollable, TextInput, Text, Container, Length, Column, Row, Align, Checkbox, Element, Space,
 };
-use crate::gui::styles::{CustomTextInput, CustomCheckbox, CustomContainer};
-use users::{
-   User, Groups, Users, gid_t, all_users, get_group_by_gid, get_user_by_name,
-   os::unix::GroupExt,
-};
+use libkoompi::system_settings::users_groups::{User, Group};
+use crate::gui::styles::{CustomTextInput, CustomCheckbox, CustomContainer, CustomButton};
+use crate::gui::addon_widgets::icon_btn;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct EditGroupPage {
-   pub group_name_state: text_input::State,
-   pub group_name_val: String,
-   pub ls_members: Vec<(bool, User)>,
-   pub scroll_members: scrollable::State,
+   group_name_state: text_input::State,
+   group_name_val: String,
+   ls_members: Vec<(bool, User)>,
+   ls_users: Vec<User>,
+   scroll_members: scrollable::State,
+   is_changed: bool,
+   btn_ok_state: button::State,
 }
 
 #[derive(Debug, Clone)]
 pub enum EditGroupMsg {
    GroupNameChanged(String),
-   GroupNameSubmitted,
+   GroupNameSubmitted(String),
    MemberToggled(usize, bool),
+   OkayClicked(Vec<String>),
 }
 
 impl EditGroupPage {
-   pub fn new(curr_gid: gid_t) -> Self {
-      if let Some(group) = get_group_by_gid(curr_gid) {
-         let group_name = group.name().to_str().unwrap_or("");
-         let group_members: Vec<User> = group.members().to_vec().into_iter().filter_map(|name| get_user_by_name(&name)).collect();
-         // let allusers = unsafe { all_users() };
-         Self {
-            group_name_state: text_input::State::focused(),
-            group_name_val: String::from(group_name),
-            ls_members: group_members.into_iter().map(|user| (true, user)).collect(), // !filter group member
-            scroll_members: scrollable::State::new()
-         }
-      } else {
-         Self::default()
+   pub fn new(group: &Group, ls_users: Vec<&User>) -> Self {
+      let grp_members = group.members();
+      Self {
+         group_name_val: group.formatted_name(),
+         ls_users: ls_users.iter().map(ToOwned::to_owned).map(|usr| usr.clone()).collect(),
+         ls_members: ls_users.into_iter().map(|usr| (grp_members.contains(usr.username()), usr.to_owned())).collect(), 
+         ..Self::default()
       }
    }
 
-   pub fn with_gid(&mut self, gid: gid_t) {
-      if let Some(group) = get_group_by_gid(gid) {
-         let group_name = group.name().to_str().unwrap_or("");
-         let group_members: Vec<User> = group.members().to_vec().iter().filter_map(|name| get_user_by_name(&name)).collect();
-         // let allusers = unsafe { all_users() };
-         self.group_name_val = String::from(group_name);
-         self.ls_members = group_members.into_iter().map(|user| (true, user)).collect(); // !filter group member
-      }
+   pub fn with_grp(&mut self, group: &Group) {
+      self.group_name_val = group.formatted_name();
+      self.ls_members = self.ls_users.iter().map(|usr| (group.members().contains(usr.username()), usr.to_owned())).collect();
+      self.is_changed = false;
    }
 
    pub fn update(&mut self, msg: EditGroupMsg) {
       use EditGroupMsg::*;
       match msg {
          GroupNameChanged(val) => self.group_name_val = val,
-         GroupNameSubmitted => {},
          MemberToggled(idx, is_checked) => {
             if let Some(member) = self.ls_members.get_mut(idx) {
                member.0 = is_checked;
+               if !self.is_changed { self.is_changed = true; }
             }
          },
+         _ => {}
       }
    }
 
    pub fn view(&mut self) -> Element<EditGroupMsg> {
       use EditGroupMsg::*;
       let Self {
-         group_name_state, group_name_val, ls_members, scroll_members, ..
+         group_name_state, group_name_val, ls_members, scroll_members, btn_ok_state, ..
       } = self;
 
       let lb_grp_name = Text::new("Group name:");
-      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default).on_submit(GroupNameSubmitted);
+      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default).on_submit(GroupNameSubmitted(group_name_val.clone()));
 
       let scrollable_members = ls_members.iter_mut().enumerate().fold(Scrollable::new(scroll_members).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (is_checked, user))| {
-         let chb_member = Checkbox::new(*is_checked, user.name().to_str().unwrap_or(""), move |b| MemberToggled(idx, b)).width(Length::Fill).spacing(10).style(CustomCheckbox::Default);
+         let chb_member = Checkbox::new(*is_checked, user.fullname().as_str(), move |b| MemberToggled(idx, b)).width(Length::Fill).spacing(10).style(CustomCheckbox::Default);
          scrollable.push(chb_member)
       });
       let member_pane = Container::new(
@@ -83,14 +76,24 @@ impl EditGroupPage {
          .push(scrollable_members)
       ).height(Length::Fill).width(Length::Fill).style(CustomContainer::ForegroundWhite);
 
+      let mut btn_okay = icon_btn(btn_ok_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
+      if self.is_changed {
+         btn_okay = btn_okay.on_press(OkayClicked(ls_members.iter().filter(|(is_checked, _)| *is_checked).map(|(_, usr)| usr.username().to_owned()).collect()));
+      }
+
       Container::new(
-         Column::new().width(Length::Fill).spacing(10)
+         Column::new().width(Length::Fill).padding(20).spacing(10)
          .push(
             Row::new().spacing(10).align_items(Align::Center)
             .push(lb_grp_name)
             .push(txt_grp_name)
          )
          .push(member_pane)
+         .push(
+            Row::new().spacing(10).align_items(Align::Center)
+            .push(Space::with_width(Length::Fill))
+            .push(btn_okay)
+         )
       ).width(Length::FillPortion(7)).height(Length::Fill).into()
    }
 }

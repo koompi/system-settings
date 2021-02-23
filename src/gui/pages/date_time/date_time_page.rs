@@ -208,6 +208,7 @@ impl DateTimePage {
    }
 
    pub fn view(&mut self) -> Element<DateTimeMessage> {
+      use DateTimeMessage::*;
       let DateTimePage {
          datetime_manager,
          locale_manager,
@@ -223,7 +224,7 @@ impl DateTimePage {
       } = self;
 
       // របារផ្ទាំង
-      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, |idx| DateTimeMessage::TabChanged(idx));
+      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -238,18 +239,18 @@ impl DateTimePage {
                is_date_change,
             } = datetime_tab;
 
-            let chb_auto_datetime = Checkbox::new(*datetime_manager.ntp(), "Set date and time automatically", DateTimeMessage::AutoDateTimeToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_datetime = Checkbox::new(*datetime_manager.ntp(), "Set date and time automatically", AutoDateTimeToggled).spacing(10).style(CustomCheckbox::Default);
             let date = clock.now.date().format(locale_manager.time_details().d_fmt.as_str()).to_string();
             let txt_date: Element<_> = if *datetime_manager.ntp() {
                Text::new(date).into()
             } else {
-               TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, DateTimeMessage::TxtDateChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
+               TextInput::new(txt_date_state, "", if *is_date_change {temp_date_val} else {&date}, TxtDateChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
             };
             let time = clock.now.time().format(locale_manager.time_details().t_fmt.as_str()).to_string();
             let txt_time: Element<_> = if *datetime_manager.ntp() {
                Text::new(time).size(14).into()
             } else {
-               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, DateTimeMessage::TxtTimeChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
+               TextInput::new(txt_time_state, "", if *is_time_change {temp_time_val} else {&time}, TxtTimeChanged).padding(7).width(Length::Units(127)).style(CustomTextInput::Default).into()
             };
             let calendar_con = Container::new(Text::new("Calendar")).width(Length::Units(127)).height(Length::Units(127)).center_x().center_y().style(CustomContainer::ForegroundWhite);
             let calendar_sec = Container::new(
@@ -291,11 +292,11 @@ impl DateTimePage {
                ..
             } = timezone_tab;
 
-            let chb_auto_tz = Checkbox::new(*datetime_manager.ntp(), "Set time zone automatically using current location", DateTimeMessage::AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_tz = Checkbox::new(*datetime_manager.ntp(), "Set time zone automatically using current location", AutoTZToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_tz_hint = Text::new("To change the local time zone, select your area from the list below then click Apply.");
             let txt_current_tz = Text::new(format!("Current local time zone: {}", datetime_manager.timezone()));
 
-            let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, DateTimeMessage::SearchTZChanged).padding(10).style(CustomTextInput::Default);
+            let input_search_tz = TextInput::new(search_state, "Search time zone...", &search_val, SearchTZChanged).padding(10).style(CustomTextInput::Default);
             let scrollable_continent = ls_continents.iter_mut().fold(Scrollable::new(scroll_continent).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (con, state)| {
                let mut btn = Button::new(state, Text::new(con.as_str())).width(Length::Fill).style(
                   if let Some(selected) = selected_continent {
@@ -305,7 +306,7 @@ impl DateTimePage {
                   else {CustomButton::Text}
                );
                if !(*datetime_manager.ntp()) {
-                  btn = btn.on_press(DateTimeMessage::ContinentSelected(con.clone()));
+                  btn = btn.on_press(ContinentSelected(con.clone()));
                }
                scrollable.push(btn)
             });
@@ -330,7 +331,7 @@ impl DateTimePage {
                   else {CustomButton::Text}
                );
                if !(*datetime_manager.ntp()) {
-                  btn = btn.on_press(DateTimeMessage::TZSelected(tz.clone()));
+                  btn = btn.on_press(TZSelected(tz.clone()));
                }
                scrollable.push(btn)
             });
@@ -364,12 +365,12 @@ impl DateTimePage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DateTimeMessage::DefaultsClicked).style(CustomButton::Default);
+      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DefaultsClicked).style(CustomButton::Default);
       let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
       let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
       if *is_changed {
-         btn_ok = btn_ok.on_press(DateTimeMessage::ApplyClicked);
-         btn_reset = btn_reset.on_press(DateTimeMessage::ResetClicked);
+         btn_ok = btn_ok.on_press(ApplyClicked);
+         btn_reset = btn_reset.on_press(ResetClicked);
       }
       let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
          .push(btn_defaults)

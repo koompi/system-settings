@@ -4,12 +4,12 @@ use iced::{
 use crate::gui::styles::{CustomTextInput, CustomButton};
 use crate::gui::addon_widgets::icon_btn;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct AddGroupPage {
-   pub fullname_state: text_input::State,
-   pub fullname_val: String,
-   pub btn_create_state: button::State,
-   pub btn_cancel_state: button::State,
+   fullname_state: text_input::State,
+   fullname_val: String,
+   btn_create_state: button::State,
+   btn_cancel_state: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -48,7 +48,7 @@ impl AddGroupPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).spacing(10)
+         Column::new().width(Length::Fill).padding(20).spacing(10)
          .push(
             Row::new().spacing(10).align_items(Align::Center)
             .push(lb_grp_name)

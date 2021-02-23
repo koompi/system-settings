@@ -1,13 +1,18 @@
 use super::{
-   users_tab::{UsersTab, UsersMsg}, groups_tab::{GroupsTab, GroupsMsg}
+   users_tab::{UsersTab, UsersMsg}, 
+   groups_tab::{GroupsTab, GroupsMsg}
 };
+use std::{cell::RefCell, rc::Rc};
+use libkoompi::system_settings::users_groups::UsersGroupsManager;
 use crate::gui::addon_widgets::tabbar;
 use crate::gui::styles::{CustomContainer, CustomButton};
 use iced::{
    button, Button, Text, Container, Length, Column, Row, Align, Element, Space
 };
 
+#[derive(Debug, Default)]
 pub struct UserGroupPage {
+   usrgrp_mn: Rc<RefCell<UsersGroupsManager>>,
    tabbar_state: Vec<(&'static str, button::State)>,
    curr_tab_idx: usize,
    users_tab: UsersTab,
@@ -25,15 +30,27 @@ pub enum UserGroupMsg {
 
 impl UserGroupPage {
    pub fn new() -> Self {
-      Self {
-         tabbar_state: vec![
-            ("Users", button::State::new()),
-            ("Groups", button::State::new()),
-         ],
-         curr_tab_idx: 0,
-         users_tab: UsersTab::new(),
-         groups_tab: GroupsTab::new(),
-         btn_option_state: button::State::new(),
+      let tabs = vec![
+         ("Users", button::State::new()),
+         ("Groups", button::State::new()),
+      ];
+      match UsersGroupsManager::new() {
+         Ok(usrgrp_mn) => {
+            let usrgrp_mn = Rc::new(RefCell::new(usrgrp_mn));
+
+            Self {
+               users_tab: UsersTab::new(Rc::clone(&usrgrp_mn)),
+               groups_tab: GroupsTab::new(Rc::clone(&usrgrp_mn)),
+               usrgrp_mn,
+               tabbar_state: tabs,
+               curr_tab_idx: 0,
+               btn_option_state: button::State::new(),
+            }
+         },
+         Err(err) => {
+            eprintln!("{:?}", err);
+            Self::default()
+         }
       }
    }
 
@@ -64,7 +81,7 @@ impl UserGroupPage {
       } = self;
 
       // របារផ្ទាំង
-      let tabbar_sec = tabbar(tabbar_state, self.curr_tab_idx, |idx| TabChanged(idx));
+      let tabbar_sec = tabbar(tabbar_state, self.curr_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.curr_tab_idx {
