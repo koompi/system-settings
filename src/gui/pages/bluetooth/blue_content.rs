@@ -37,13 +37,18 @@ impl Default for BluetoothDevType {
         BluetoothDevType::SmartPhone
     }
 }
+
 impl BlueContent {
     pub fn new() -> Self {
         let _simpler_code = |b_type: BluetoothDevType, b_ssid: &str, b_status: BluetoothStatus| (b_type, b_ssid.to_string(), b_status);
         let mut data = blue_backend::BluetoothData::new();
-        let list_address = data.get_address().unwrap();
+        let mut blue_address = Vec::<(String, String)>::new();
+        match data.get_address() {
+            Ok(incoming_result) => blue_address = incoming_result.to_vec(),
+            Err(e) => println!("Error : {:?}", e),
+        }
         let mut init_vec_state: Vec<(BluetoothDevType, String, BluetoothStatus)> = Vec::new();
-        for new_data in list_address {
+        for new_data in blue_address {
             init_vec_state.push((BluetoothDevType::Computer, format!("{} {}", new_data.0, new_data.1), BluetoothStatus::NoConnected));
         }
         Self {
@@ -51,16 +56,23 @@ impl BlueContent {
             ..Default::default()
         }
     }
+    fn get_blueaddress(&mut self) -> Vec<(String, String)> {
+        let mut blue_address = Vec::<(String, String)>::new();
+        match self.bluedata.get_address() {
+            Ok(addresses) => blue_address = addresses.to_vec(),
+            Err(e) => println!("Error: {:?}", e),
+        };
+        blue_address
+    }
     pub fn update(&mut self, msg: BlueConentMsg) {
         match msg {
             BlueConentMsg::DevRefreshed => {
                 self.bluedata.get_data().clear();
-                let list_address = self.bluedata.get_address().unwrap();
                 let length = self.vector_bluetooths.len();
                 for _ in 0..=length - 1 {
                     self.vector_bluetooths.pop();
                 }
-                for new_data in list_address {
+                for new_data in self.get_blueaddress() {
                     self.vector_bluetooths.push((BluetoothDevType::Computer, format!("{} {}", new_data.0, new_data.1), BluetoothStatus::NoConnected));
                 }
             }
@@ -145,7 +157,12 @@ pub mod blue_backend {
             adapter.set_powered(true)?;
             let session = DiscoverySession::create_session(&bt_session, adapter.get_id()).unwrap();
             thread::sleep(Duration::from_millis(200));
-            session.start_discovery().unwrap();
+            match session.start_discovery() {
+                Ok(()) => {
+                    println!("discover successfully")
+                }
+                Err(e) => println!("Error: {:?}", e),
+            }
             thread::sleep(Duration::from_millis(200));
             let devices = adapter.get_device_list().unwrap();
             println!("{} device(s) found", devices.len());
@@ -161,7 +178,10 @@ pub mod blue_backend {
                 }
                 // adapter.remove_device(device.get_id()).unwrap();
             }
-            session.stop_discovery().unwrap();
+            match session.stop_discovery() {
+                Ok(()) => println!("Not error: "),
+                Err(e) => println!("Error: {:?}", e),
+            }
             Ok(&self.data)
         }
     }
