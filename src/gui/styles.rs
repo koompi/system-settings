@@ -126,42 +126,45 @@ pub enum CustomContainer {
    Primary,
    Success,
    Warning,
+   Transparent(Color),
 }
 
 impl container::StyleSheet for CustomContainer {
    fn style(&self) -> container::Style {
+      use CustomContainer::*;
       container::Style {
-         background: Some(Background::Color(match self {
-            CustomContainer::Background | CustomContainer::Header => BACKGROUND,
-            CustomContainer::ForegroundWhite => Color::WHITE,
-            CustomContainer::ForegroundGray | CustomContainer::Segment => FOREGROUND,
-            CustomContainer::Hovered => Color {
+         background: Some(match self {
+            Background | Header => BACKGROUND,
+            ForegroundWhite => Color::WHITE,
+            ForegroundGray | Segment => FOREGROUND,
+            Hovered => Color {
                a: 0.2,
                ..Color::BLACK
             },
-            CustomContainer::FadedBrightForeground => Color {
+            FadedBrightForeground => Color {
                a: 0.8,
                ..FOREGROUND
             },
-            CustomContainer::Primary => Color { a: 0.7, ..ACCENT },
-            CustomContainer::Success => SUCCESS,
-            CustomContainer::Warning => WARNING,
-         })),
+            Primary => Color { a: 0.7, ..ACCENT },
+            Success => SUCCESS,
+            Warning => WARNING,
+            Transparent(color) => Color { a: 0.3, ..(*color) }
+         }.into()),
          border_radius: match self {
-            CustomContainer::Segment => 10.0,
-            CustomContainer::ForegroundGray | CustomContainer::Hovered => 7.0,
-            CustomContainer::FadedBrightForeground => 4.0,
-            CustomContainer::Success | CustomContainer::Warning | CustomContainer::Primary => 5.0,
+            Segment => 10.0,
+            ForegroundGray | Hovered => 7.0,
+            FadedBrightForeground => 4.0,
+            Success | Warning | Primary => 5.0,
             _ => 0.0,
          },
          border_width: match self {
-            CustomContainer::Header | CustomContainer::Segment => 1.0,
-            CustomContainer::Primary => 0.5,
+            Header | Segment => 1.0,
+            Primary => 0.5,
             _ => 0.0,
          },
          border_color: match self {
-            CustomContainer::Header => Color::TRANSPARENT,
-            CustomContainer::Primary => Color::BLACK,
+            Header => Color::TRANSPARENT,
+            Primary => Color::BLACK,
             _ => BACKGROUND,
          },
          ..container::Style::default()
