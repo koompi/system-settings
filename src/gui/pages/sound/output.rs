@@ -66,12 +66,20 @@ impl SoundOutput {
     pub fn update(&mut self, msg: SoundOutputMsg) {
         match msg {
             SoundOutputMsg::BalanceChanged(val) => self.balance_val = val,
-            SoundOutputMsg::EnableBoostSound(is_enable) => self.is_boost_sound = is_enable,
+            SoundOutputMsg::EnableBoostSound(is_enable) => {
+                self.is_boost_sound = is_enable;
+                if is_enable {
+                    {}
+                } else {
+                    self.out_value = (100.0 * self.out_value) / 150.0;
+                    self.sink_input.set_device_volume_by_name("alsa_output.pci-0000_00_1f.3.analog-stereo", self.out_value / 100.0);
+                }
+            }
             SoundOutputMsg::MutedSound => {}
             SoundOutputMsg::SeletedOut(out) => self.selected_out_dev = out,
             SoundOutputMsg::SoundOutChanged(val) => {
                 self.out_value = val;
-                self.sink_input.set_device_volume_by_index(0, val / 100.0);
+                self.sink_input.set_device_volume_by_name("alsa_output.pci-0000_00_1f.3.analog-stereo", val / 100.0);
             }
         }
     }
@@ -82,7 +90,7 @@ impl SoundOutput {
                 .push(Text::new("Output").size(12))
                 .push(
                     Container::new(
-                        Row::new().align_items(Align::Center).spacing(10).push(Text::new("Output Device").size(FONT_SIZE + 10)).push(
+                        Row::new().align_items(Align::Center).spacing(10).push(Text::new("Output Device").size(10)).push(
                             PickList::new(&mut self.pick_out_dev, &OutputDevice::ALL[..], Some(self.selected_out_dev), SoundOutputMsg::SeletedOut)
                                 .text_size(14)
                                 .style(PickListStyle {})
@@ -134,7 +142,7 @@ impl SoundOutput {
                     .style(ContainerStyle::LightGrayCircle),
                 )
                 .push(if self.is_boost_sound {
-                    Container::new(Text::new("If the volume is lounder than 100%, it may distort audio and be harmdul to your speaker").size(8)).padding(10)
+                    Container::new(Text::new("If the volume is lounder than 100%, it may distort audio and be harmdul to your speaker").size(10)).padding(10)
                 } else {
                     Container::new(Space::with_height(Length::Units(0)))
                 })
