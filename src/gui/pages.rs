@@ -2,7 +2,7 @@
 mod general_page;
 mod access_page;
 mod battery_page;
-// mod bluetooth;
+mod bluetooth;
 mod date_time;
 mod desktop_page;
 mod display_page;
@@ -20,7 +20,7 @@ mod update_page;
 mod user_group;
 use access_page::{AccessMessage, AccessPage};
 use battery_page::{BatteryMessage, BatteryPage};
-// use bluetooth::{BluetoothMessage, BluetoothPage};
+use bluetooth::{BluetoothMessage, BluetoothPage};
 use date_time::{DateTimeMessage, DateTimePage};
 use desktop_page::{DesktopMessage, DesktopPage};
 use display_page::{DisplayMessage, DisplayPage};
@@ -47,7 +47,7 @@ pub struct Pages {
 
 #[derive(Debug, Clone)]
 pub enum PagesMessage {
-   // BluetoothMessage(BluetoothMessage),
+   BluetoothMessage(BluetoothMessage),
    SoundMessage(SoundMessage),
    GeneralMessage(GeneralMessage),
    PrinterMessage(PrinterMessage),
@@ -80,7 +80,7 @@ pub enum PageModel {
    UpdatePageModel { update_page: SoftwareUpdate },
    PrivacyPageModel { privacy_page: PrivacyPage },
    NetworkPageModel { network_page: NetworkPage },
-   // BluetoothPageModel { bluetooth_page: BluetoothPage },
+   BluetoothPageModel { bluetooth_page: BluetoothPage },
    SoundPageModel { sound_page: SoundPage },
    PrinterPageModel { printer_page: PrinterPage },
    KeyboardPageModel { keyboard_page: KeyboardPage },
@@ -107,7 +107,7 @@ impl Pages {
             PrivacyPageModel { privacy_page: PrivacyPage::new() },
             UpdatePageModel { update_page: SoftwareUpdate::new() },
             NetworkPageModel { network_page: NetworkPage::new() },
-            // BluetoothPageModel { bluetooth_page: BluetoothPage::new() },
+            BluetoothPageModel { bluetooth_page: BluetoothPage::new() },
             SoundPageModel { sound_page: SoundPage::new() },
             PrinterPageModel { printer_page: PrinterPage::new() },
             KeyboardPageModel { keyboard_page: KeyboardPage::new() },
@@ -147,11 +147,11 @@ impl PageModel {
       use PageModel::*;
       use PagesMessage::*;
       match msg {
-         // BluetoothMessage(msg) => {
-         //    if let BluetoothPageModel { bluetooth_page } = self {
-         //       bluetooth_page.update(msg);
-         //    }
-         // }
+         BluetoothMessage(msg) => {
+            if let BluetoothPageModel { bluetooth_page } = self {
+               bluetooth_page.update(msg);
+            }
+         }
          SoundMessage(msg) => {
             if let SoundPageModel { sound_page } = self {
                sound_page.update(msg);
@@ -268,7 +268,7 @@ impl PageModel {
          NotificationsModel { noti_page } => noti_page.view().map(move |msg| PagesMessage::NotifyMsg(msg)),
          PrivacyPageModel { privacy_page } => privacy_page.view().map(move |msg| PagesMessage::PrivacyMessage(msg)),
          NetworkPageModel { network_page } => network_page.view().map(move |msg| PagesMessage::NetMessage(msg)),
-         // BluetoothPageModel { bluetooth_page } => bluetooth_page.view().map(move |msg| PagesMessage::BluetoothMessage(msg)),
+         BluetoothPageModel { bluetooth_page } => bluetooth_page.view().map(move |msg| PagesMessage::BluetoothMessage(msg)),
          SoundPageModel { sound_page } => sound_page.view().map(move |msg| PagesMessage::SoundMessage(msg)),
          PrinterPageModel { printer_page } => printer_page.view().map(move |msg| PagesMessage::PrinterMessage(msg)),
          KeyboardPageModel { keyboard_page } => keyboard_page.view().map(move |msg| PagesMessage::KeyboardMessage(msg)),
@@ -294,7 +294,7 @@ impl PageModel {
          UpdatePageModel { .. } => "Software Update",
          PrivacyPageModel { .. } => "Security & Privacy",
          NetworkPageModel { .. } => "Network",
-         // BluetoothPageModel { .. } => "Bluetooth",
+         BluetoothPageModel { .. } => "Bluetooth",
          SoundPageModel { .. } => "Sound",
          PrinterPageModel { .. } => "Printers & Scanners",
          KeyboardPageModel { .. } => "Keyboard",
