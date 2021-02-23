@@ -1,13 +1,8 @@
 use crate::helpers::ROOT_PATH;
-use iced::{
-   button, pick_list, slider, Align, Button, Checkbox, Column, Container, Element, Length,
-   PickList, Row, Slider, Space, Svg, Text,
-};
-use iced_custom_widget::{stepper, Icon, Stepper};
+use iced::{button, pick_list, slider, Align, Button, Checkbox, Column, Container, Element, Length, PickList, Row, Slider, Space, Svg, Text};
+use iced_custom_widget::{number_input, Icon, NumberInput};
 
-use super::super::styles::{
-   CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider,
-};
+use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider};
 use chrono::prelude::*;
 use libkoompi::system_settings::devices::Brightness;
 use smart_default::SmartDefault;
@@ -31,12 +26,12 @@ pub enum BatteryMessage {
    RestoreDefaultPowerClicked,
    StartUpToggled(bool),
    StartUpRepeatChanged(RepeatDays),
-   StartUpHourChanged(f32),
-   StartUpMinuteChanged(f32),
+   StartUpHourChanged(u8),
+   StartUpMinuteChanged(u8),
    SleepToggled(bool),
    SleepRepeatChanged(RepeatDays),
-   SleepHourChanged(f32),
-   SleepMinuteChanged(f32),
+   SleepHourChanged(u8),
+   SleepMinuteChanged(u8),
    RestorePrevClicked,
    ApplyScheduleClicked,
 }
@@ -63,21 +58,12 @@ impl BatteryPage {
          sidebar_state: vec![
             ('\u{f080}', "Usage".to_string(), button::State::new()),
             ('\u{f240}', "Battery".to_string(), button::State::new()),
-            (
-               '\u{f5ba}',
-               "Power Adapter".to_string(),
-               button::State::new(),
-            ),
+            ('\u{f5ba}', "Power Adapter".to_string(), button::State::new()),
             ('\u{f133}', "Schedule".to_string(), button::State::new()),
          ],
          current_sidebar_tab_idx: 0,
          current_battery: 55,
-         current_time: format!(
-            "Today, {:02}:{:02} {}",
-            hour,
-            now.minute(),
-            if is_pm { "PM" } else { "AM" }
-         ),
+         current_time: format!("Today, {:02}:{:02} {}", hour, now.minute(), if is_pm { "PM" } else { "AM" }),
          show_battery_status: true,
          usage: Usage::new(),
          battery_tab: BatteryTab::new(),
@@ -91,48 +77,25 @@ impl BatteryPage {
       match msg {
          BatteryMessage::SidebarChanged(idx) => self.current_sidebar_tab_idx = idx,
          BatteryMessage::InnerTabChanged(idx) => self.usage.current_tab_idx = idx,
-         BatteryMessage::ShowBatteryStatusToggled(is_checked) => {
-            self.show_battery_status = is_checked
-         }
-         BatteryMessage::TurnDisplayOffBatteryChanged(val) => {
-            self.battery_tab.turn_display_off_after_val = val
-         }
+         BatteryMessage::ShowBatteryStatusToggled(is_checked) => self.show_battery_status = is_checked,
+         BatteryMessage::TurnDisplayOffBatteryChanged(val) => self.battery_tab.turn_display_off_after_val = val,
          BatteryMessage::BrightNessChanged(val) => {
             self.battery_tab.brigthness_value = val;
-            match self
-               .brightnessctl
-               .login1_set_brightness(self.battery_tab.brigthness_value as u32)
-            {
+            match self.brightnessctl.login1_set_brightness(self.battery_tab.brigthness_value as u32) {
                Ok(()) => {}
                Err(e) => eprint!("Error: {:?}", e),
             }
          }
-         BatteryMessage::SlightlyDimDisplayToggled(is_checked) => {
-            self.battery_tab.slightly_dim_display = is_checked
-         }
-         BatteryMessage::PowerNapWhileBatteryToggled(is_checked) => {
-            self.battery_tab.enable_power_nap = is_checked
-         }
-         BatteryMessage::OptVideoStreamToggled(is_checked) => {
-            self.battery_tab.opt_video_stream = is_checked
-         }
-         BatteryMessage::OptBatteryChargedToggled(is_checked) => {
-            self.battery_tab.opt_battery_charging = is_checked
-         }
+         BatteryMessage::SlightlyDimDisplayToggled(is_checked) => self.battery_tab.slightly_dim_display = is_checked,
+         BatteryMessage::PowerNapWhileBatteryToggled(is_checked) => self.battery_tab.enable_power_nap = is_checked,
+         BatteryMessage::OptVideoStreamToggled(is_checked) => self.battery_tab.opt_video_stream = is_checked,
+         BatteryMessage::OptBatteryChargedToggled(is_checked) => self.battery_tab.opt_battery_charging = is_checked,
          BatteryMessage::BatteryHealthClicked => self.battery_tab.is_battery_health_clicked = true,
          BatteryMessage::RestoreDefaultBatteryClicked => self.battery_tab = BatteryTab::new(),
-         BatteryMessage::TurnDisplayOffPowerChanged(val) => {
-            self.power_adapter.turn_display_off_after_val = val
-         }
-         BatteryMessage::PreventFromSleepToggled(is_checked) => {
-            self.power_adapter.prevent_from_sleep = is_checked
-         }
-         BatteryMessage::WakeNetworkAccessToggled(is_checked) => {
-            self.power_adapter.wake_network_access = is_checked
-         }
-         BatteryMessage::PowerNapWhilePowerToggled(is_checked) => {
-            self.power_adapter.enable_power_nap = is_checked
-         }
+         BatteryMessage::TurnDisplayOffPowerChanged(val) => self.power_adapter.turn_display_off_after_val = val,
+         BatteryMessage::PreventFromSleepToggled(is_checked) => self.power_adapter.prevent_from_sleep = is_checked,
+         BatteryMessage::WakeNetworkAccessToggled(is_checked) => self.power_adapter.wake_network_access = is_checked,
+         BatteryMessage::PowerNapWhilePowerToggled(is_checked) => self.power_adapter.enable_power_nap = is_checked,
          BatteryMessage::RestoreDefaultPowerClicked => self.power_adapter = PowerAdapter::new(),
          BatteryMessage::StartUpToggled(is_checked) => {
             self.schedule.startup = is_checked;
@@ -186,69 +149,35 @@ impl BatteryPage {
       } = self;
 
       // របារចំហៀង
-      let icon = Svg::from_path(format!("{}/assets/images/battery.svg", ROOT_PATH()))
-         .height(Length::Units(127));
-      let icon_con = Container::new(icon)
-         .padding(27)
-         .width(Length::Fill)
-         .center_x();
+      let icon = Svg::from_path(format!("{}/assets/images/battery.svg", ROOT_PATH())).height(Length::Units(127));
+      let icon_con = Container::new(icon).padding(27).width(Length::Fill).center_x();
       let battery_level = Text::new(format!("Current Level: {}%", current_battery)).size(15);
       let last_charged = Text::new("Last charged to 100%").size(12);
       let last_charged_date = Text::new(current_time.as_str()).size(12);
-      let sidebar_tabs = sidebar_state.iter_mut().enumerate().fold(
-         Column::new().spacing(4),
-         |col, (idx, (icon, name, state))| {
-            col.push(
-               Button::new(
-                  state,
-                  Row::new()
-                     .spacing(4)
-                     .align_items(Align::Center)
-                     .push(Icon::new(*icon).size(18))
-                     .push(Text::new(name.as_str())),
-               )
+      let sidebar_tabs = sidebar_state.iter_mut().enumerate().fold(Column::new().spacing(4), |col, (idx, (icon, name, state))| {
+         col.push(
+            Button::new(state, Row::new().spacing(4).align_items(Align::Center).push(Icon::new(*icon).size(18)).push(Text::new(name.as_str())))
                .width(Length::Fill)
                .on_press(BatteryMessage::SidebarChanged(idx))
-               .style(if *current_sidebar_tab_idx == idx {
-                  CustomButton::SelectedSidebar
-               } else {
-                  CustomButton::Sidebar
-               }),
-            )
-         },
-      );
+               .style(if *current_sidebar_tab_idx == idx { CustomButton::SelectedSidebar } else { CustomButton::Sidebar }),
+         )
+      });
       let sidebar_col = Column::new()
          .spacing(20)
          .align_items(Align::Center)
          .push(icon_con)
-         .push(
-            Column::new()
-               .spacing(7)
-               .align_items(Align::Center)
-               .push(battery_level)
-               .push(last_charged)
-               .push(last_charged_date),
-         )
+         .push(Column::new().spacing(7).align_items(Align::Center).push(battery_level).push(last_charged).push(last_charged_date))
          .push(sidebar_tabs);
-      let sidebar = Container::new(sidebar_col)
-         .padding(7)
-         .width(Length::FillPortion(2))
-         .height(Length::Fill)
-         .center_x();
+      let sidebar = Container::new(sidebar_col).padding(7).width(Length::FillPortion(2)).height(Length::Fill).center_x();
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match current_sidebar_tab_idx {
          0 => {
-            let Usage {
-               tabbar_state,
-               current_tab_idx,
-            } = usage;
+            let Usage { tabbar_state, current_tab_idx } = usage;
 
             let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
             for (idx, (name, btn_state)) in tabbar_state.iter_mut().enumerate() {
-               let mut btn = Button::new(btn_state, Text::new(name.as_str()))
-                  .padding(5)
-                  .on_press(BatteryMessage::InnerTabChanged(idx));
+               let mut btn = Button::new(btn_state, Text::new(name.as_str())).padding(5).on_press(BatteryMessage::InnerTabChanged(idx));
                if *current_tab_idx == idx {
                   btn = btn.style(CustomButton::SelectedTab);
                } else {
@@ -256,91 +185,38 @@ impl BatteryPage {
                }
                tabbar = tabbar.push(btn);
             }
-            let tabbar_con = Container::new(tabbar)
-               .padding(2)
-               .center_x()
-               .style(CustomContainer::Segment);
-            let tabbar_section = Container::new(tabbar_con)
-               .padding(7)
-               .width(Length::Fill)
-               .center_x();
+            let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
+            let tabbar_section = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
 
             let inner_tabview = match current_tab_idx {
                0 => {
                   let lb_battery_level = Text::new("Battery Level");
-                  let line_chart_1 =
-                     Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH()))
-                        .height(Length::Fill);
-                  let battery_level_sec = Container::new(
-                     Column::new()
-                        .spacing(10)
-                        .push(lb_battery_level)
-                        .push(line_chart_1),
-                  )
-                  .height(Length::FillPortion(5));
+                  let line_chart_1 = Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH())).height(Length::Fill);
+                  let battery_level_sec = Container::new(Column::new().spacing(10).push(lb_battery_level).push(line_chart_1)).height(Length::FillPortion(5));
 
                   let lb_screen_on = Text::new("Screen On Usage");
-                  let line_chart_2 =
-                     Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH()))
-                        .height(Length::Fill);
-                  let screen_on_sec = Container::new(
-                     Column::new()
-                        .spacing(10)
-                        .push(lb_screen_on)
-                        .push(line_chart_2),
-                  )
-                  .height(Length::FillPortion(5));
-                  Container::new(
-                     Column::new()
-                        .spacing(20)
-                        .push(battery_level_sec)
-                        .push(screen_on_sec),
-                  )
-                  .height(Length::Fill)
+                  let line_chart_2 = Svg::from_path(format!("{}/assets/images/line-chart.svg", ROOT_PATH())).height(Length::Fill);
+                  let screen_on_sec = Container::new(Column::new().spacing(10).push(lb_screen_on).push(line_chart_2)).height(Length::FillPortion(5));
+                  Container::new(Column::new().spacing(20).push(battery_level_sec).push(screen_on_sec)).height(Length::Fill)
                }
                1 => {
                   let lb_enery_usage = Text::new("Energy Usage");
-                  let bar_chart_1 =
-                     Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH()))
-                        .height(Length::Fill);
-                  let energy_usage_sec = Container::new(
-                     Column::new()
-                        .spacing(10)
-                        .push(lb_enery_usage)
-                        .push(bar_chart_1),
-                  )
-                  .height(Length::FillPortion(5));
+                  let bar_chart_1 = Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH())).height(Length::Fill);
+                  let energy_usage_sec = Container::new(Column::new().spacing(10).push(lb_enery_usage).push(bar_chart_1)).height(Length::FillPortion(5));
 
                   let lb_screen_on = Text::new("Screen On Usage");
-                  let bar_chart_2 =
-                     Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH()))
-                        .height(Length::Fill);
-                  let screen_on_sec = Container::new(
-                     Column::new()
-                        .spacing(10)
-                        .push(lb_screen_on)
-                        .push(bar_chart_2),
-                  )
-                  .height(Length::FillPortion(5));
-                  Container::new(
-                     Column::new()
-                        .spacing(20)
-                        .push(energy_usage_sec)
-                        .push(screen_on_sec),
-                  )
-                  .height(Length::Fill)
+                  let bar_chart_2 = Svg::from_path(format!("{}/assets/images/bar-chart.svg", ROOT_PATH())).height(Length::Fill);
+                  let screen_on_sec = Container::new(Column::new().spacing(10).push(lb_screen_on).push(bar_chart_2)).height(Length::FillPortion(5));
+                  Container::new(Column::new().spacing(20).push(energy_usage_sec).push(screen_on_sec)).height(Length::Fill)
                }
                _ => Container::new(Space::with_width(Length::Fill)),
             };
 
             Container::new(
-               Column::new().width(Length::Fill).push(tabbar_section).push(
-                  inner_tabview
-                     .padding(15)
-                     .width(Length::Fill)
-                     .height(Length::Fill)
-                     .style(CustomContainer::ForegroundWhite),
-               ),
+               Column::new()
+                  .width(Length::Fill)
+                  .push(tabbar_section)
+                  .push(inner_tabview.padding(15).width(Length::Fill).height(Length::Fill).style(CustomContainer::ForegroundWhite)),
             )
             .width(Length::Fill)
             .height(Length::Fill)
@@ -361,42 +237,16 @@ impl BatteryPage {
                ..
             } = battery_tab;
 
-            let chb_show_battery = Checkbox::new(
-               *show_battery_status,
-               "Show battery status in menu bar",
-               BatteryMessage::ShowBatteryStatusToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
+            let chb_show_battery = Checkbox::new(*show_battery_status, "Show battery status in menu bar", BatteryMessage::ShowBatteryStatusToggled).spacing(10).style(CustomCheckbox::Default);
             let lb_turn_display_off = Text::new("Turn display off after: ").size(12);
             let lb_brightness = Text::new("Dispaly Brightness").size(12);
-            let slider_turn_display_off = Slider::new(
-               turn_display_off_after_state,
-               1..=181,
-               *turn_display_off_after_val,
-               BatteryMessage::TurnDisplayOffBatteryChanged,
-            )
-            .width(Length::FillPortion(4))
-            .style(CustomSlider::Default);
+            let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffBatteryChanged)
+               .width(Length::FillPortion(4))
+               .style(CustomSlider::Default);
             *brigthness_value = self.brightnessctl.get_percent() as u8;
-            let slider_brightness = Slider::new(
-               brightness_control,
-               1..=100,
-               *brigthness_value,
-               BatteryMessage::BrightNessChanged,
-            )
-            .width(Length::FillPortion(4))
-            .style(CustomSlider::Default);
+            let slider_brightness = Slider::new(brightness_control, 1..=100, *brigthness_value, BatteryMessage::BrightNessChanged).width(Length::FillPortion(4)).style(CustomSlider::Default);
             let turn_display_off_sec = Column::new()
-               .push(
-                  Row::new()
-                     .push(lb_brightness)
-                     .push(Space::with_width(Length::Fill))
-                     .push(Text::new(format!(
-                        "{}%",
-                        self.brightnessctl.get_percent().to_string()
-                     ))),
-               )
+               .push(Row::new().push(lb_brightness).push(Space::with_width(Length::Fill)).push(Text::new(format!("{}%", self.brightnessctl.get_percent().to_string()))))
                .push(slider_brightness)
                .spacing(4)
                .push(lb_turn_display_off)
@@ -416,35 +266,19 @@ impl BatteryPage {
                   ),
                );
 
-            let chb_slightly_dim = Checkbox::new(
-               *slightly_dim_display,
-               "Slightly dim the display while on battery power",
-               BatteryMessage::SlightlyDimDisplayToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
-            let chb_power_nap = Checkbox::new(
-               *enable_power_nap,
-               "Enable Power Nap while on battery power",
-               BatteryMessage::PowerNapWhileBatteryToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
+            let chb_slightly_dim = Checkbox::new(*slightly_dim_display, "Slightly dim the display while on battery power", BatteryMessage::SlightlyDimDisplayToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
+            let chb_power_nap = Checkbox::new(*enable_power_nap, "Enable Power Nap while on battery power", BatteryMessage::PowerNapWhileBatteryToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
             let txt_hint = Text::new("While sleeping, your computer can periodically check for new email, calendar and more.").size(12);
-            let chb_opt_video_stream = Checkbox::new(
-               *opt_video_stream,
-               "Optimize video streaming while on battery",
-               BatteryMessage::OptVideoStreamToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
-            let chb_opt_battery_charging = Checkbox::new(
-               *opt_battery_charging,
-               "Optimize video streaming while on battery",
-               BatteryMessage::OptBatteryChargedToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
+            let chb_opt_video_stream = Checkbox::new(*opt_video_stream, "Optimize video streaming while on battery", BatteryMessage::OptVideoStreamToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
+            let chb_opt_battery_charging = Checkbox::new(*opt_battery_charging, "Optimize video streaming while on battery", BatteryMessage::OptBatteryChargedToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
             let txt_charging_hint = Text::new("To reduce battery aging, your computer learns from your daily charging routine, so it can wait to finish charging past 80% until you need to use it on battery. ").size(12);
 
             let top_sec = Container::new(
@@ -453,48 +287,31 @@ impl BatteryPage {
                   .push(chb_show_battery)
                   .push(turn_display_off_sec)
                   .push(
-                     Column::new().spacing(10).push(chb_slightly_dim).push(
-                        Column::new().push(chb_power_nap).push(
-                           Row::new()
-                              .push(Space::with_width(Length::Units(30)))
-                              .push(txt_hint),
-                        ),
-                     ),
+                     Column::new()
+                        .spacing(10)
+                        .push(chb_slightly_dim)
+                        .push(Column::new().push(chb_power_nap).push(Row::new().push(Space::with_width(Length::Units(30))).push(txt_hint))),
                   )
                   .push(
-                     Column::new().spacing(10).push(chb_opt_video_stream).push(
-                        Column::new().push(chb_opt_battery_charging).push(
-                           Row::new()
-                              .push(Space::with_width(Length::Units(30)))
-                              .push(txt_charging_hint),
-                        ),
-                     ),
+                     Column::new()
+                        .spacing(10)
+                        .push(chb_opt_video_stream)
+                        .push(Column::new().push(chb_opt_battery_charging).push(Row::new().push(Space::with_width(Length::Units(30))).push(txt_charging_hint))),
                   ),
             )
             .height(Length::Fill);
 
             // ផ្នែកខាងក្រោម
-            let btn_battery_health =
-               Button::new(battery_health_state, Text::new("  Battery Health...  "))
-                  .on_press(BatteryMessage::BatteryHealthClicked)
-                  .style(CustomButton::Default);
-            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  "))
-               .on_press(BatteryMessage::RestoreDefaultBatteryClicked)
-               .style(CustomButton::Default);
+            let btn_battery_health = Button::new(battery_health_state, Text::new("  Battery Health...  ")).on_press(BatteryMessage::BatteryHealthClicked).style(CustomButton::Default);
+            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  ")).on_press(BatteryMessage::RestoreDefaultBatteryClicked).style(CustomButton::Default);
             let bottom_row = Row::new()
                .spacing(15)
                .align_items(Align::Center)
                .push(btn_restore)
                .push(Space::with_width(Length::Fill))
-               .push(Text::new(if *is_battery_health_clicked {
-                  "Battery Condition: Normal"
-               } else {
-                  ""
-               }))
+               .push(Text::new(if *is_battery_health_clicked { "Battery Condition: Normal" } else { "" }))
                .push(btn_battery_health);
-            let bottom_sec = Container::new(bottom_row)
-               .width(Length::Fill)
-               .align_x(Align::End);
+            let bottom_sec = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
             Container::new(Column::new().push(top_sec).push(bottom_sec))
          }
@@ -508,22 +325,11 @@ impl BatteryPage {
                restore_defaults,
             } = power_adapter;
 
-            let chb_show_battery = Checkbox::new(
-               *show_battery_status,
-               "Show battery status in menu bar",
-               BatteryMessage::ShowBatteryStatusToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
+            let chb_show_battery = Checkbox::new(*show_battery_status, "Show battery status in menu bar", BatteryMessage::ShowBatteryStatusToggled).spacing(10).style(CustomCheckbox::Default);
             let lb_turn_display_off = Text::new("Turn display off after: ").size(12);
-            let slider_turn_display_off = Slider::new(
-               turn_display_off_after_state,
-               1..=181,
-               *turn_display_off_after_val,
-               BatteryMessage::TurnDisplayOffPowerChanged,
-            )
-            .width(Length::FillPortion(4))
-            .style(CustomSlider::Default);
+            let slider_turn_display_off = Slider::new(turn_display_off_after_state, 1..=181, *turn_display_off_after_val, BatteryMessage::TurnDisplayOffPowerChanged)
+               .width(Length::FillPortion(4))
+               .style(CustomSlider::Default);
             let turn_display_off_sec = Column::new().spacing(4).push(lb_turn_display_off).push(
                Column::new().push(slider_turn_display_off).push(
                   Row::new()
@@ -540,57 +346,28 @@ impl BatteryPage {
                ),
             );
 
-            let chb_prevent_from_sleep = Checkbox::new(
-               *prevent_from_sleep,
-               "Prevent computer from sleeping automatically when the display is off",
-               BatteryMessage::PreventFromSleepToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
-            let chb_wake_network_access = Checkbox::new(
-               *wake_network_access,
-               "Wake for network access",
-               BatteryMessage::WakeNetworkAccessToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
-            let chb_power_nap = Checkbox::new(
-               *enable_power_nap,
-               "Enable Power Nap while plugged into a power adapter",
-               BatteryMessage::PowerNapWhilePowerToggled,
-            )
-            .spacing(10)
-            .style(CustomCheckbox::Default);
+            let chb_prevent_from_sleep = Checkbox::new(*prevent_from_sleep, "Prevent computer from sleeping automatically when the display is off", BatteryMessage::PreventFromSleepToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
+            let chb_wake_network_access = Checkbox::new(*wake_network_access, "Wake for network access", BatteryMessage::WakeNetworkAccessToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_power_nap = Checkbox::new(*enable_power_nap, "Enable Power Nap while plugged into a power adapter", BatteryMessage::PowerNapWhilePowerToggled)
+               .spacing(10)
+               .style(CustomCheckbox::Default);
             let txt_hint = Text::new("While sleeping, your computer can backup using Time Machine and periodically check for email, calendar and more.").size(12);
 
             let top_sec = Container::new(
-               Column::new()
-                  .spacing(20)
-                  .push(chb_show_battery)
-                  .push(turn_display_off_sec)
-                  .push(
-                     Column::new()
-                        .spacing(10)
-                        .push(chb_prevent_from_sleep)
-                        .push(chb_wake_network_access)
-                        .push(
-                           Column::new().push(chb_power_nap).push(
-                              Row::new()
-                                 .push(Space::with_width(Length::Units(30)))
-                                 .push(txt_hint),
-                           ),
-                        ),
-                  ),
+               Column::new().spacing(20).push(chb_show_battery).push(turn_display_off_sec).push(
+                  Column::new()
+                     .spacing(10)
+                     .push(chb_prevent_from_sleep)
+                     .push(chb_wake_network_access)
+                     .push(Column::new().push(chb_power_nap).push(Row::new().push(Space::with_width(Length::Units(30))).push(txt_hint))),
+               ),
             )
             .height(Length::Fill);
             // ផ្នែកខាងក្រោម
-            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  "))
-               .on_press(BatteryMessage::RestoreDefaultPowerClicked)
-               .style(CustomButton::Default);
-            let bottom_row = Row::new()
-               .spacing(15)
-               .align_items(Align::Center)
-               .push(btn_restore);
+            let btn_restore = Button::new(restore_defaults, Text::new("  Defaults  ")).on_press(BatteryMessage::RestoreDefaultPowerClicked).style(CustomButton::Default);
+            let bottom_row = Row::new().spacing(15).align_items(Align::Center).push(btn_restore);
             let bottom_sec = Container::new(bottom_row).width(Length::Fill);
 
             Container::new(Column::new().push(top_sec).push(bottom_sec))
@@ -610,37 +387,12 @@ impl BatteryPage {
                is_changed,
             } = schedule;
 
-            let chb_startup = Checkbox::new(*startup, "Start up", BatteryMessage::StartUpToggled)
-               .spacing(10)
-               .style(CustomCheckbox::Default);
-            let pl_startup_repeat = PickList::new(
-               startup_repeat_state,
-               &RepeatDays::ALL[..],
-               Some(*startup_repeat_val),
-               BatteryMessage::StartUpRepeatChanged,
-            )
-            .style(CustomSelect::Primary);
-            let sp_startup_hour = Stepper::new(
-               startup_time_state.hour_val,
-               &mut startup_time_state.dec_hour_state,
-               &mut startup_time_state.inc_hour_state,
-               BatteryMessage::StartUpHourChanged,
-            )
-            .max(24.0);
-            let sp_startup_minute = Stepper::new(
-               startup_time_state.minute_val,
-               &mut startup_time_state.dec_minute_state,
-               &mut startup_time_state.inc_minute_state,
-               BatteryMessage::StartUpMinuteChanged,
-            )
-            .max(60.0);
+            let chb_startup = Checkbox::new(*startup, "Start up", BatteryMessage::StartUpToggled).spacing(10).style(CustomCheckbox::Default);
+            let pl_startup_repeat = PickList::new(startup_repeat_state, &RepeatDays::ALL[..], Some(*startup_repeat_val), BatteryMessage::StartUpRepeatChanged).style(CustomSelect::Primary);
+            let sp_startup_hour = NumberInput::new(&mut startup_time_state.hour_state, startup_time_state.hour_val, 24, BatteryMessage::StartUpHourChanged).width(Length::Units(50));
+            let sp_startup_minute = NumberInput::new(&mut startup_time_state.minute_state, startup_time_state.minute_val, 60, BatteryMessage::StartUpMinuteChanged).width(Length::Units(50));
             let txt_startup_hint = Text::new("Scheduled start up will only occur when a power adapter is connected to your computer.");
-            let startup_hint_con = Container::new(if *startup {
-               txt_startup_hint
-            } else {
-               Text::new("")
-            })
-            .height(Length::Units(35));
+            let startup_hint_con = Container::new(if *startup { txt_startup_hint } else { Text::new("") }).height(Length::Units(35));
             let startup_con = Container::new(
                Row::new().push(Space::with_width(Length::Units(30))).push(
                   Column::new()
@@ -659,30 +411,10 @@ impl BatteryPage {
                ),
             );
 
-            let chb_sleep = Checkbox::new(*sleep, "Sleep", BatteryMessage::SleepToggled)
-               .spacing(10)
-               .style(CustomCheckbox::Default);
-            let pl_sleep_repeat = PickList::new(
-               sleep_repeat_state,
-               &RepeatDays::ALL[..],
-               Some(*sleep_repeat_val),
-               BatteryMessage::SleepRepeatChanged,
-            )
-            .style(CustomSelect::Primary);
-            let sp_sleep_hour = Stepper::new(
-               sleep_time_state.hour_val,
-               &mut sleep_time_state.dec_hour_state,
-               &mut sleep_time_state.inc_hour_state,
-               BatteryMessage::SleepHourChanged,
-            )
-            .max(24.0);
-            let sp_sleep_minute = Stepper::new(
-               sleep_time_state.minute_val,
-               &mut sleep_time_state.dec_minute_state,
-               &mut sleep_time_state.inc_minute_state,
-               BatteryMessage::SleepMinuteChanged,
-            )
-            .max(60.0);
+            let chb_sleep = Checkbox::new(*sleep, "Sleep", BatteryMessage::SleepToggled).spacing(10).style(CustomCheckbox::Default);
+            let pl_sleep_repeat = PickList::new(sleep_repeat_state, &RepeatDays::ALL[..], Some(*sleep_repeat_val), BatteryMessage::SleepRepeatChanged).style(CustomSelect::Primary);
+            let sp_sleep_hour = NumberInput::new(&mut sleep_time_state.hour_state, sleep_time_state.hour_val, 24, BatteryMessage::SleepHourChanged).width(Length::Units(50));
+            let sp_sleep_minute = NumberInput::new(&mut sleep_time_state.minute_state, sleep_time_state.minute_val, 60, BatteryMessage::SleepMinuteChanged).width(Length::Units(50));
             let sleep_con = Container::new(
                Row::new()
                   .spacing(7)
@@ -695,34 +427,16 @@ impl BatteryPage {
                   .push(sp_sleep_minute),
             );
 
-            let top_sec = Container::new(
-               Column::new()
-                  .push(chb_startup)
-                  .push(startup_con)
-                  .push(chb_sleep)
-                  .push(sleep_con),
-            )
-            .height(Length::Fill);
+            let top_sec = Container::new(Column::new().push(chb_startup).push(startup_con).push(chb_sleep).push(sleep_con)).height(Length::Fill);
             // ផ្នែកខាងក្រោម
-            let mut btn_restore = Button::new(
-               restore_prev_state,
-               Text::new("  Restore Previous Settings  "),
-            )
-            .style(CustomButton::Default);
-            let mut btn_apply =
-               Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
+            let mut btn_restore = Button::new(restore_prev_state, Text::new("  Restore Previous Settings  ")).style(CustomButton::Default);
+            let mut btn_apply = Button::new(appply_state, Text::new("  Apply  ")).style(CustomButton::Primary);
             if *is_changed {
                btn_restore = btn_restore.on_press(BatteryMessage::RestorePrevClicked);
                btn_apply = btn_apply.on_press(BatteryMessage::ApplyScheduleClicked);
             }
-            let bottom_row = Row::new()
-               .spacing(15)
-               .align_items(Align::Center)
-               .push(btn_restore)
-               .push(btn_apply);
-            let bottom_sec = Container::new(bottom_row)
-               .width(Length::Fill)
-               .align_x(Align::End);
+            let bottom_row = Row::new().spacing(15).align_items(Align::Center).push(btn_restore).push(btn_apply);
+            let bottom_sec = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
             Container::new(Column::new().push(top_sec).push(bottom_sec))
          }
@@ -730,18 +444,12 @@ impl BatteryPage {
       };
 
       // មាតិកា
-      let content = Row::new().width(Length::Fill).push(sidebar).push(
-         Container::new(tabview.padding(27).style(CustomContainer::ForegroundGray))
-            .width(Length::FillPortion(6))
-            .height(Length::Fill)
-            .padding(20),
-      );
+      let content = Row::new()
+         .width(Length::Fill)
+         .push(sidebar)
+         .push(Container::new(tabview.padding(27).style(CustomContainer::ForegroundGray)).width(Length::FillPortion(6)).height(Length::Fill).padding(20));
 
-      Container::new(content)
-         .width(Length::FillPortion(15))
-         .height(Length::Fill)
-         .style(CustomContainer::Background)
-         .into()
+      Container::new(content).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
    }
 }
 
@@ -754,10 +462,7 @@ pub struct Usage {
 impl Usage {
    pub fn new() -> Self {
       Self {
-         tabbar_state: vec![
-            ("  Last 24 Hours  ".to_string(), button::State::new()),
-            ("  Last 7 Days  ".to_string(), button::State::new()),
-         ],
+         tabbar_state: vec![("  Last 24 Hours  ".to_string(), button::State::new()), ("  Last 7 Days  ".to_string(), button::State::new())],
          current_tab_idx: 0,
       }
    }
@@ -830,25 +535,17 @@ pub struct Schedule {
 
 #[derive(Debug, Clone, Default)]
 struct TimeState {
-   inc_hour_state: stepper::State,
-   hour_val: f32,
-   dec_hour_state: stepper::State,
-   inc_minute_state: stepper::State,
-   minute_val: f32,
-   dec_minute_state: stepper::State,
+   hour_state: number_input::State,
+   hour_val: u8,
+   minute_state: number_input::State,
+   minute_val: u8,
 }
 
 impl Schedule {
    pub fn new() -> Self {
       Self {
-         startup_time_state: TimeState {
-            hour_val: 12.0,
-            ..Default::default()
-         },
-         sleep_time_state: TimeState {
-            hour_val: 12.0,
-            ..Default::default()
-         },
+         startup_time_state: TimeState { hour_val: 12, ..Default::default() },
+         sleep_time_state: TimeState { hour_val: 12, ..Default::default() },
          ..Default::default()
       }
    }

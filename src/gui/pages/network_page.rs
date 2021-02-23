@@ -1,1464 +1,1683 @@
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-use super::super::styles::{CustomButton, CustomContainer};
-use crate::helpers::ROOT_PATH;
 use iced::{
-    button, pick_list, scrollable, text_input, Align, Button, Checkbox, Column, Container, Element,
-    HorizontalAlignment, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text,
-    TextInput,
+    button, pick_list, scrollable, text_input, Align, Button, Column, Container, Element,
+    HorizontalAlignment, Length, PickList, Row, Rule, Scrollable, Space, Text, TextInput,
+    VerticalAlignment,
 };
-use iced_custom_widget::Grid;
-use vedas_core::macros::select::*;
-#[derive(Debug, Clone)]
+use iced_custom_widget as icw;
+use icw::components::Icon;
+use icw::components::Tab;
+use icw::components::Toggler;
+use crate::gui::styles::{
+    buttons::ButtonStyle, containers::ContainerStyle, picklist::PickListStyle, rules::RuleStyle,
+    textinput::InputStyle,
+};
+use std::fmt;
+/// # use iced_native::{renderer::Null, Element, Grid as NativeGrid, Text};
+// fn main() {
+//     init();
+// }
+#[derive(Default, Debug, Clone)]
 pub struct NetworkPage {
-    search: text_input::State,
-    value: String,
-    tabbar_state: Vec<(String, button::State, Control)>,
-    current_idx: usize,
-    select_tab: Control,
-    gencofig: GeneralConfig,
-    identity: Identify,
-    security: Security,
-    ipv4: IPV4,
-    ipv6: IPV6,
-    apply: button::State,
-    cancel: button::State,
-    list_wifi: Vec<ListCon>,
-    scr_list: scrollable::State,
+    choice: Choice,
+    wireless: Wireless,
+    wire: Wire,
+    network: NetSettings,
+    is_active: bool,
+    scroll_content: scrollable::State,
 }
-#[derive(Debug, Copy, Clone)]
-pub enum Control {
-    Details,
-    Wifi,
-    Security,
-    IPv4,
-    Ipv6,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Choice {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
 }
+impl Default for Choice {
+    fn default() -> Self {
+        Choice::A
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum NetMessage {
-    OnSearchWif(String),
-    TabChanged(usize, Control),
-    GenConfigMsg(GenConfigMsg),
-    IdentifyMsg(IdentifyMsg),
-    SecureMsg(SecureMsg),
-    IPv4Msg(IPv4Msg),
-    IPv6Msg(IPv6Msg),
-    ListMessage(ListMessage),
-    ApplyChanged,
-    CancelChanged,
+    TabSelect(Choice),
+    WirelessMsg(WirelessMsg),
+    WireMsg(WireMsg),
+    ToggleChange(bool),
+    NetSettingsMsg(NetSettingsMsg),
 }
 
 impl NetworkPage {
     pub fn new() -> Self {
-        let function = |name: &str, icon: &str, status: &str| {
-            ListCon::new(name.to_string(), icon.to_string(), status.to_string())
-        };
-        let prefe = vec![
-            function("Koompi Attic", "wireless", "connected "),
-            function("Koompi OS", "wireless", "connected "),
-            function("SmallWorld Venture", "wireless", "connected "),
-            function("Smallworld Space", "wireless", "connected "),
-            function("Kong buthon", "wireless", "connected "),
-            function("Koompi lab", "wireless", "connected "),
-            function("Koompi Attic", "wireless", "connected "),
-            function("Koompi OS", "wireless", "connected "),
-            function("SmallWorld Venture", "wireless", "connected "),
-            function("Smallworld Space", "wireless", "connected "),
-            function("Kong buthon", "wireless", "connected "),
-            function("Koompi lab", "wireless", "connected "),
-            function("Koompi Attic", "wireless", "connected "),
-            function("Koompi OS", "wireless", "connected "),
-            function("SmallWorld Venture", "wireless", "connected "),
-            function("Smallworld Space", "wireless", "connected "),
-            function("Kong buthon", "wireless", "connected "),
-            function("Koompi lab", "wireless", "connected "),
-            function("Koompi Attic", "wireless", "connected "),
-            function("Koompi OS", "wireless", "connected "),
-            function("SmallWorld Venture", "wireless", "connected "),
-            function("Smallworld Space", "wireless", "connected "),
-            function("Kong buthon", "wireless", "connected "),
-            function("Koompi lab", "wireless", "connected "),
-        ];
         Self {
-            search: text_input::State::new(),
-            value: String::default(),
-            tabbar_state: vec![
-                (
-                    "  General  ".to_string(),
-                    button::State::new(),
-                    Control::Details,
-                ),
-                (
-                    "  Identify  ".to_string(),
-                    button::State::new(),
-                    Control::Wifi,
-                ),
-                (
-                    "  Security  ".to_string(),
-                    button::State::new(),
-                    Control::Security,
-                ),
-                ("  IPV4  ".to_string(), button::State::new(), Control::IPv4),
-                ("  IPV6  ".to_string(), button::State::new(), Control::Ipv6),
-            ],
-            current_idx: 0,
-            select_tab: Control::Details,
-            gencofig: GeneralConfig::new(),
-            identity: Identify::new(),
-            security: Security::new(),
-            ipv4: IPV4::new(),
-            ipv6: IPV6::new(),
-            apply: button::State::new(),
-            cancel: button::State::new(),
-            list_wifi: prefe,
-            scr_list: scrollable::State::new(),
-        }
-    }
-    pub fn update(&mut self, msg: NetMessage) {
-        match msg {
-            NetMessage::OnSearchWif(text) => {
-                self.value = text;
-            }
-            NetMessage::TabChanged(idx, control) => {
-                self.current_idx = idx;
-                self.select_tab = control;
-                // println!("you select: {:?}", control);
-            }
-            NetMessage::GenConfigMsg(msg) => {
-                self.gencofig.update(msg);
-            }
-            NetMessage::IdentifyMsg(msg) => {
-                self.identity.update(msg);
-            }
-            NetMessage::SecureMsg(msg) => {
-                self.security.update(msg);
-            }
-            NetMessage::IPv4Msg(msg) => {
-                self.ipv4.update(msg);
-            }
-            NetMessage::IPv6Msg(msg) => {
-                self.ipv6.update(msg);
-            }
-            NetMessage::ApplyChanged => {}
-            NetMessage::CancelChanged => {}
-            NetMessage::ListMessage(msg) => {}
+            network: NetSettings::new(),
+            wireless: Wireless::new(),
+            ..Default::default()
         }
     }
 
-    pub fn view(&mut self) -> Element<NetMessage> {
-        let NetworkPage {
-            search,
-            value,
-            tabbar_state,
-            current_idx,
-            select_tab,
-            gencofig,
-            identity,
-            security,
-            ipv4,
-            ipv6,
-            apply,
-            cancel,
-            list_wifi,
-            scr_list,
-        } = self;
-        let mut tabbar = Row::new().spacing(2).align_items(Align::Center);
-        for (idx, (name, btn_state, control)) in tabbar_state.iter_mut().enumerate() {
-            let mut btn = Button::new(btn_state, Text::new(name.as_str()))
-                .padding(5)
-                .on_press(NetMessage::TabChanged(idx, *control));
-            if *current_idx == idx {
-                btn = btn.style(CustomButton::SelectedTab);
-            } else {
-                btn = btn.style(CustomButton::Tab);
+    pub fn update(&mut self, message: NetMessage) {
+        match message {
+            NetMessage::TabSelect(select) => {
+                self.choice = select;
             }
-            tabbar = tabbar.push(btn);
+            NetMessage::WirelessMsg(msg) => {
+                self.wireless.update(msg);
+            }
+            NetMessage::ToggleChange(is_active) => {
+                self.is_active = is_active;
+            }
+            NetMessage::WireMsg(msg) => {
+                self.wire.update(msg);
+            }
+            NetMessage::NetSettingsMsg(msg) => {
+                self.network.update(msg);
+            }
         }
-        let tabbar_con = Container::new(tabbar)
-            .padding(2)
-            .center_x()
-            .style(CustomContainer::Segment);
-        let tabbar_section = Container::new(tabbar_con)
-            .padding(7)
+    }
+    pub fn view(&mut self) -> Element<NetMessage> {
+        let row = Column::new()
             .width(Length::Fill)
-            .center_x();
-        let tabview = match select_tab {
-            Control::Details => gencofig
-                .view()
-                .map(move |msg| NetMessage::GenConfigMsg(msg)),
-            Control::Wifi => identity.view().map(move |msg| NetMessage::IdentifyMsg(msg)),
-            Control::Security => security.view().map(move |msg| NetMessage::SecureMsg(msg)),
-            Control::IPv4 => ipv4.view().map(move |msg| NetMessage::IPv4Msg(msg)),
-            Control::Ipv6 => ipv6.view().map(move |msg| NetMessage::IPv6Msg(msg)),
-        };
-        let list_view = Scrollable::new(scr_list).push(list_wifi.iter_mut().fold(
-            Column::new().spacing(5),
-            |column, pref| {
-                column
-                    .push(Rule::horizontal(4))
-                    .push(pref.view().map(move |msg| NetMessage::ListMessage(msg)))
-            },
-        ));
-        let list_container = Container::new(list_view).center_x().center_y();
-        let list_side = Column::new()
-            .width(Length::FillPortion(3))
             .align_items(Align::Center)
             .spacing(10)
-            .push(Text::new("Connection").size(25))
             .push(
-                TextInput::new(search, "searching..", value, NetMessage::OnSearchWif)
-                    .size(18)
-                    .padding(5),
-            )
-            .push(Text::new("Wi-Fi").size(18))
-            .push(list_container);
-        let apply = Column::new().push(
-            Row::new()
-                .spacing(10)
-                .push(
-                    Button::new(
-                        apply,
-                        Text::new("Cancel").horizontal_alignment(HorizontalAlignment::Center),
-                    )
-                    .padding(10)
-                    .width(Length::Units(100))
-                    .on_press(NetMessage::ApplyChanged),
+                Tab::new(
+                    Choice::A,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f796}', "Ethernet"),
                 )
-                .push(
-                    Button::new(
-                        cancel,
-                        Text::new("Apply").horizontal_alignment(HorizontalAlignment::Center),
-                    )
-                    .width(Length::Units(100))
-                    .padding(10)
-                    .on_press(NetMessage::CancelChanged),
-                ),
-        );
-        let content_side = Column::new()
-            .align_items(Align::Center)
-            .push(
-                Text::new("Network Setting")
-                    .horizontal_alignment(HorizontalAlignment::Center)
-                    .size(25),
+                .width(Length::Fill)
+                .height(Length::Units(50)),
             )
-            .push(tabbar_section)
-            .push(tabview)
-            .push(apply.padding(10))
-            .width(Length::FillPortion(7))
-            .height(Length::Fill);
-
-        let main_layout: Element<_> = Row::new()
-            .width(Length::Fill)
+            .push(
+                Tab::new(
+                    Choice::B,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f1eb}', "Wireless"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::C,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f6ff}', "DSL"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::D,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f3ed}', "VPN"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::E,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f7ba}', "System Proxy"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::F,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f7b9}', "Application Proxy"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::G,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f0c1}', "Personal Hotspot"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            )
+            .push(
+                Tab::new(
+                    Choice::H,
+                    Some(self.choice),
+                    NetMessage::TabSelect,
+                    tab_content('\u{f05a}', "Network Details"),
+                )
+                .width(Length::Fill)
+                .height(Length::Units(50)),
+            );
+        let contnet = Column::new()
             .height(Length::Fill)
-            .push(list_side)
-            .push(Rule::vertical(10))
-            .push(content_side)
-            .into();
-        Container::new(main_layout)
+            .align_items(Align::Center)
+            .padding(20)
+            .push(match self.choice {
+                Choice::A => self.wire.view().map(move |msg| NetMessage::WireMsg(msg)),
+                Choice::B => self
+                    .wireless
+                    .view()
+                    .map(move |msg| NetMessage::WirelessMsg(msg)),
+                Choice::C => self
+                    .network
+                    .view()
+                    .map(move |msg| NetMessage::NetSettingsMsg(msg)),
+                Choice::D => Text::new("Content D").into(),
+                Choice::F => Text::new("Content F").into(),
+                Choice::G => Text::new("Content G").into(),
+                Choice::E => Text::new("Content E").into(),
+                Choice::H => Text::new("Content H").into(),
+            });
+        let netsidebar_scroll = Scrollable::new(&mut self.scroll_content)
+            .push(row)
             .padding(10)
+            .scrollbar_width(4)
+            .scroller_width(4);
+        let whole_content: Element<_> = Row::new()
             .width(Length::Fill)
             .height(Length::Fill)
+            .push(
+                Container::new(netsidebar_scroll.height(Length::Fill))
+                    .style(ContainerStyle::White)
+                    .width(Length::FillPortion(4))
+                    .height(Length::Fill),
+            )
+            .push(Rule::vertical(10))
+            .push(
+                Container::new(contnet.height(Length::Fill))
+                    .width(Length::FillPortion(9))
+                    .height(Length::Fill)
+                    .style(ContainerStyle::White), // .padding(10),
+            )
+            .into();
+        let container = Container::new(whole_content)
+            .width(Length::Fill)
+            .center_x()
+            .center_y();
+        Container::new(container)
+            .style(ContainerStyle::LightGray)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(10)
             .center_x()
             .center_y()
-            .style(CustomContainer::FadedBrightForeground)
             .into()
     }
 }
+fn tab_content<'a>(unicode: char, name: &str) -> Row<'a, NetMessage> {
+    Row::new()
+        .push(Icon::new(unicode).size(24))
+        .push(Text::new(name).size(16))
+        .align_items(Align::Center)
+        .spacing(8)
+}
+// pub fn init() {
+//     match NetworkPage::run(Settings::default()) {
+//         Ok(val) => println!("run success with exit code: {:?}", val),
+//         Err(e) => eprintln!("Error: {}", e),
+//     }
+// }
 
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum VPN {
-    KoompiVPN,
-    FastVPN,
-    NetVPN,
-}
-impl VPN {
-    const ALL: [VPN; 3] = [VPN::KoompiVPN, VPN::FastVPN, VPN::NetVPN];
-}
-select_display!(VPN, VPN::KoompiVPN => "KoompiVPN", VPN::FastVPN => "FastVPN", VPN::NetVPN => "NetVPN");
-
-impl Default for VPN {
-    fn default() -> Self {
-        VPN::KoompiVPN
-    }
-}
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum Metered {
-    Automatic,
-    Yes,
-    No,
-}
-impl Metered {
-    const ALL: [Metered; 3] = [Metered::Automatic, Metered::Yes, Metered::No];
-}
-impl Default for Metered {
-    fn default() -> Self {
-        Metered::Automatic
-    }
-}
-select_display!(Metered, Metered::Automatic => "Automatic", Metered::Yes => "Yes", Metered::No => "No");
-#[derive(Debug, Clone)]
-pub enum GenConfigMsg {
-    AutoConnection(bool),
-    PriorityChanged(String),
-    FireWallChanged(String),
-    AllowAllUser(bool),
-    AutoVPN(bool),
-    VPNChnaged(VPN),
-    MeterChanged(Metered),
-    AdvanceChanged,
-}
-#[derive(Debug, Clone)]
-pub struct GeneralConfig {
-    // primitive State
-    is_auto: bool,
-    is_alluser: bool,
-    is_vpn: bool,
-    priority_value: String,
-    fireall_value: String,
-    // Compound State
-    auto_vpn: pick_list::State<VPN>,
-    meters: pick_list::State<Metered>,
-    select_vpn: VPN,
-    select_meter: Metered,
-    advance: button::State,
-    priority_input: text_input::State,
-    firewall: text_input::State,
-}
-impl GeneralConfig {
-    pub fn new() -> Self {
-        Self {
-            is_auto: true,
-            is_alluser: true,
-            is_vpn: false,
-            priority_value: String::default(),
-            fireall_value: String::default(),
-            auto_vpn: pick_list::State::default(),
-            meters: pick_list::State::default(),
-            select_vpn: VPN::KoompiVPN,
-            select_meter: Metered::Automatic,
-            advance: button::State::new(),
-            priority_input: text_input::State::new(),
-            firewall: text_input::State::new(),
-        }
-    }
-    pub fn update(&mut self, msg: GenConfigMsg) {
-        match msg {
-            GenConfigMsg::PriorityChanged(value) => {
-                self.priority_value = value;
-            }
-            GenConfigMsg::AutoConnection(value) => {
-                self.is_auto = value;
-            }
-            GenConfigMsg::AllowAllUser(value) => {
-                self.is_alluser = value;
-            }
-            GenConfigMsg::AutoVPN(value) => {
-                self.is_vpn = value;
-            }
-            GenConfigMsg::VPNChnaged(vpn) => {
-                self.select_vpn = vpn;
-            }
-            GenConfigMsg::AdvanceChanged => {}
-            GenConfigMsg::FireWallChanged(value) => {
-                self.fireall_value = value;
-            }
-            GenConfigMsg::MeterChanged(meter) => {
-                self.select_meter = meter;
-            }
-        }
-    }
-    pub fn view(&mut self) -> Element<GenConfigMsg> {
-        let GeneralConfig {
-            is_auto,
-            is_alluser,
-            is_vpn,
-            priority_value,
-            fireall_value,
-            auto_vpn,
-            meters,
-            select_vpn,
-            select_meter,
-            advance,
-            priority_input,
-            firewall,
-        } = self;
-
-        let row1 = Row::new()
-            .spacing(50)
-            .align_items(Align::Center)
-            .push(Checkbox::new(
-                *is_auto,
-                "Connection automatically with priority",
-                GenConfigMsg::AutoConnection,
-            ))
-            .push(
-                TextInput::new(
-                    priority_input,
-                    "Enter priority",
-                    &priority_value,
-                    GenConfigMsg::PriorityChanged,
-                )
-                .padding(10),
-            );
-        let row2 = Row::new()
-            .align_items(Align::Center)
-            .spacing(52)
-            .push(Checkbox::new(
-                *is_alluser,
-                "All users may connect to this network",
-                GenConfigMsg::AllowAllUser,
-            ))
-            .push(
-                Button::new(
-                    advance,
-                    Text::new("Adavance...").horizontal_alignment(HorizontalAlignment::Center),
-                )
-                .padding(10)
-                .width(Length::Fill)
-                .on_press(GenConfigMsg::AdvanceChanged),
-            );
-        let row3 = Row::new()
-            .align_items(Align::Center)
-            .spacing(98)
-            .push(Checkbox::new(
-                *is_vpn,
-                "Automatically connect to VPN",
-                GenConfigMsg::AutoVPN,
-            ))
-            .push(
-                PickList::new(
-                    auto_vpn,
-                    &VPN::ALL[..],
-                    Some(*select_vpn),
-                    GenConfigMsg::VPNChnaged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let row4 = Row::new()
-            .align_items(Align::Center)
-            .spacing(222)
-            .push(Text::new("Firewall zone:"))
-            .push(
-                TextInput::new(
-                    firewall,
-                    "Firewall Zone",
-                    fireall_value,
-                    GenConfigMsg::FireWallChanged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let row5 = Row::new()
-            .align_items(Align::Center)
-            .push(Text::new("Metered: "))
-            .spacing(245)
-            .push(
-                PickList::new(
-                    meters,
-                    &Metered::ALL[..],
-                    Some(*select_meter),
-                    GenConfigMsg::MeterChanged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let general_content = Column::new()
-            .padding(20)
-            .spacing(10)
-            .push(row1)
-            .push(row2)
-            .push(row3)
-            .push(row4)
-            .push(row5)
-            .width(Length::Fill);
-        Container::new(general_content)
-            .style(CustomContainer::ForegroundWhite)
-            .into()
-    }
-}
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum BSSID {
-    Address,
-}
-select_display!(BSSID, BSSID::Address => "00:33:44:6D::8D");
-impl Default for BSSID {
-    fn default() -> Self {
-        BSSID::Address
-    }
-}
-impl BSSID {
-    const ALL: [BSSID; 1] = [BSSID::Address];
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum MAC {
-    Address,
-}
-impl MAC {
-    const ALL: [MAC; 1] = [MAC::Address];
-}
-
-impl Default for MAC {
-    fn default() -> Self {
-        MAC::Address
-    }
-}
-select_display!(MAC, MAC::Address => "00:33:44:6D::8D (wlp2s0)");
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum CloneAddr {
-    Preserve,
-    Permenant,
-    Randome,
-    Stable,
-}
-select_display!(CloneAddr,
-    CloneAddr::Preserve => "Preserve",
-    CloneAddr::Permenant => "Permenant",
-    CloneAddr::Randome =>"Randome",
-    CloneAddr::Stable => "Stable");
-impl CloneAddr {
-    const ALL: [CloneAddr; 4] = [
-        CloneAddr::Preserve,
-        CloneAddr::Permenant,
-        CloneAddr::Randome,
-        CloneAddr::Stable,
-    ];
-}
-impl Default for CloneAddr {
-    fn default() -> Self {
-        CloneAddr::Permenant
-    }
-}
 #[derive(Default, Debug, Clone)]
-pub struct Identify {
-    ssid: String,
-    bssid: BSSID,
-    mac_address: MAC,
-    clone_address: CloneAddr,
-    ssid_ui: text_input::State,
-    bssid_ui: pick_list::State<BSSID>,
-    mac_addr_ui: pick_list::State<MAC>,
-    clone: pick_list::State<CloneAddr>,
-}
-#[derive(Debug, Clone)]
-pub enum IdentifyMsg {
-    SsidChanged(String),
-    BssidChanged(BSSID),
-    MacChanged(MAC),
-    CloneChanged(CloneAddr),
-}
-
-impl Identify {
-    pub fn new() -> Self {
-        Self {
-            ssid: String::default(),
-            bssid: BSSID::default(),
-            mac_address: MAC::default(),
-            clone_address: CloneAddr::default(),
-            ssid_ui: text_input::State::new(),
-            bssid_ui: pick_list::State::default(),
-            mac_addr_ui: pick_list::State::default(),
-            clone: pick_list::State::default(),
-        }
-    }
-    pub fn update(&mut self, msg: IdentifyMsg) {
-        match msg {
-            IdentifyMsg::SsidChanged(value) => {
-                self.ssid = value;
-            }
-            IdentifyMsg::BssidChanged(bssid) => {
-                self.bssid = bssid;
-            }
-            IdentifyMsg::MacChanged(mac) => {
-                self.mac_address = mac;
-            }
-            IdentifyMsg::CloneChanged(clone) => {
-                self.clone_address = clone;
-            }
-        }
-    }
-    pub fn view(&mut self) -> Element<IdentifyMsg> {
-        let Identify {
-            ssid,
-            bssid,
-            mac_address,
-            clone_address,
-            ssid_ui,
-            bssid_ui,
-            mac_addr_ui,
-            clone,
-        } = self;
-        let row = Row::new()
-            .align_items(Align::Center)
-            .push(Text::new("SSID").width(Length::Units(100)))
-            .push(
-                TextInput::new(ssid_ui, "Koompi Attic", ssid, IdentifyMsg::SsidChanged)
-                    .padding(10)
-                    .width(Length::Fill),
-            );
-        let row1 = Row::new()
-            .align_items(Align::Center)
-            .push(Text::new("BSSID").width(Length::Units(100)))
-            .push(
-                PickList::new(
-                    bssid_ui,
-                    &BSSID::ALL[..],
-                    Some(*bssid),
-                    IdentifyMsg::BssidChanged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let row2 = Row::new()
-            .align_items(Align::Center)
-            .push(Text::new("MAC Addres").width(Length::Units(100)))
-            .push(
-                PickList::new(
-                    mac_addr_ui,
-                    &MAC::ALL[..],
-                    Some(*mac_address),
-                    IdentifyMsg::MacChanged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let row3 = Row::new()
-            .align_items(Align::Center)
-            .push(Text::new("Clone Address").width(Length::Units(100)))
-            .push(
-                PickList::new(
-                    clone,
-                    &CloneAddr::ALL[..],
-                    Some(*clone_address),
-                    IdentifyMsg::CloneChanged,
-                )
-                .padding(10)
-                .width(Length::Fill),
-            );
-        let content: Element<_> = Column::new()
-            .spacing(10)
-            .padding(20)
-            .width(Length::Fill)
-            .push(row)
-            .push(row1)
-            .push(row2)
-            .push(row3)
-            .into();
-        Container::new(content)
-            .style(CustomContainer::ForegroundWhite)
-            .into()
-    }
-}
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
-pub enum SecurityType {
-    WPA2Personal,
-    WPA2Enterprise,
-    WPA3Personal,
-    Dynamic802x,
-    NONE,
-}
-
-select_display!(SecurityType,
-    SecurityType::WPA2Personal => "WPA/WPA2 Personal",
-    SecurityType::WPA2Enterprise => "WPA/WPA2 Enterprise",
-    SecurityType::WPA3Personal =>"WPA3Personal",
-    SecurityType::Dynamic802x => "Dynamic WEB (802.1x)", 
-    SecurityType::NONE => "None");
-
-impl SecurityType {
-    const ALL: [SecurityType; 5] = [
-        SecurityType::WPA2Personal,
-        SecurityType::WPA2Enterprise,
-        SecurityType::WPA3Personal,
-        SecurityType::Dynamic802x,
-        SecurityType::NONE,
-    ];
-}
-impl Default for SecurityType {
-    fn default() -> Self {
-        SecurityType::WPA2Personal
-    }
-}
-#[derive(Debug, Clone)]
-pub enum SecureMsg {
-    PassChanged(String),
-    ShowPassChanged(bool),
-    SecureChanged(SecurityType),
-}
-#[derive(Debug, Clone)]
-pub struct Security {
-    security: SecurityType,
-    pass_value: String,
-    show_pass: bool,
-    security_ui: pick_list::State<SecurityType>,
-    pass_ui: text_input::State,
-}
-
-impl Security {
-    pub fn new() -> Self {
-        Self {
-            security: SecurityType::default(),
-            pass_value: String::from("KOOMPI123"),
-            show_pass: false,
-            security_ui: pick_list::State::default(),
-            pass_ui: text_input::State::new(),
-        }
-    }
-
-    pub fn update(&mut self, msg: SecureMsg) {
-        match msg {
-            SecureMsg::PassChanged(value) => {
-                self.pass_value = value;
-            }
-            SecureMsg::SecureChanged(secure) => {
-                self.security = secure;
-            }
-            SecureMsg::ShowPassChanged(value) => {
-                self.show_pass = value;
-            }
-        }
-    }
-    pub fn view(&mut self) -> Element<SecureMsg> {
-        let Security {
-            security,
-            pass_value,
-            show_pass,
-            security_ui,
-            pass_ui,
-        } = self;
-        let row = Row::new()
-            .width(Length::Fill)
-            .align_items(Align::Center)
-            .push(Text::new("Security: ").width(Length::Units(150)))
-            .push(
-                PickList::new(
-                    security_ui,
-                    &SecurityType::ALL[..],
-                    Some(*security),
-                    SecureMsg::SecureChanged,
-                )
-                .width(Length::Fill)
-                .padding(10),
-            );
-        let row1 = Row::new()
-            .width(Length::Fill)
-            .align_items(Align::Center)
-            .push(Text::new("Password: ").width(Length::Units(150)))
-            .push(match *show_pass {
-                true => TextInput::new(pass_ui, "password..", pass_value, SecureMsg::PassChanged)
-                    .padding(10),
-                false => TextInput::new(pass_ui, "password..", pass_value, SecureMsg::PassChanged)
-                    .password()
-                    .padding(10),
-            });
-        let row2 = Row::new()
-            .push(Space::with_width(Length::Units(150)))
-            .push(Checkbox::new(
-                *show_pass,
-                "Show password",
-                SecureMsg::ShowPassChanged,
-            ));
-        let content: Element<_> = Column::new()
-            .padding(10)
-            .width(Length::Fill)
-            .spacing(10)
-            .push(row)
-            .push(row1)
-            .push(row2)
-            .into();
-        Container::new(content)
-            .style(CustomContainer::ForegroundWhite)
-            .into()
-    }
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IPV4Method {
-    DHCP,
-    Manual,
-    Shared,
-    LinkLocal,
-    Disable,
-}
-impl Default for IPV4Method {
-    fn default() -> Self {
-        IPV4Method::DHCP
-    }
-}
-impl IPV4Method {
-    fn all() -> [IPV4Method; 5] {
-        [
-            IPV4Method::DHCP,
-            IPV4Method::Manual,
-            IPV4Method::Shared,
-            IPV4Method::LinkLocal,
-            IPV4Method::Disable,
-        ]
-    }
-}
-impl From<IPV4Method> for String {
-    fn from(language: IPV4Method) -> String {
-        String::from(match language {
-            IPV4Method::DHCP => "Automatic(DHCP)",
-            IPV4Method::Manual => "Manual",
-            IPV4Method::Shared => "Shared to other",
-            IPV4Method::LinkLocal => "Link-Local Only",
-            IPV4Method::Disable => "Disable",
-        })
-    }
-}
-#[derive(Debug, Clone)]
-pub struct IPV4 {
-    dns: String,
-    dns_auto: bool,
-    private_net: bool,
-    selected: Option<IPV4Method>,
-    address: Vec<String>,
-    routes: Vec<String>,
-    man_addr: String,
-    man_netmask: String,
-    man_gateway: String,
-    man_addui: text_input::State,
-    man_netmaskui: text_input::State,
-    man_gatewayui: text_input::State,
-    dns_input: text_input::State,
-    delete_manual: button::State,
-    route_addval: String,
-    route_netval: String,
-    route_gateval: String,
-    route_metricval: String,
-    delte_rotue: button::State,
-    route_addui: text_input::State,
-    route_netmaskui: text_input::State,
-    route_gatewayui: text_input::State,
-    route_metric: text_input::State,
-}
-
-#[derive(Debug, Clone)]
-pub enum IPv4Msg {
-    IPV4MethodChanged(IPV4Method),
-    Add2Chagned(String),
-    AddNetmastk(String),
-    AddGateway(String),
-    RouteChagned(String),
-    RouteNetmastk(String),
-    RouteGateway(String),
-    RouteMetric(String),
-    DeleteManual,
-    DelteManualRoute,
-    DnsChanged(String),
-    DnsAutomatic(bool),
-    PrivateNetChagned(bool),
-}
-
-impl IPV4 {
-    pub fn new() -> Self {
-        Self {
-            dns: String::default(),
-            dns_auto: true,
-            private_net: false,
-            selected: Some(IPV4Method::default()),
-            address: vec![
-                "Address".to_string(),
-                "Netmask".to_string(),
-                "Gateway".to_string(),
-            ],
-            routes: vec![
-                "Address".to_string(),
-                "Netmask".to_string(),
-                "Gateway".to_string(),
-                "Metric".to_string(),
-            ],
-            man_addr: String::default(),
-            man_gateway: String::default(),
-            man_netmask: String::default(),
-            man_addui: text_input::State::new(),
-            man_gatewayui: text_input::State::new(),
-            man_netmaskui: text_input::State::new(),
-            dns_input: text_input::State::new(),
-            delete_manual: button::State::new(),
-            route_addval: String::default(),
-            route_netval: String::default(),
-            route_gateval: String::default(),
-            route_metricval: String::default(),
-            delte_rotue: button::State::new(),
-            route_addui: text_input::State::new(),
-            route_gatewayui: text_input::State::new(),
-            route_netmaskui: text_input::State::new(),
-            route_metric: text_input::State::new(),
-        }
-    }
-    pub fn update(&mut self, msg: IPv4Msg) {
-        match msg {
-            IPv4Msg::IPV4MethodChanged(value) => {
-                self.selected = Some(value);
-            }
-            IPv4Msg::Add2Chagned(value) => {
-                self.man_addr = value;
-            }
-            IPv4Msg::AddNetmastk(value) => {
-                self.man_netmask = value;
-            }
-            IPv4Msg::AddGateway(value) => {
-                self.man_gateway = value;
-            }
-            IPv4Msg::DeleteManual => {}
-            IPv4Msg::DnsAutomatic(value) => {
-                self.dns_auto = value;
-            }
-            IPv4Msg::DnsChanged(value) => {
-                self.dns = value;
-            }
-            IPv4Msg::PrivateNetChagned(value) => {
-                self.private_net = value;
-            }
-            IPv4Msg::RouteChagned(value) => {
-                self.route_addval = value;
-            }
-            IPv4Msg::RouteGateway(value) => {
-                self.route_netval = value;
-            }
-            IPv4Msg::RouteNetmastk(value) => {
-                self.route_gateval = value;
-            }
-            IPv4Msg::RouteMetric(value) => {
-                self.route_metricval = value;
-            }
-            IPv4Msg::DelteManualRoute => {}
-        }
-    }
-
-    pub fn view(&mut self) -> Element<IPv4Msg> {
-        let IPV4 {
-            dns,
-            dns_auto,
-            private_net,
-            selected,
-            address,
-            routes,
-            man_addr,
-            man_netmask,
-            man_gateway,
-            man_addui,
-            man_netmaskui,
-            man_gatewayui,
-            dns_input,
-            delete_manual,
-            delte_rotue,
-            route_addval,
-            route_netval,
-            route_gateval,
-            route_metricval,
-            route_addui,
-            route_netmaskui,
-            route_gatewayui,
-            route_metric,
-        } = self;
-
-        let grid = IPV4Method::all().iter().cloned().fold(
-            Grid::new().column_width(200),
-            |layout, value| {
-                layout.push(
-                    Radio::new(value, value, *selected, IPv4Msg::IPV4MethodChanged)
-                        .size(18)
-                        .width(Length::Units(100)),
-                )
-            },
-        );
-        let data = match selected.unwrap() {
-            IPV4Method::Manual => Column::new()
-                .width(Length::Fill)
-                .push(Column::new().push(Text::new("Address: ")))
-                .push(
-                    address
-                        .iter()
-                        .fold(Row::new().width(Length::Fill), |row, value| {
-                            row.push(
-                                Column::new()
-                                    .width(Length::FillPortion(1))
-                                    .align_items(Align::Center)
-                                    .push(Text::new(value)),
-                            )
-                        }),
-                )
-                .push(
-                    Row::new()
-                        .align_items(Align::Center)
-                        .width(Length::Fill)
-                        .push(
-                            TextInput::new(man_addui, "", man_addr, IPv4Msg::Add2Chagned)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            TextInput::new(man_netmaskui, "", man_netmask, IPv4Msg::AddNetmastk)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            TextInput::new(man_gatewayui, "", man_gateway, IPv4Msg::AddGateway)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            Button::new(delete_manual, Text::new("Delete"))
-                                .on_press(IPv4Msg::DeleteManual)
-                                .padding(10),
-                        ),
-                ),
-            _ => Column::new(),
-        };
-        let dns_content = Column::new()
-            .push(
-                Row::new()
-                    .push(
-                        Column::new()
-                            .width(Length::FillPortion(1))
-                            .align_items(Align::Start)
-                            .push(Text::new("DNS")),
-                    )
-                    .push(
-                        Column::new()
-                            .width(Length::FillPortion(1))
-                            .align_items(Align::End)
-                            .push(Checkbox::new(*dns_auto, "Automatic", IPv4Msg::DnsAutomatic)),
-                    ),
-            )
-            .push(
-                TextInput::new(dns_input, "", dns, IPv4Msg::DnsChanged)
-                    .padding(10)
-                    .width(Length::Fill),
-            );
-
-        let route_section = Column::new()
-            .width(Length::Fill)
-            .push(Column::new().push(Text::new("Routes: ")))
-            .push(
-                routes
-                    .iter()
-                    .fold(Row::new().width(Length::Fill), |row, value| {
-                        row.push(
-                            Column::new()
-                                .width(Length::FillPortion(1))
-                                .align_items(Align::Center)
-                                .push(Text::new(value)),
-                        )
-                    }),
-            )
-            .push(
-                Row::new()
-                    .align_items(Align::Center)
-                    .width(Length::Fill)
-                    .push(
-                        TextInput::new(route_addui, "", route_addval, IPv4Msg::RouteChagned)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_netmaskui, "", route_netval, IPv4Msg::RouteNetmastk)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_gatewayui, "", route_gateval, IPv4Msg::RouteGateway)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_metric, "", route_metricval, IPv4Msg::RouteMetric)
-                            .width(Length::FillPortion(1))
-                            .padding(10),
-                    )
-                    .push(
-                        Button::new(delte_rotue, Text::new("Delete"))
-                            .on_press(IPv4Msg::DelteManualRoute)
-                            .padding(10),
-                    ),
-            );
-        let first_section = Row::new()
-            .push(Text::new("IPv4 Method").width(Length::Fill))
-            .push(grid);
-        let contetn: Element<_> = Column::new()
-            .spacing(10)
-            .push(first_section)
-            .push(data)
-            .push(dns_content)
-            .push(route_section)
-            .push(Checkbox::new(
-                *private_net,
-                "Use this connection only for resources on its network",
-                IPv4Msg::PrivateNetChagned,
-            ))
-            .width(Length::Fill)
-            .into();
-        Container::new(contetn)
-            .padding(10)
-            .style(CustomContainer::ForegroundWhite)
-            .width(Length::Fill)
-            .into()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IPV6Method {
-    DHCP,
-    Manual,
-    Shared,
-    LinkLocal,
-    Disable,
-    Automatic,
-}
-impl Default for IPV6Method {
-    fn default() -> Self {
-        IPV6Method::DHCP
-    }
-}
-impl IPV6Method {
-    fn all() -> [IPV6Method; 6] {
-        [
-            IPV6Method::DHCP,
-            IPV6Method::Manual,
-            IPV6Method::Shared,
-            IPV6Method::LinkLocal,
-            IPV6Method::Disable,
-            IPV6Method::Automatic,
-        ]
-    }
-}
-impl From<IPV6Method> for String {
-    fn from(language: IPV6Method) -> String {
-        String::from(match language {
-            IPV6Method::DHCP => "Automatic(DHCP)",
-            IPV6Method::Manual => "Manual",
-            IPV6Method::Shared => "Shared to other",
-            IPV6Method::LinkLocal => "Link-Local Only",
-            IPV6Method::Disable => "Disable",
-            IPV6Method::Automatic => "Automatic, DHCP only",
-        })
-    }
-}
-#[derive(Debug, Clone)]
-pub struct IPV6 {
-    dns: String,
-    dns_auto: bool,
-    private_net: bool,
-    selected: Option<IPV6Method>,
-    address: Vec<String>,
-    routes: Vec<String>,
-    man_addr: String,
-    man_netmask: String,
-    man_gateway: String,
-    man_addui: text_input::State,
-    man_netmaskui: text_input::State,
-    man_gatewayui: text_input::State,
-    dns_input: text_input::State,
-    delete_manual: button::State,
-    route_addval: String,
-    route_netval: String,
-    route_gateval: String,
-    route_metricval: String,
-    delte_rotue: button::State,
-    route_addui: text_input::State,
-    route_netmaskui: text_input::State,
-    route_gatewayui: text_input::State,
-    route_metric: text_input::State,
-}
-
-#[derive(Debug, Clone)]
-pub enum IPv6Msg {
-    IPV6MethodChanged(IPV6Method),
-    Add2Chagned(String),
-    AddNetmastk(String),
-    AddGateway(String),
-    RouteChagned(String),
-    RouteNetmastk(String),
-    RouteGateway(String),
-    RouteMetric(String),
-    DeleteManual,
-    DelteManualRoute,
-    DnsChanged(String),
-    DnsAutomatic(bool),
-    PrivateNetChagned(bool),
-}
-
-impl IPV6 {
-    pub fn new() -> Self {
-        Self {
-            dns: String::default(),
-            dns_auto: true,
-            private_net: false,
-            selected: Some(IPV6Method::default()),
-            address: vec![
-                "Address".to_string(),
-                "Prefix".to_string(),
-                "Gateway".to_string(),
-            ],
-            routes: vec![
-                "Address".to_string(),
-                "Prefix".to_string(),
-                "Gateway".to_string(),
-                "Metric".to_string(),
-            ],
-            man_addr: String::default(),
-            man_gateway: String::default(),
-            man_netmask: String::default(),
-            man_addui: text_input::State::new(),
-            man_gatewayui: text_input::State::new(),
-            man_netmaskui: text_input::State::new(),
-            dns_input: text_input::State::new(),
-            delete_manual: button::State::new(),
-            route_addval: String::default(),
-            route_netval: String::default(),
-            route_gateval: String::default(),
-            route_metricval: String::default(),
-            delte_rotue: button::State::new(),
-            route_addui: text_input::State::new(),
-            route_gatewayui: text_input::State::new(),
-            route_netmaskui: text_input::State::new(),
-            route_metric: text_input::State::new(),
-        }
-    }
-    pub fn update(&mut self, msg: IPv6Msg) {
-        match msg {
-            IPv6Msg::IPV6MethodChanged(value) => {
-                self.selected = Some(value);
-            }
-            IPv6Msg::Add2Chagned(value) => {
-                self.man_addr = value;
-            }
-            IPv6Msg::AddNetmastk(value) => {
-                self.man_netmask = value;
-            }
-            IPv6Msg::AddGateway(value) => {
-                self.man_gateway = value;
-            }
-            IPv6Msg::DeleteManual => {}
-            IPv6Msg::DnsAutomatic(value) => {
-                self.dns_auto = value;
-            }
-            IPv6Msg::DnsChanged(value) => {
-                self.dns = value;
-            }
-            IPv6Msg::PrivateNetChagned(value) => {
-                self.private_net = value;
-            }
-            IPv6Msg::RouteChagned(value) => {
-                self.route_addval = value;
-            }
-            IPv6Msg::RouteGateway(value) => {
-                self.route_netval = value;
-            }
-            IPv6Msg::RouteNetmastk(value) => {
-                self.route_gateval = value;
-            }
-            IPv6Msg::RouteMetric(value) => {
-                self.route_metricval = value;
-            }
-            IPv6Msg::DelteManualRoute => {}
-        }
-    }
-
-    pub fn view(&mut self) -> Element<IPv6Msg> {
-        let IPV6 {
-            dns,
-            dns_auto,
-            private_net,
-            selected,
-            address,
-            routes,
-            man_addr,
-            man_netmask,
-            man_gateway,
-            man_addui,
-            man_netmaskui,
-            man_gatewayui,
-            dns_input,
-            delete_manual,
-            delte_rotue,
-            route_addval,
-            route_netval,
-            route_gateval,
-            route_metricval,
-            route_addui,
-            route_netmaskui,
-            route_gatewayui,
-            route_metric,
-        } = self;
-
-        let grid = IPV6Method::all().iter().cloned().fold(
-            Grid::new().column_width(200),
-            |layout, value| {
-                layout.push(
-                    Radio::new(value, value, *selected, IPv6Msg::IPV6MethodChanged)
-                        .size(18)
-                        .width(Length::Units(100)),
-                )
-            },
-        );
-        let data = match selected.unwrap() {
-            IPV6Method::Manual => Column::new()
-                .width(Length::Fill)
-                .push(Column::new().push(Text::new("Address: ")))
-                .push(
-                    address
-                        .iter()
-                        .fold(Row::new().width(Length::Fill), |row, value| {
-                            row.push(
-                                Column::new()
-                                    .width(Length::FillPortion(1))
-                                    .align_items(Align::Center)
-                                    .push(Text::new(value)),
-                            )
-                        }),
-                )
-                .push(
-                    Row::new()
-                        .align_items(Align::Center)
-                        .width(Length::Fill)
-                        .push(
-                            TextInput::new(man_addui, "", man_addr, IPv6Msg::Add2Chagned)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            TextInput::new(man_netmaskui, "", man_netmask, IPv6Msg::AddNetmastk)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            TextInput::new(man_gatewayui, "", man_gateway, IPv6Msg::AddGateway)
-                                .width(Length::FillPortion(1))
-                                .padding(10),
-                        )
-                        .push(
-                            Button::new(delete_manual, Text::new("Delete"))
-                                .on_press(IPv6Msg::DeleteManual)
-                                .padding(10),
-                        ),
-                ),
-            _ => Column::new(),
-        };
-        let dns_content = Column::new()
-            .push(
-                Row::new()
-                    .push(
-                        Column::new()
-                            .width(Length::FillPortion(1))
-                            .align_items(Align::Start)
-                            .push(Text::new("DNS")),
-                    )
-                    .push(
-                        Column::new()
-                            .width(Length::FillPortion(1))
-                            .align_items(Align::End)
-                            .push(Checkbox::new(*dns_auto, "Automatic", IPv6Msg::DnsAutomatic)),
-                    ),
-            )
-            .push(
-                TextInput::new(dns_input, "", dns, IPv6Msg::DnsChanged)
-                    .padding(10)
-                    .width(Length::Fill),
-            );
-
-        let route_section = Column::new()
-            .width(Length::Fill)
-            .push(Column::new().push(Text::new("Routes: ")))
-            .push(
-                routes
-                    .iter()
-                    .fold(Row::new().width(Length::Fill), |row, value| {
-                        row.push(
-                            Column::new()
-                                .width(Length::FillPortion(1))
-                                .align_items(Align::Center)
-                                .push(Text::new(value)),
-                        )
-                    }),
-            )
-            .push(
-                Row::new()
-                    .align_items(Align::Center)
-                    .width(Length::Fill)
-                    .push(
-                        TextInput::new(route_addui, "", route_addval, IPv6Msg::RouteChagned)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_netmaskui, "", route_netval, IPv6Msg::RouteNetmastk)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_gatewayui, "", route_gateval, IPv6Msg::RouteGateway)
-                            .width(Length::FillPortion(2))
-                            .padding(10),
-                    )
-                    .push(
-                        TextInput::new(route_metric, "", route_metricval, IPv6Msg::RouteMetric)
-                            .width(Length::FillPortion(1))
-                            .padding(10),
-                    )
-                    .push(
-                        Button::new(delte_rotue, Text::new("Delete"))
-                            .on_press(IPv6Msg::DelteManualRoute)
-                            .padding(10),
-                    ),
-            );
-        let first_section = Row::new()
-            .push(Text::new("IPv6 Method").width(Length::Fill))
-            .push(grid);
-        let contetn: Element<_> = Column::new()
-            .spacing(10)
-            .push(first_section)
-            .push(data)
-            .push(dns_content)
-            .push(route_section)
-            .push(Checkbox::new(
-                *private_net,
-                "Use this connection only for resources on its network",
-                IPv6Msg::PrivateNetChagned,
-            ))
-            .width(Length::Fill)
-            .into();
-        Container::new(contetn)
-            .padding(10)
-            .style(CustomContainer::ForegroundWhite)
-            .width(Length::Fill)
-            .into()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ListCon {
-    name: String,
-    icon: String,
+pub struct Wireless {
+    is_active: bool,
+    is_shown: bool,
     status: String,
+    security: Option<String>,
+    ssid: String,
+    network_settings: NetSettings,
+    ssid_vector: Vec<(button::State, bool, char, String)>,
 }
-#[derive(Debug, Clone)]
-pub enum ListMessage {}
-impl ListCon {
-    pub fn new(n: String, i: String, s: String) -> Self {
+
+impl Wireless {
+    pub fn new() -> Self {
+        let ssid_gen = |btn: button::State, secure: bool, icon: char, ssid: &str| {
+            (btn, secure, icon, ssid.to_string())
+        };
+        let mut empty: Vec<(button::State, bool, char, String)> = Vec::new();
+        for _ in 1..=10 {
+            empty.push(ssid_gen(
+                button::State::new(),
+                true,
+                '\u{f1eb}',
+                "Koompi OS",
+            ));
+        }
+        for i in &empty {
+            println!("{:?}", i);
+        }
         Self {
-            name: n,
-            icon: i,
-            status: s,
+            ssid_vector: empty,
+            is_shown: false,
+            network_settings: NetSettings::new(),
+            ..Self::default()
         }
     }
-    pub fn view(&mut self) -> Element<ListMessage> {
-        let ListCon { name, icon, status } = self;
-        let data = Row::new()
-            .spacing(5)
-            .push(Svg::from_path(format!(
-                "{}/assets/images/{}.svg",
-                ROOT_PATH(),
-                icon
-            )))
+    pub fn update(&mut self, msg: WirelessMsg) {
+        match msg {
+            WirelessMsg::EnableWireless(value) => {
+                self.is_active = value;
+            }
+            WirelessMsg::NothingButton => {}
+            WirelessMsg::ShowSettings => {
+                self.is_shown = !self.is_shown;
+            }
+            WirelessMsg::NetSettingsMsg(msg) => {
+                self.network_settings.update(msg);
+            }
+        }
+    }
+    pub fn view(&mut self) -> Element<WirelessMsg> {
+        println!("size of vector ssid: {}", self.ssid_vector.len());
+        // .push(Toggler::new(
+        //     self.is_active,
+        //     String::from("Wire Network Adapter"),
+        //     WirelessMsg::EnableWireless,
+        // ))
+        let wireless_layout = Column::new()
+            .push(
+                self.ssid_vector.iter_mut().fold(
+                    Column::new()
+                        .width(Length::Fill)
+                        .spacing(4)
+                        .height(Length::Fill),
+                    |column, (state, status, icon, ssid)| {
+                        column.push(
+                            Row::new()
+                                .align_items(Align::Center)
+                                .padding(10)
+                                .spacing(8)
+                                .push(if *status {
+                                    Icon::new('\u{f3ed}').size(16)
+                                } else {
+                                    Icon::new('\u{f09c}').size(16)
+                                })
+                                .push(Icon::new('\u{f1eb}').size(24))
+                                .push(Text::new(ssid.as_str()).size(16))
+                                .push(Space::with_width(Length::Fill))
+                                .push(
+                                    Button::new(state, Icon::new('\u{f105}'))
+                                        .on_press(WirelessMsg::ShowSettings)
+                                        .style(ButtonStyle::Transparent),
+                                ),
+                        )
+                    },
+                ),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill);
+        let wifi_layout = Row::new()
             .push(
                 Column::new()
-                    .push(Text::new(name.as_str()).size(20))
-                    .push(Text::new(status.as_str())),
-            );
-        data.into()
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .push(Toggler::new(
+                        self.is_active,
+                        String::from("Wireless Network Adapter"),
+                        WirelessMsg::EnableWireless,
+                    ))
+                    .spacing(10)
+                    .push(wireless_layout),
+            )
+            .push(Rule::vertical(10).style(RuleStyle {}))
+            .push(if self.is_shown {
+                self.network_settings
+                    .view()
+                    .map(move |msg| WirelessMsg::NetSettingsMsg(msg))
+            } else {
+                Space::with_width(Length::Shrink).into()
+            });
+        Container::new(wifi_layout)
+            .center_x()
+            .center_y()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
     }
 }
+#[derive(Debug, Clone)]
+pub enum WirelessMsg {
+    EnableWireless(bool),
+    NothingButton,
+    ShowSettings,
+    NetSettingsMsg(NetSettingsMsg),
+}
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Wire {
+    is_enable: bool,
+    add_net_con: button::State,
+}
+#[derive(Debug, Copy, Clone)]
+pub enum WireMsg {
+    EnableWired(bool),
+    NetworkAdded,
+}
+impl Wire {
+    fn new() -> Self {
+        Self { ..Self::default() }
+    }
+    fn update(&mut self, msg: WireMsg) {
+        match msg {
+            WireMsg::EnableWired(is_enable) => {
+                self.is_enable = is_enable;
+            }
+            WireMsg::NetworkAdded => {}
+        }
+    }
+    fn view(&mut self) -> Element<WireMsg> {
+        Column::new()
+            .spacing(10)
+            .align_items(Align::Center)
+            .push(Toggler::new(
+                self.is_enable,
+                String::from("Wire Network Adapter"),
+                WireMsg::EnableWired,
+            ))
+            .push(
+                Container::new(Text::new("Plug in the network cable first"))
+                    .center_x()
+                    .center_y()
+                    .width(Length::Fill)
+                    .height(Length::Units(100))
+                    .style(ContainerStyle::LightGrayCircle),
+            )
+            .push(Space::with_height(Length::Fill))
+            .push(
+                Button::new(&mut self.add_net_con, Icon::new('\u{f067}').size(24))
+                    .style(ButtonStyle::BigCircular(86, 101, 115, 1.0))
+                    .padding(10)
+                    .width(Length::Units(50))
+                    .height(Length::Units(50))
+                    .on_press(WireMsg::NetworkAdded),
+            )
+            .into()
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct NetSettings {
+    // Applicaiton State
+    general: (String, bool),
+    commonip: CommonIp,
+    security: Security,
+    wlan: Wlan,
+    // Application Ui State
+    // Security Part
+    host_name: text_input::State,
+    host_value: String,
+    is_auto_conn: bool,
+    is_custom_mtu: bool,
+    is_shown_passwd: bool,
+    is_shown_private_key: bool,
+    passwd: String,
+    passwd_name: text_input::State,
+    pick_list: pick_list::State<SecurityType>,
+    pick_list1: pick_list::State<PwdOption>,
+    pick_list3: pick_list::State<Authentication>,
+    pick_list4: pick_list::State<EAPAuth>,
+    pick_listip4: pick_list::State<Ip4Method>,
+    pick_listip6: pick_list::State<Ipv6Method>,
+    pick_listwlan: pick_list::State<DeviceMacAddr>,
+    selected_eapauth: EAPAuth,
+    selected_auth: Authentication,
+    selected_security: SecurityType,
+    selected_pwdoption: PwdOption,
+    selected_ip4: Ip4Method,
+    selected_ip6: Ipv6Method,
+    selected_wlan: DeviceMacAddr,
+    toggle_show_passwd: button::State,
+    identity: text_input::State,
+    identity_val: String,
+    private_pwd: text_input::State,
+    private_pwd_val: String,
+    private_key: text_input::State,
+    private_key_val: String,
+    ca_cert: text_input::State,
+    ca_cert_val: String,
+    user_cert: text_input::State,
+    user_cert_val: String,
+    private_pwd_file: button::State,
+    private_key_file: button::State,
+    ca_cert_file: button::State,
+    user_cert_file: button::State,
+    ip4_primary_dns_val: String,
+    ip4_primary_dns: text_input::State,
+    ip4_secondary_dns_val: String,
+    ip4_secondary_dns: text_input::State,
+    ip6_primary_dns_val: String,
+    ip6_primary_dns: text_input::State,
+    ip6_secondary_dns_val: String,
+    ip6_secondary_dns: text_input::State,
+    net_settings_scrolls: scrollable::State,
+
+    // Wlan
+    wlan_ssid: text_input::State,
+    wlan_ssid_val: String,
+    wlan_mtu_input: text_input::State,
+    wlan_mtu_input_val: String,
+    wlan_mtu_plus: button::State,
+    wlan_mtu_minus: button::State,
+    wlan_mtu_refresh: button::State,
+
+    save_btn: button::State,
+    cancel_btn: button::State,
+    btn_state: ButtonState,
+}
+
+enum IP {
+    IPV4,
+    IPV6,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ip4Method {
+    Auto,
+    Manual,
+}
+impl Default for Ip4Method {
+    fn default() -> Self {
+        Ip4Method::Auto
+    }
+}
+impl Ip4Method {
+    const ALL: [Ip4Method; 2] = [Ip4Method::Auto, Ip4Method::Manual];
+}
+
+impl fmt::Display for Ip4Method {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Ip4Method::Auto => "Auto",
+                Ip4Method::Manual => "Manual",
+            }
+        )
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ipv6Method {
+    Auto,
+    Manual,
+    Ignore,
+}
+impl Default for Ipv6Method {
+    fn default() -> Self {
+        Ipv6Method::Auto
+    }
+}
+impl Ipv6Method {
+    const ALL: [Ipv6Method; 3] = [Ipv6Method::Auto, Ipv6Method::Manual, Ipv6Method::Ignore];
+}
+impl fmt::Display for Ipv6Method {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Ipv6Method::Auto => "Auto",
+                Ipv6Method::Manual => "Manual",
+                Ipv6Method::Ignore => "Ignore",
+            }
+        )
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeviceMacAddr {
+    SOME,
+    NONE,
+}
+impl Default for DeviceMacAddr {
+    fn default() -> Self {
+        DeviceMacAddr::NONE
+    }
+}
+impl DeviceMacAddr {
+    const ALL: [DeviceMacAddr; 2] = [DeviceMacAddr::NONE, DeviceMacAddr::SOME];
+}
+impl fmt::Display for DeviceMacAddr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DeviceMacAddr::NONE => "Not Bind",
+                DeviceMacAddr::SOME => "30:3A:64:AD:2B:77 (wlan0)",
+            }
+        )
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+struct CommonIp {
+    Method: Vec<String>,
+    PrimaryDns: String,
+    SecondaryDns: String,
+}
+#[derive(Default, Debug, Clone)]
+struct Security {
+    Type: Vec<String>,
+    PwdOption: Vec<u8>,
+    Pwd: String,
+}
+
+#[derive(Default, Debug, Clone)]
+struct Wlan {
+    Ssid: String,
+    DevMacAddr: Option<String>,
+    CustomMtu: bool,
+}
+
+#[derive(Debug, Clone)]
+pub enum NetSettingsMsg {
+    HostChanged(String),
+    HostSubmit,
+    AutoConnMutated(bool),
+    LanguageSelected(SecurityType),
+    PwdOptionSelected(PwdOption),
+    PasswordInput(String),
+    ToggleShownPasswd,
+    AuthChanged(Authentication),
+    EAPAuthChanged(EAPAuth),
+    Ip4MethodChanged(Ip4Method),
+    Ip6MethodChanged(Ipv6Method),
+    IdentityChanged(String),
+    PrivatePwdChanged(String),
+    PrivateKeyChanged(String),
+    CaCertChanged(String),
+    UserCertChanged(String),
+    PrimaryDnsIp4(String),
+    SecondaryDnsIp4(String),
+    PrimaryDnsIp6(String),
+    SecondaryDnsIp6(String),
+    ToggleKey,
+    OpenFile1,
+    OpenFile2,
+    OpenFile3,
+    // WLAN
+    WlanSsidChanged(String),
+    DevMacAddrChanged(DeviceMacAddr),
+    CustomMtuChanged(bool),
+    WlanMtuInput(String),
+    WlanMtuPlus,
+    WlanMtuMinus,
+    WlanMtuRefresh,
+    OnSave,
+    OnCancel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SecurityType {
+    NONE,
+    WEP,
+    WPA_WPA2_PERSONAL,
+    WPA_WPA2_ENTERPRISE,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Authentication {
+    SharedKey,
+    OpenSystem,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PwdOption {
+    OneUser,
+    AllUser,
+    AskFirst,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EAPAuth {
+    TLS,
+    LEAP,
+    FAST,
+    TUNNELEDTLS,
+    PROTECTEDEAP,
+}
+#[derive(Debug, Clone)]
+pub enum ButtonState {
+    Disable,
+    Enable,
+}
+impl Default for ButtonState {
+    fn default() -> Self {
+        ButtonState::Disable
+    }
+}
+impl EAPAuth {
+    const ALL: [EAPAuth; 5] = [
+        EAPAuth::TLS,
+        EAPAuth::LEAP,
+        EAPAuth::FAST,
+        EAPAuth::TUNNELEDTLS,
+        EAPAuth::PROTECTEDEAP,
+    ];
+}
+impl Default for EAPAuth {
+    fn default() -> Self {
+        EAPAuth::TLS
+    }
+}
+
+impl fmt::Display for EAPAuth {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EAPAuth::TLS => "TLS",
+                EAPAuth::LEAP => "LEAP",
+                EAPAuth::FAST => "FAST",
+                EAPAuth::TUNNELEDTLS => "Tunneled TLS",
+                EAPAuth::PROTECTEDEAP => "Protected EAP",
+            }
+        )
+    }
+}
+impl Authentication {
+    const ALL: [Authentication; 2] = [Authentication::SharedKey, Authentication::OpenSystem];
+}
+impl Default for Authentication {
+    fn default() -> Self {
+        Authentication::SharedKey
+    }
+}
+impl fmt::Display for Authentication {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Authentication::SharedKey => "ShareKey",
+                Authentication::OpenSystem => "OpenSystem",
+            }
+        )
+    }
+}
+impl PwdOption {
+    const ALL: [PwdOption; 3] = [PwdOption::OneUser, PwdOption::AllUser, PwdOption::OneUser];
+}
+impl Default for PwdOption {
+    fn default() -> Self {
+        PwdOption::OneUser
+    }
+}
+impl fmt::Display for PwdOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                PwdOption::OneUser => "Save password for this user",
+                PwdOption::AllUser => "Save password for all users",
+                PwdOption::AskFirst => "Ask me always",
+            }
+        )
+    }
+}
+impl SecurityType {
+    const ALL: [SecurityType; 4] = [
+        SecurityType::NONE,
+        SecurityType::WEP,
+        SecurityType::WPA_WPA2_PERSONAL,
+        SecurityType::WPA_WPA2_ENTERPRISE,
+    ];
+}
+
+impl Default for SecurityType {
+    fn default() -> Self {
+        SecurityType::WPA_WPA2_PERSONAL
+    }
+}
+impl std::fmt::Display for SecurityType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SecurityType::NONE => "None",
+                SecurityType::WEP => "WEP",
+                SecurityType::WPA_WPA2_PERSONAL => "WPA/WPA2 Personal",
+                SecurityType::WPA_WPA2_ENTERPRISE => "WPA/WPA2 Enterprise",
+            }
+        )
+    }
+}
+
+fn default_text(text: &str) -> Text {
+    Text::new(text).size(16)
+}
+impl NetSettings {
+    fn new() -> Self {
+        Self {
+            is_shown_passwd: true,
+            is_custom_mtu: false,
+            wlan_mtu_input_val: "0".to_string(),
+            ..Self::default()
+        }
+    }
+
+    fn update(&mut self, msg: NetSettingsMsg) {
+        match msg {
+            NetSettingsMsg::HostChanged(name) => {
+                self.host_value = name;
+            }
+            NetSettingsMsg::HostSubmit => {}
+            NetSettingsMsg::AutoConnMutated(is_auto_conn) => {
+                self.is_auto_conn = is_auto_conn;
+            }
+            NetSettingsMsg::LanguageSelected(lang) => {
+                self.selected_security = lang;
+            }
+            NetSettingsMsg::PwdOptionSelected(opts) => {
+                self.selected_pwdoption = opts;
+            }
+            NetSettingsMsg::PasswordInput(password) => {
+                self.passwd = password;
+            }
+            NetSettingsMsg::ToggleShownPasswd => {
+                self.is_shown_passwd = !self.is_shown_passwd;
+            }
+            NetSettingsMsg::AuthChanged(auth) => {
+                self.selected_auth = auth;
+            }
+            NetSettingsMsg::EAPAuthChanged(eapauth) => {
+                self.selected_eapauth = eapauth;
+            }
+            NetSettingsMsg::IdentityChanged(identity) => {
+                self.identity_val = identity;
+            }
+            NetSettingsMsg::PrivatePwdChanged(ppwd) => {
+                self.private_pwd_val = ppwd;
+            }
+            NetSettingsMsg::PrivateKeyChanged(pkey) => {
+                self.private_key_val = pkey;
+            }
+            NetSettingsMsg::CaCertChanged(cacert) => {
+                self.ca_cert_val = cacert;
+            }
+            NetSettingsMsg::UserCertChanged(usercert) => {
+                self.user_cert_val = usercert;
+            }
+            NetSettingsMsg::Ip4MethodChanged(ip4) => {
+                self.selected_ip4 = ip4;
+            }
+            NetSettingsMsg::Ip6MethodChanged(ip6) => {
+                self.selected_ip6 = ip6;
+            }
+            NetSettingsMsg::PrimaryDnsIp4(ip4_dns_val) => {
+                self.ip4_primary_dns_val = ip4_dns_val;
+            }
+            NetSettingsMsg::SecondaryDnsIp4(ip4_second_val) => {
+                self.ip4_secondary_dns_val = ip4_second_val;
+            }
+            NetSettingsMsg::PrimaryDnsIp6(ip6_dns_val) => {
+                self.ip6_primary_dns_val = ip6_dns_val;
+            }
+            NetSettingsMsg::SecondaryDnsIp6(ip6_second_val) => {
+                self.ip6_secondary_dns_val = ip6_second_val;
+            }
+            NetSettingsMsg::ToggleKey => {
+                self.is_shown_private_key = !self.is_shown_private_key;
+            }
+            NetSettingsMsg::WlanSsidChanged(ssid) => {
+                self.wlan_ssid_val = ssid;
+            }
+            NetSettingsMsg::DevMacAddrChanged(dev_mac_addr) => {
+                self.selected_wlan = dev_mac_addr;
+            }
+            NetSettingsMsg::CustomMtuChanged(is_shown) => {
+                self.is_custom_mtu = is_shown;
+            }
+            NetSettingsMsg::OnCancel => {}
+            NetSettingsMsg::OnSave => {}
+            NetSettingsMsg::WlanMtuInput(mtu_val) => {
+                if mtu_val.len() <= 4 {
+                    match mtu_val.parse::<u32>() {
+                        Ok(_) => self.wlan_mtu_input_val = mtu_val,
+                        Err(e) => eprintln!("Error: {:?}", e),
+                    }
+                } else {
+                    {}
+                }
+            }
+            NetSettingsMsg::WlanMtuPlus => match self.wlan_mtu_input_val.parse::<u32>() {
+                Ok(data) => {
+                    if data <= 9999 {
+                        self.wlan_mtu_input_val = (data + 1).to_string()
+                    } else {
+                        {}
+                    }
+                }
+                Err(e) => eprintln!("Error: {:?}", e),
+            },
+
+            NetSettingsMsg::WlanMtuMinus => match self.wlan_mtu_input_val.parse::<u32>() {
+                Ok(data) => {
+                    if data > 0 {
+                        self.wlan_mtu_input_val = (data - 1).to_string()
+                    } else {
+                        {}
+                    }
+                }
+                Err(e) => eprintln!("Error: {:?}", e),
+            },
+            NetSettingsMsg::WlanMtuRefresh => {
+                self.wlan_mtu_input_val = "0".to_string();
+            }
+            NetSettingsMsg::OpenFile1 => {}
+            NetSettingsMsg::OpenFile2 => {}
+            NetSettingsMsg::OpenFile3 => {}
+        }
+    }
+    fn view(&mut self) -> Element<NetSettingsMsg> {
+        let NetSettings {
+            host_name,
+            host_value,
+            is_auto_conn,
+            passwd,
+            passwd_name,
+            identity,
+            identity_val,
+            private_pwd,
+            private_pwd_val,
+            private_key,
+            private_key_val,
+            ca_cert,
+            ca_cert_val,
+            user_cert,
+            user_cert_val,
+            private_pwd_file,
+            private_key_file,
+            ca_cert_file,
+            user_cert_file,
+            net_settings_scrolls,
+            ..
+        } = self;
+        let net_layout = Column::new();
+        let general = Column::new()
+            .spacing(10)
+            .push(Text::new("General").size(24))
+            .push(
+                Container::new(
+                    Column::new()
+                        .align_items(Align::Center)
+                        .spacing(10)
+                        .padding(10)
+                        .push(
+                            Row::new()
+                                .push(default_text("Name").width(Length::FillPortion(1)))
+                                .align_items(Align::Center)
+                                .push(
+                                    TextInput::new(
+                                        host_name,
+                                        "Koompi Attic",
+                                        host_value,
+                                        NetSettingsMsg::HostChanged,
+                                    )
+                                    .padding(6)
+                                    .style(InputStyle::InkBorder)
+                                    .width(Length::FillPortion(2))
+                                    .on_submit(NetSettingsMsg::HostSubmit),
+                                ),
+                        )
+                        .push(Rule::horizontal(4).style(RuleStyle {}))
+                        .push(
+                            Row::new()
+                                .push(default_text("Auto Connect"))
+                                .push(Space::with_width(Length::Fill))
+                                .push(Toggler::new(
+                                    *is_auto_conn,
+                                    "".to_string(),
+                                    NetSettingsMsg::AutoConnMutated,
+                                )),
+                        ),
+                )
+                .width(Length::Fill)
+                .style(ContainerStyle::LightGrayCircle),
+            );
+        let security = Column::new()
+            .spacing(10)
+            .push(Text::new("Security").size(24))
+            .push(
+                Container::new(
+                    Column::new()
+                        .align_items(Align::Center)
+                        .spacing(10)
+                        .padding(10)
+                        .push(
+                            Row::new()
+                                .push(default_text("Security").width(Length::FillPortion(1)))
+                                .align_items(Align::Center)
+                                .push(
+                                    PickList::new(
+                                        &mut self.pick_list,
+                                        &SecurityType::ALL[..],
+                                        Some(self.selected_security),
+                                        NetSettingsMsg::LanguageSelected,
+                                    )
+                                    .text_size(16)
+                                    .style(PickListStyle {})
+                                    .padding(6)
+                                    .width(Length::FillPortion(2)),
+                                )
+                                .width(Length::FillPortion(3)),
+                        )
+                        .push(match self.selected_security {
+                            SecurityType::NONE => {
+                                Container::new(Space::with_height(Length::Units(0)))
+                            }
+                            SecurityType::WEP => Container::new(
+                                Column::new()
+                                    .push(
+                                        Row::new()
+                                            .push(
+                                                default_text("Pwd Options")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .align_items(Align::Center)
+                                            .push(
+                                                PickList::new(
+                                                    &mut self.pick_list1,
+                                                    &PwdOption::ALL[..],
+                                                    Some(self.selected_pwdoption),
+                                                    NetSettingsMsg::PwdOptionSelected,
+                                                )
+                                                .text_size(16)
+                                                .style(PickListStyle {})
+                                                .padding(6)
+                                                .width(Length::FillPortion(2)),
+                                            ),
+                                    )
+                                    .push(Rule::horizontal(10).style(RuleStyle {}))
+                                    .push(
+                                        Row::new()
+                                            .align_items(Align::Center)
+                                            .push(default_text("Key").width(Length::FillPortion(1)))
+                                            .spacing(4)
+                                            .push(if self.is_shown_passwd {
+                                                TextInput::new(
+                                                    passwd_name,
+                                                    "Required",
+                                                    passwd,
+                                                    NetSettingsMsg::PasswordInput,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            } else {
+                                                TextInput::new(
+                                                    passwd_name,
+                                                    "Required",
+                                                    passwd,
+                                                    NetSettingsMsg::PasswordInput,
+                                                )
+                                                .password()
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            })
+                                            .push(
+                                                Button::new(
+                                                    &mut self.toggle_show_passwd,
+                                                    Icon::new(if self.is_shown_passwd {
+                                                        '\u{f06e}'
+                                                    } else {
+                                                        '\u{f070}'
+                                                    }),
+                                                )
+                                                .style(ButtonStyle::Circular(86, 101, 115, 1.0))
+                                                .on_press(NetSettingsMsg::ToggleShownPasswd),
+                                            ),
+                                    )
+                                    .push(Rule::horizontal(10).style(RuleStyle {}))
+                                    .push(
+                                        Row::new()
+                                            .align_items(Align::Center)
+                                            .push(
+                                                default_text("Authentication")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(
+                                                PickList::new(
+                                                    &mut self.pick_list3,
+                                                    &Authentication::ALL[..],
+                                                    Some(self.selected_auth),
+                                                    NetSettingsMsg::AuthChanged,
+                                                )
+                                                .text_size(16)
+                                                .style(PickListStyle {})
+                                                .padding(6)
+                                                .width(Length::FillPortion(2)),
+                                            ),
+                                    ),
+                            ),
+                            SecurityType::WPA_WPA2_PERSONAL => Container::new(
+                                Column::new()
+                                    .spacing(10)
+                                    .push(
+                                        Row::new()
+                                            .push(
+                                                default_text("Pwd Options")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .align_items(Align::Center)
+                                            .push(
+                                                PickList::new(
+                                                    &mut self.pick_list1,
+                                                    &PwdOption::ALL[..],
+                                                    Some(self.selected_pwdoption),
+                                                    NetSettingsMsg::PwdOptionSelected,
+                                                )
+                                                .text_size(16)
+                                                .style(PickListStyle {})
+                                                .padding(6)
+                                                .width(Length::FillPortion(2)),
+                                            ),
+                                    )
+                                    .push(Rule::horizontal(10).style(RuleStyle {}))
+                                    .push(
+                                        Row::new()
+                                            .align_items(Align::Center)
+                                            .push(
+                                                default_text("Password")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .spacing(4)
+                                            .push(if self.is_shown_passwd {
+                                                TextInput::new(
+                                                    passwd_name,
+                                                    "Required",
+                                                    passwd,
+                                                    NetSettingsMsg::PasswordInput,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            } else {
+                                                TextInput::new(
+                                                    passwd_name,
+                                                    "Required",
+                                                    passwd,
+                                                    NetSettingsMsg::PasswordInput,
+                                                )
+                                                .password()
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            })
+                                            .push(
+                                                Button::new(
+                                                    &mut self.toggle_show_passwd,
+                                                    Icon::new(if self.is_shown_passwd {
+                                                        '\u{f06e}'
+                                                    } else {
+                                                        '\u{f070}'
+                                                    }),
+                                                )
+                                                .style(ButtonStyle::Circular(65, 203, 126, 1.0))
+                                                .on_press(NetSettingsMsg::ToggleShownPasswd),
+                                            ),
+                                    ),
+                            ),
+                            SecurityType::WPA_WPA2_ENTERPRISE => Container::new(
+                                Column::new()
+                                    .padding(10)
+                                    .spacing(10)
+                                    .push(
+                                        Row::new().push(
+                                            PickList::new(
+                                                &mut self.pick_list4,
+                                                &EAPAuth::ALL[..],
+                                                Some(self.selected_eapauth),
+                                                NetSettingsMsg::EAPAuthChanged,
+                                            )
+                                            .text_size(16)
+                                            .style(PickListStyle {})
+                                            .padding(6)
+                                            .width(Length::FillPortion(2)),
+                                        ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .push(
+                                                default_text("Pwd Options")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .align_items(Align::Center)
+                                            .push(
+                                                PickList::new(
+                                                    &mut self.pick_list1,
+                                                    &PwdOption::ALL[..],
+                                                    Some(self.selected_pwdoption),
+                                                    NetSettingsMsg::PwdOptionSelected,
+                                                )
+                                                .text_size(16)
+                                                .style(PickListStyle {})
+                                                .padding(6)
+                                                .width(Length::FillPortion(2)),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .push(
+                                                default_text("Identity")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(
+                                                TextInput::new(
+                                                    identity,
+                                                    "Required",
+                                                    identity_val,
+                                                    NetSettingsMsg::IdentityChanged,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2)),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .spacing(4)
+                                            .push(
+                                                default_text("Private Pwd")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(if self.is_shown_private_key {
+                                                TextInput::new(
+                                                    private_pwd,
+                                                    "Required",
+                                                    private_pwd_val,
+                                                    NetSettingsMsg::PrivatePwdChanged,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            } else {
+                                                TextInput::new(
+                                                    private_pwd,
+                                                    "Required",
+                                                    private_pwd_val,
+                                                    NetSettingsMsg::PrivatePwdChanged,
+                                                )
+                                                .password()
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2))
+                                            })
+                                            .push(
+                                                Button::new(
+                                                    private_pwd_file,
+                                                    Icon::new(if self.is_shown_private_key {
+                                                        '\u{f06e}'
+                                                    } else {
+                                                        '\u{f070}'
+                                                    }),
+                                                )
+                                                .on_press(NetSettingsMsg::ToggleKey),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .spacing(4)
+                                            .push(
+                                                default_text("Private Key")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(
+                                                TextInput::new(
+                                                    private_key,
+                                                    "",
+                                                    private_key_val,
+                                                    NetSettingsMsg::PrivateKeyChanged,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2)),
+                                            )
+                                            .push(
+                                                Button::new(
+                                                    private_key_file,
+                                                    Icon::new('\u{f0c6}'),
+                                                )
+                                                .on_press(NetSettingsMsg::OpenFile1)
+                                                .style(ButtonStyle::Circular(86, 101, 115, 1.0)),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .spacing(4)
+                                            .push(
+                                                default_text("CA Cert")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(
+                                                TextInput::new(
+                                                    ca_cert,
+                                                    "",
+                                                    ca_cert_val,
+                                                    NetSettingsMsg::CaCertChanged,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2)),
+                                            )
+                                            .push(
+                                                Button::new(ca_cert_file, Icon::new('\u{f0c6}'))
+                                                    .on_press(NetSettingsMsg::OpenFile2)
+                                                    .style(ButtonStyle::Circular(
+                                                        86, 101, 115, 1.0,
+                                                    )),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .spacing(4)
+                                            .push(
+                                                default_text("User Cert")
+                                                    .width(Length::FillPortion(1)),
+                                            )
+                                            .push(
+                                                TextInput::new(
+                                                    user_cert,
+                                                    "",
+                                                    user_cert_val,
+                                                    NetSettingsMsg::UserCertChanged,
+                                                )
+                                                .padding(6)
+                                                .style(InputStyle::InkBorder)
+                                                .width(Length::FillPortion(2)),
+                                            )
+                                            .push(
+                                                Button::new(user_cert_file, Icon::new('\u{f0c6}'))
+                                                    .on_press(NetSettingsMsg::OpenFile3)
+                                                    .style(ButtonStyle::Circular(
+                                                        86, 101, 115, 1.0,
+                                                    )),
+                                            ),
+                                    ),
+                            )
+                            .width(Length::Fill),
+                        }),
+                )
+                .style(ContainerStyle::LightGrayCircle)
+                .width(Length::Fill),
+            );
+        let ipv4 = Container::new(
+            Column::new()
+                .spacing(10)
+                .push(Text::new("IPv4").size(24))
+                .push(
+                    Container::new(
+                        Column::new()
+                            .padding(10)
+                            .spacing(10)
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("Method"))
+                                    .push(
+                                        PickList::new(
+                                            &mut self.pick_listip4,
+                                            &Ip4Method::ALL[..],
+                                            Some(self.selected_ip4),
+                                            NetSettingsMsg::Ip4MethodChanged,
+                                        )
+                                        .text_size(16)
+                                        .style(PickListStyle {})
+                                        .padding(6)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("Primary DNS").width(Length::FillPortion(1)))
+                                    .push(
+                                        TextInput::new(
+                                            &mut self.ip4_primary_dns,
+                                            "",
+                                            &self.ip4_primary_dns_val,
+                                            NetSettingsMsg::PrimaryDnsIp4,
+                                        )
+                                        .padding(6)
+                                        .style(InputStyle::InkBorder)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(
+                                        default_text("Secondary DNS").width(Length::FillPortion(1)),
+                                    )
+                                    .push(
+                                        TextInput::new(
+                                            &mut self.ip4_secondary_dns,
+                                            "",
+                                            &self.ip4_secondary_dns_val,
+                                            NetSettingsMsg::SecondaryDnsIp4,
+                                        )
+                                        .padding(6)
+                                        .style(InputStyle::InkBorder)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            ),
+                    )
+                    .style(ContainerStyle::LightGrayCircle),
+                ),
+        );
+        let ipv6 = Container::new(
+            Column::new()
+                .spacing(10)
+                .push(Text::new("IPv4").size(24))
+                .push(
+                    Container::new(
+                        Column::new()
+                            .padding(10)
+                            .spacing(10)
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("Method"))
+                                    .push(
+                                        PickList::new(
+                                            &mut self.pick_listip6,
+                                            &Ipv6Method::ALL[..],
+                                            Some(self.selected_ip6),
+                                            NetSettingsMsg::Ip6MethodChanged,
+                                        )
+                                        .text_size(16)
+                                        .style(PickListStyle {})
+                                        .padding(6)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("Primary DNS").width(Length::FillPortion(1)))
+                                    .push(
+                                        TextInput::new(
+                                            &mut self.ip6_primary_dns,
+                                            "",
+                                            &self.ip6_primary_dns_val,
+                                            NetSettingsMsg::PrimaryDnsIp6,
+                                        )
+                                        .padding(6)
+                                        .style(InputStyle::InkBorder)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(
+                                        default_text("Secondary DNS").width(Length::FillPortion(1)),
+                                    )
+                                    .push(
+                                        TextInput::new(
+                                            &mut self.ip6_secondary_dns,
+                                            "",
+                                            &self.ip6_secondary_dns_val,
+                                            NetSettingsMsg::SecondaryDnsIp6,
+                                        )
+                                        .padding(6)
+                                        .style(InputStyle::InkBorder)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            ),
+                    )
+                    .style(ContainerStyle::LightGrayCircle),
+                ),
+        );
+        let wlan = Column::new().push(
+            Column::new()
+                .spacing(10)
+                .push(Text::new("WLAN").size(24))
+                .push(
+                    Container::new(
+                        Column::new()
+                            .spacing(10)
+                            .padding(10)
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("SSID").width(Length::FillPortion(1)))
+                                    .push(
+                                        TextInput::new(
+                                            &mut self.wlan_ssid,
+                                            "",
+                                            &self.wlan_ssid_val,
+                                            NetSettingsMsg::WlanSsidChanged,
+                                        )
+                                        .padding(6)
+                                        .style(InputStyle::InkBorder)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(
+                                        default_text("Device Mac Address")
+                                            .width(Length::FillPortion(1)),
+                                    )
+                                    .push(
+                                        PickList::new(
+                                            &mut self.pick_listwlan,
+                                            &DeviceMacAddr::ALL[..],
+                                            Some(self.selected_wlan),
+                                            NetSettingsMsg::DevMacAddrChanged,
+                                        )
+                                        .text_size(16)
+                                        .style(PickListStyle {})
+                                        .padding(6)
+                                        .width(Length::FillPortion(2)),
+                                    ),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(
+                                Row::new()
+                                    .align_items(Align::Center)
+                                    .push(default_text("Customize MTU"))
+                                    .push(Space::with_width(Length::Fill))
+                                    .push(Toggler::new(
+                                        self.is_custom_mtu,
+                                        String::from(""),
+                                        NetSettingsMsg::CustomMtuChanged,
+                                    )),
+                            )
+                            .push(Rule::horizontal(10).style(RuleStyle {}))
+                            .push(if self.is_custom_mtu {
+                                Container::new(
+                                    Row::new()
+                                        .padding(10)
+                                        .spacing(4)
+                                        .align_items(Align::Center)
+                                        .push(default_text("MTU").width(Length::FillPortion(1)))
+                                        .push(
+                                            Row::new()
+                                                .spacing(10)
+                                                .width(Length::FillPortion(3))
+                                                .push(
+                                                    TextInput::new(
+                                                        &mut self.wlan_mtu_input,
+                                                        "",
+                                                        &self.wlan_mtu_input_val,
+                                                        NetSettingsMsg::WlanMtuInput,
+                                                    )
+                                                    .padding(6)
+                                                    .style(InputStyle::InkBorder)
+                                                    .width(Length::FillPortion(2)),
+                                                )
+                                                .push(
+                                                    Button::new(
+                                                        &mut self.wlan_mtu_plus,
+                                                        Icon::new('\u{f067}'),
+                                                    )
+                                                    .on_press(NetSettingsMsg::WlanMtuPlus)
+                                                    .style(ButtonStyle::Circular(
+                                                        215, 219, 221, 0.5,
+                                                    )),
+                                                )
+                                                .push(
+                                                    Button::new(
+                                                        &mut self.wlan_mtu_minus,
+                                                        Icon::new('\u{f068}'),
+                                                    )
+                                                    .on_press(NetSettingsMsg::WlanMtuMinus)
+                                                    .style(ButtonStyle::Circular(
+                                                        215, 219, 221, 0.5,
+                                                    )),
+                                                )
+                                                .push(
+                                                    Button::new(
+                                                        &mut self.wlan_mtu_refresh,
+                                                        Icon::new('\u{f2f9}'),
+                                                    )
+                                                    .on_press(NetSettingsMsg::WlanMtuRefresh)
+                                                    .style(ButtonStyle::Circular(
+                                                        215, 219, 221, 0.5,
+                                                    )),
+                                                ),
+                                        ),
+                                )
+                            } else {
+                                Container::new(Space::with_height(Length::Shrink))
+                            }),
+                    )
+                    .style(ContainerStyle::LightGrayCircle),
+                ),
+        );
+        let network_scroll = Scrollable::new(net_settings_scrolls).push(
+            net_layout
+                .spacing(20)
+                .push(general)
+                .push(security)
+                .push(ipv4)
+                .push(ipv6)
+                .push(wlan),
+        );
+        let whole_settings = Column::new()
+            .push(
+                network_scroll
+                    .padding(20)
+                    .scroller_width(4)
+                    .scrollbar_width(4),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("Hello wrold"))
+                    .width(Length::Fill)
+                    .height(Length::Units(100))
+                    .spacing(4)
+                    .align_items(Align::Center)
+                    .push(match self.btn_state {
+                        ButtonState::Enable => Button::new(
+                            &mut self.cancel_btn,
+                            Text::new("Cancel")
+                                .vertical_alignment(VerticalAlignment::Center)
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .width(Length::Fill)
+                        .padding(6)
+                        .style(ButtonStyle::BigCircular(86, 101, 115, 1.0))
+                        .on_press(NetSettingsMsg::OnCancel),
+                        ButtonState::Disable => Button::new(
+                            &mut self.cancel_btn,
+                            Text::new("Cancel")
+                                .vertical_alignment(VerticalAlignment::Center)
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .width(Length::Fill)
+                        .padding(6)
+                        .style(ButtonStyle::BigCircular(86, 101, 115, 1.0)),
+                    })
+                    .push(match self.btn_state {
+                        ButtonState::Enable => Button::new(
+                            &mut self.save_btn,
+                            Text::new("Save")
+                                .vertical_alignment(VerticalAlignment::Center)
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .width(Length::Fill)
+                        .padding(6)
+                        .style(ButtonStyle::BigCircular(86, 101, 115, 1.0))
+                        .on_press(NetSettingsMsg::OnSave),
+                        ButtonState::Disable => Button::new(
+                            &mut self.save_btn,
+                            Text::new("Save")
+                                .vertical_alignment(VerticalAlignment::Center)
+                                .horizontal_alignment(HorizontalAlignment::Center),
+                        )
+                        .width(Length::Fill)
+                        .padding(6)
+                        .style(ButtonStyle::BigCircular(86, 101, 115, 1.0)),
+                    }),
+            );
+        Container::new(whole_settings)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_connection() {}
+}
+
+// helper functions
+// fn apply_row<'a, F>(
+//     name: &str,
+//     input: &'a mut text_input::State,
+//     value: &'a str,
+//     f: F,
+// ) -> Element<'a, UserInfomsg>
+// where
+//     F: Fn(String) -> UserInfomsg + 'static,
+// {
+//     if name.eq_ignore_ascii_case("password") || name.eq_ignore_ascii_case("confirm") {
+//         Row::new()
+//             .align_items(Align::Center)
+//             .push(Text::new(name).size(FONT_SIZE).width(Length::Units(100)))
+//             .push(
+//                 TextInput::new(input, "", &value, f)
+//                     .password()
+//                     .size(FONT_SIZE)
+//                     .padding(10),
+//             )
+//             .into()
+//     } else {
+//         Row::new()
+//             .align_items(Align::Center)
+//             .push(Text::new(name).size(FONT_SIZE).width(Length::Units(100)))
+//             .push(
+//                 TextInput::new(input, "", &value, f)
+//                     .size(FONT_SIZE)
+//                     .padding(10),
+//             )
+//             .into()
+//     }
+// }
