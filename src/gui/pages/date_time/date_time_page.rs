@@ -361,13 +361,11 @@ impl DateTimePage {
         let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center).push(btn_defaults).push(btn_reset).push(Space::with_width(Length::Fill)).push(btn_ok);
         let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
-        // មាតិកា
-        let content = Column::new()
-            .width(Length::Fill)
-            .align_items(Align::Center)
-            .push(tabbar_sec)
-            .push(tabview.height(Length::Fill).padding(20).style(CustomContainer::ForegroundGray))
-            .push(bottom_section);
+      // មាតិកា
+      let content = Column::new().width(Length::Fill).align_items(Align::Center)
+         .push(tabbar_sec)
+         .push(tabview.height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
+         .push(bottom_section);
 
         Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
     }

@@ -122,43 +122,46 @@ pub enum CustomContainer {
 }
 
 impl container::StyleSheet for CustomContainer {
-    fn style(&self) -> container::Style {
-        use CustomContainer::*;
-        container::Style {
-            background: Some(
-                match self {
-                    Background | Header => BACKGROUND,
-                    ForegroundWhite => Color::WHITE,
-                    ForegroundGray | Segment => FOREGROUND,
-                    Hovered => Color { a: 0.2, ..Color::BLACK },
-                    FadedBrightForeground => Color { a: 0.8, ..FOREGROUND },
-                    Primary => Color { a: 0.7, ..ACCENT },
-                    Success => SUCCESS,
-                    Warning => WARNING,
-                    Transparent(color) => Color { a: 0.3, ..(*color) },
-                }
-                .into(),
-            ),
-            border_radius: match self {
-                Segment => 10.0,
-                ForegroundGray | Hovered => 7.0,
-                FadedBrightForeground => 4.0,
-                Success | Warning | Primary => 5.0,
-                _ => 0.0,
+   fn style(&self) -> container::Style {
+      use CustomContainer::*;
+      container::Style {
+         background: Some(match self {
+            Background | Header => BACKGROUND,
+            ForegroundWhite => Color::WHITE,
+            ForegroundGray | Segment => FOREGROUND,
+            Hovered => Color {
+               a: 0.2,
+               ..Color::BLACK
             },
-            border_width: match self {
-                Header | Segment => 1.0,
-                Primary => 0.5,
-                _ => 0.0,
+            FadedBrightForeground => Color {
+               a: 0.8,
+               ..FOREGROUND
             },
-            border_color: match self {
-                Header => Color::TRANSPARENT,
-                Primary => Color::BLACK,
-                _ => BACKGROUND,
-            },
-            ..container::Style::default()
-        }
-    }
+            Primary => Color { a: 0.7, ..ACCENT },
+            Success => SUCCESS,
+            Warning => WARNING,
+            Transparent(color) => Color { a: 0.35, ..(*color) }
+         }.into()),
+         border_radius: match self {
+            Segment => 10.0,
+            ForegroundGray | Hovered => 7.0,
+            FadedBrightForeground => 4.0,
+            Success | Warning | Primary => 5.0,
+            _ => 0.0,
+         },
+         border_width: match self {
+            Header | Segment => 1.0,
+            Primary => 0.5,
+            _ => 0.0,
+         },
+         border_color: match self {
+            Header => Color::TRANSPARENT,
+            Primary => Color::BLACK,
+            _ => BACKGROUND,
+         },
+         ..container::Style::default()
+      }
+   }
 }
 
 pub enum CustomTextInput {

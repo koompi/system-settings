@@ -1,12 +1,17 @@
+use iced::{
+   text_input, button, pick_list, TextInput, PickList, Text, Container, Length, Column, Row, Align, Space, Element,
+};
+use libkoompi::{
+   system_settings::users_groups::{User, MAX_UID, MIN_UID}, helpers::to_account_name,
+};
+use crate::gui::styles::{CustomTextInput, CustomButton, CustomSelect, CustomContainer, FOREGROUND};
 use crate::gui::addon_widgets::icon_btn;
-use crate::gui::styles::{CustomButton, CustomSelect, CustomTextInput};
-use iced::{button, pick_list, text_input, Align, Column, Container, Element, Length, PickList, Row, Space, Text, TextInput};
-use iced_custom_widget::{number_input, NumberInput};
-use libkoompi::system_settings::users_groups::User;
+use iced_custom_widget::{number_input, NumberInput, Stack};
 
 #[derive(Debug, Default)]
 pub struct ChangeInfoPage {
    login_shells: Vec<String>,
+   is_curr_usr: bool,
    uid_state: number_input::State,
    uid: u16,
    groupname_state: text_input::State,
@@ -49,10 +54,9 @@ pub struct UserReq {
 }
 
 impl ChangeInfoPage {
-   pub fn new(user: &User, groupname: Option<&String>, login_shells: Vec<String>) -> Self {
+   pub fn new(user: &User, is_curr_usr: bool, groupname: Option<&String>, login_shells: Vec<String>) -> Self {
       Self {
-         login_shells,
-         uid: user.uid(),
+         login_shells, is_curr_usr, uid: user.uid(),
          groupname: groupname.unwrap_or(&String::default()).to_string(),
          username: user.username().clone(),
          fullname: user.fullname().clone(),
@@ -75,24 +79,24 @@ impl ChangeInfoPage {
       use nfd2::Response;
       use ChangeInfoMsg::*;
       let mut has_changed = true;
+
       match msg {
          UIDChanged(val) => self.uid = val,
-         GroupNameChanged(val) => self.groupname = val,
+         GroupNameChanged(val) => self.groupname = to_account_name(&val),
          FullNameChanged(val) => self.fullname = val,
-         UserNameChanged(val) => self.username = val,
+         UserNameChanged(val) => self.username = to_account_name(&val),
          LoginShellChanged(val) => self.login_shell = Some(val),
          HomeDirChanged(val) => self.home_dir = val,
          BrowseClicked => {
             if let Ok(res) = nfd2::open_file_dialog(None, Some(std::path::Path::new(&self.home_dir))) {
                match res {
                   Response::Okay(file_path) => self.home_dir = file_path.into_os_string().into_string().unwrap(),
-                  // Response::Cancel => has_changed = false,
-                  _ => has_changed = false,
+                  _ => has_changed = false
                }
             } else {
                has_changed = false
             }
-         }
+         },
          CancelClicked | OkayClicked(_) => has_changed = false,
       }
       self.is_changed = has_changed;
@@ -101,46 +105,45 @@ impl ChangeInfoPage {
    pub fn view(&mut self) -> Element<ChangeInfoMsg> {
       use ChangeInfoMsg::*;
       let Self {
-         uid_state,
-         uid,
-         fullname_state,
-         fullname,
-         username_state,
-         username,
-         login_shell_state,
-         login_shell,
-         home_dir_state,
-         home_dir,
-         groupname_state,
-         groupname,
-         btn_browse_home_dir,
-         btn_ok_state,
-         btn_cancel_state,
-         login_shells,
-         ..
+         uid_state, uid, fullname_state, fullname, username_state, username, login_shell_state, login_shell, 
+         home_dir_state, home_dir, groupname_state, groupname, btn_browse_home_dir, btn_ok_state, btn_cancel_state, login_shells, ..
       } = self;
+      
       let lb_user_id = Text::new("User ID");
       let lb_fullname = Text::new("Full Name:");
       let lb_username = Text::new("User Name:");
       let lb_group_name = Text::new("Group Name:");
       let lb_login_shell = Text::new("Login Shell:");
       let lb_home_dir = Text::new("Home Directory:");
-      let lb_sec = Column::new().spacing(20).push(lb_user_id).push(lb_fullname).push(lb_username).push(lb_group_name).push(lb_login_shell).push(lb_home_dir);
-      let txt_user_id = NumberInput::new(uid_state, *uid, 2000, UIDChanged).min(1000);
+      let lb_sec = Column::new().spacing(20).push(lb_user_id).push(lb_fullname).push(lb_username)
+         .push(lb_group_name).push(lb_login_shell).push(lb_home_dir);
+
+      let txt_user_id = NumberInput::new(uid_state, *uid, MAX_UID, UIDChanged).min(MIN_UID);
       let txt_fullname = TextInput::new(fullname_state, "", &fullname, FullNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let txt_username = TextInput::new(username_state, "", &username, UserNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let txt_group_name = TextInput::new(groupname_state, "", &groupname, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let pl_login_shell = PickList::new(login_shell_state, login_shells.clone(), login_shell.clone(), LoginShellChanged).style(CustomSelect::Primary);
-      let txt_home_dir = TextInput::new(home_dir_state, "", &home_dir, HomeDirChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
-      let btn_browse_home = icon_btn(btn_browse_home_dir, '\u{f07b}', "Browse", None).on_press(BrowseClicked).style(CustomButton::Default);
-      let info_sec = Column::new()
-         .spacing(7)
-         .push(txt_user_id)
-         .push(txt_fullname)
-         .push(txt_username)
-         .push(txt_group_name)
-         .push(pl_login_shell)
-         .push(Row::new().spacing(5).align_items(Align::Center).push(txt_home_dir).push(btn_browse_home));
+      let txt_home_dir = TextInput::new(home_dir_state, "", &home_dir, HomeDirChanged).padding(7).style(CustomTextInput::Default);
+      let mut btn_browse_home = icon_btn(btn_browse_home_dir, '\u{f07b}', "Browse", None).style(CustomButton::Default);
+      if !self.is_curr_usr {
+         btn_browse_home = btn_browse_home.on_press(BrowseClicked);
+      }
+      let sec_home_dir = Row::new().spacing(10).align_items(Align::Center).push(txt_home_dir).push(btn_browse_home);
+      
+      let (sec_uid, sec_usrname, sec_home_dir): (Element<_>, Element<_>, Element<_>) = if !self.is_curr_usr {
+         (txt_user_id.into(), txt_username.into(), sec_home_dir.into())
+      } else {
+         let txt_uid = Stack::new().push(txt_user_id, None)
+            .push(Container::new(Row::new()).width(Length::Units(120)).height(Length::Units(25)).style(CustomContainer::Transparent(FOREGROUND)), None);
+         let txt_usrname = Stack::new().push(txt_username, None)
+            .push(Container::new(Row::new()).width(Length::Fill).height(Length::Units(27)).style(CustomContainer::Transparent(FOREGROUND)), None);
+         let sec_home_dir = Stack::new().push(sec_home_dir, None)
+            .push(Container::new(Row::new()).width(Length::Fill).height(Length::Units(27)).style(CustomContainer::Transparent(FOREGROUND)), None);
+         (txt_uid.into(), txt_usrname.into(), sec_home_dir.into())
+      };
+
+      let info_sec = Column::new().spacing(7).push(sec_uid).push(txt_fullname).push(sec_usrname).push(txt_group_name)
+         .push(pl_login_shell).push(sec_home_dir);
 
       let mut btn_okay = icon_btn(btn_ok_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
       let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
@@ -159,17 +162,19 @@ impl ChangeInfoPage {
       }
 
       Container::new(
-         Column::new()
-            .width(Length::Fill)
-            .padding(20)
-            .spacing(10)
-            .align_items(Align::Center)
-            .push(Row::new().spacing(10).width(Length::Units(400)).align_items(Align::Center).push(lb_sec).push(info_sec))
-            .push(Space::with_height(Length::Fill))
-            .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_okay)),
-      )
-      .width(Length::FillPortion(7))
-      .height(Length::Fill)
-      .into()
+         Column::new().width(Length::Fill).padding(20).spacing(10).align_items(Align::Center)
+         .push(
+            Row::new().spacing(10).width(Length::Units(400)).align_items(Align::Center)
+            .push(lb_sec)
+            .push(info_sec)
+         )
+         .push(Space::with_height(Length::Fill))
+         .push(
+            Row::new().spacing(10).align_items(Align::Center)
+            .push(Space::with_width(Length::Fill))
+            .push(btn_cancel)
+            .push(btn_okay)
+         )
+      ).width(Length::FillPortion(7)).height(Length::Fill).into()
    }
 }
