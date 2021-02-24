@@ -1,6 +1,5 @@
-use crate::gui::styles::{containers::ContainerStyle, picklist::PickListStyle, sliders::SliderStyle};
-use iced::{button, pick_list, slider, Align, Button, Column, Container, Element, HorizontalAlignment, Length, PickList, Row, Slider, Space, Text, VerticalAlignment};
-use iced_custom_widget as icw;
+use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle, picklist::PickListStyle, sliders::SliderStyle};
+use iced::{button, pick_list, slider, Align, Button, Column, Container, Element, Font, HorizontalAlignment, Length, PickList, Row, Slider, Space, Text};
 use libkoompi::system_settings::sounds::controllers::{AppControl, DeviceControl, SinkController, SourceController};
 use libkoompi::system_settings::SoundCard;
 use std::fmt;
@@ -29,7 +28,6 @@ pub struct AudioTab {
     list_source_ports: Vec<InputPort>,
     list_sinks: Vec<(String, String)>,
     list_sources: Vec<(String, String)>,
-    list_sink_source: Vec<(String, String)>,
 }
 // pub fn list_devices(dev: &Vec::<>
 impl AudioTab {
@@ -168,9 +166,27 @@ impl AudioTab {
             AudioTabMsg::NotifyChanged(val) => self.notify_val = val,
             AudioTabMsg::OutputPortChanged(port) => self.select_output_pick = port,
             AudioTabMsg::InputPortChanged(port) => self.select_input_pick = port,
-            AudioTabMsg::SpeakerMute(is_mute) => self.is_speak_mute = is_mute,
-            AudioTabMsg::MicrophoneMute(is_mute) => self.is_headset_mute = is_mute,
-            AudioTabMsg::NotificationMute(is_mute) => self.is_notification_mute = is_mute,
+            AudioTabMsg::SpeakerMute => {
+                self.is_speak_mute = !self.is_speak_mute;
+                for dev in &self.list_sinks {
+                    match self.sink_input.set_app_mute_by_name(&dev.0, if self.is_speak_mute { true } else { false }) {
+                        Ok(_) => {}
+                        Err(e) => println!("Error: {:?}", e),
+                    }
+                }
+            }
+            AudioTabMsg::MicrophoneMute => {
+                self.is_headset_mute = !self.is_headset_mute;
+                for dev in &self.list_sources {
+                    match self.source_output.set_app_mute_by_name(&dev.0, if self.is_headset_mute { true } else { false }) {
+                        Ok(_) => {}
+                        Err(e) => println!("Error: {:?}", e),
+                    }
+                }
+            }
+            AudioTabMsg::NotificationMute => {
+                self.is_notification_mute = !self.is_notification_mute;
+            }
         }
     }
     pub fn view(&mut self) -> Element<AudioTabMsg> {
@@ -195,7 +211,17 @@ impl AudioTab {
                     Row::new()
                         .spacing(10)
                         .align_items(Align::Center)
-                        .push(Slider::new(&mut self.output_slider, 0.0..=150.0, self.output_val, AudioTabMsg::OutputChanged).step(1.0).style(SliderStyle::Circle).width(Length::Fill))
+                        .push(
+                            Button::new(&mut self.speaker_mute, if self.is_speak_mute { speaker_icon_mute() } else { speaker_icon() })
+                                .on_press(AudioTabMsg::SpeakerMute)
+                                .style(ButtonStyle::Transparent),
+                        )
+                        .push(
+                            Slider::new(&mut self.output_slider, 0.0..=150.0, self.output_val, AudioTabMsg::OutputChanged)
+                                .step(1.0)
+                                .style(SliderStyle::Circle(10.0))
+                                .width(Length::Fill),
+                        )
                         .push(
                             Row::new().align_items(Align::Center).push(
                                 Row::new()
@@ -231,7 +257,12 @@ impl AudioTab {
                     Row::new()
                         .align_items(Align::Center)
                         .spacing(10)
-                        .push(Slider::new(&mut self.input_slider, 0.0..=150.0, self.input_val, AudioTabMsg::InputChanged).step(1.0).style(SliderStyle::Default).width(Length::Fill))
+                        .push(
+                            Button::new(&mut self.headset_mute, if self.is_headset_mute { microphone_icon_mute() } else { microphone_icon() })
+                                .on_press(AudioTabMsg::MicrophoneMute)
+                                .style(ButtonStyle::Transparent),
+                        )
+                        .push(Slider::new(&mut self.input_slider, 0.0..=150.0, self.input_val, AudioTabMsg::InputChanged).step(1.0).style(SliderStyle::Circle(10.0)).width(Length::Fill))
                         .push(
                             Row::new()
                                 .align_items(Align::Center)
@@ -254,9 +285,14 @@ impl AudioTab {
                         .align_items(Align::Center)
                         .spacing(10)
                         .push(
+                            Button::new(&mut self.notification_mute, if self.is_notification_mute { bell_icon_mute() } else { bell_icon() })
+                                .on_press(AudioTabMsg::NotificationMute)
+                                .style(ButtonStyle::Transparent),
+                        )
+                        .push(
                             Slider::new(&mut self.notification_slider, 0.0..=150.0, self.notify_val, AudioTabMsg::NotifyChanged)
                                 .step(1.0)
-                                .style(SliderStyle::Default)
+                                .style(SliderStyle::Circle(10.0))
                                 .width(Length::Fill),
                         )
                         .push(
@@ -295,9 +331,9 @@ pub enum AudioTabMsg {
     NotifyChanged(f64),
     OutputPortChanged(OutputPort),
     InputPortChanged(InputPort),
-    SpeakerMute(bool),
-    MicrophoneMute(bool),
-    NotificationMute(bool),
+    SpeakerMute,
+    MicrophoneMute,
+    NotificationMute,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -318,4 +354,34 @@ impl fmt::Display for InputPort {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.port)
     }
+}
+
+const ICONS: Font = Font::External {
+    name: "Line Awesome",
+    bytes: include_bytes!("../../../../assets/fonts/la-solid-900.woff"),
+};
+
+fn icon(unicode: char) -> Text {
+    Text::new(&unicode.to_string()).font(ICONS).width(Length::Units(20)).horizontal_alignment(HorizontalAlignment::Center).size(20)
+}
+
+fn speaker_icon() -> Text {
+    icon('\u{f028}')
+}
+fn speaker_icon_mute() -> Text {
+    icon('\u{f6a9}')
+}
+fn microphone_icon() -> Text {
+    icon('\u{f130}')
+}
+fn microphone_icon_mute() -> Text {
+    icon('\u{f131}')
+}
+
+fn bell_icon() -> Text {
+    icon('\u{f0f3}')
+}
+
+fn bell_icon_mute() -> Text {
+    icon('\u{f1f6}')
 }

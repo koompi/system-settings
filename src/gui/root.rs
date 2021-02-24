@@ -6,73 +6,73 @@ use iced::{button, executor, scrollable, text_input, window, Align, Application,
 use iced_custom_widget::{Grid, Icon};
 
 pub struct SystemSetting {
-   input_search: text_input::State,
-   search_text: String,
-   prefs: Vec<Pref>,
-   selected_pref: Option<usize>,
-   pages: Pages,
-   back_btn_state: button::State,
-   sidebar_scroll: scrollable::State,
-   scroll: scrollable::State,
+    input_search: text_input::State,
+    search_text: String,
+    prefs: Vec<Pref>,
+    selected_pref: Option<usize>,
+    pages: Pages,
+    back_btn_state: button::State,
+    sidebar_scroll: scrollable::State,
+    scroll: scrollable::State,
 }
 
 #[derive(Debug, Clone)]
 pub enum SystemMessage {
-   SearchChanged(String),
-   ActionSearch,
-   PrefMessage(usize, PrefMessage),
-   PagesMessage(PagesMessage),
-   NavigateBack,
+    SearchChanged(String),
+    ActionSearch,
+    PrefMessage(usize, PrefMessage),
+    PagesMessage(PagesMessage),
+    NavigateBack,
 }
 
 impl Application for SystemSetting {
-   type Executor = executor::Default;
-   type Message = SystemMessage;
-   type Flags = ();
+    type Executor = executor::Default;
+    type Message = SystemMessage;
+    type Flags = ();
 
-   fn new(_flags: ()) -> (Self, Command<Self::Message>) {
-      use Category::*;
-      let pref = |file_name: &str, name: &str, category: Category| Pref::new(format!("{}/assets/images/{}.svg", ROOT_PATH(), file_name), String::from(name), category);
-      let prefs = vec![
-         pref("window", "General", System),
-         pref("time", "Date & Time", System),
-         pref("language", "Language & Region", System),
-         pref("users", "Users & Groups", System),
-         pref("accessibility", "Accessibility", System),
-         pref("screen-saver", "Desktop & Screen Saver", System),
-         pref("notification", "Notifications", System),
-         pref("privacy", "Security & Privacy", System),
-         pref("update", "Software Update", System),
-         pref("network", "Network", Hardware),
-         pref("bluetooth", "Bluetooth", Hardware),
-         pref("sound", "Sound", Hardware),
-         pref("printer", "Printers & Scanners", Hardware),
-         pref("keyboard", "Keyboard", Hardware),
-         pref("touchpad", "Touchpad", Hardware),
-         pref("mouse", "Mouse", Hardware),
-         pref("display", "Display", Hardware),
-         pref("battery", "Battery", Hardware),
-         pref("sys-info", "System Info", Hardware),
-      ];
+    fn new(_flags: ()) -> (Self, Command<Self::Message>) {
+        use Category::*;
+        let pref = |file_name: &str, name: &str, category: Category| Pref::new(format!("{}/assets/images/{}.svg", ROOT_PATH(), file_name), String::from(name), category);
+        let prefs = vec![
+            pref("window", "General", System),
+            pref("time", "Date & Time", System),
+            pref("language", "Language & Region", System),
+            pref("users", "Users & Groups", System),
+            pref("accessibility", "Accessibility", System),
+            pref("screen-saver", "Desktop & Screen Saver", System),
+            pref("notification", "Notifications", System),
+            pref("privacy", "Security & Privacy", System),
+            pref("update", "Software Update", System),
+            pref("network", "Network", Hardware),
+            pref("bluetooth", "Bluetooth", Hardware),
+            pref("sound", "Sound", Hardware),
+            pref("printer", "Printers & Scanners", Hardware),
+            pref("keyboard", "Keyboard", Hardware),
+            pref("touchpad", "Touchpad", Hardware),
+            pref("mouse", "Mouse", Hardware),
+            pref("display", "Display", Hardware),
+            pref("battery", "Battery", Hardware),
+            pref("sys-info", "System Info", Hardware),
+        ];
 
-      (
-         Self {
-            input_search: text_input::State::new(),
-            search_text: String::new(),
-            prefs,
-            pages: Pages::new(),
-            selected_pref: None,
-            back_btn_state: button::State::new(),
-            sidebar_scroll: scrollable::State::new(),
-            scroll: scrollable::State::new(),
-         },
-         Command::none(),
-      )
-   }
+        (
+            Self {
+                input_search: text_input::State::new(),
+                search_text: String::new(),
+                prefs,
+                pages: Pages::new(),
+                selected_pref: None,
+                back_btn_state: button::State::new(),
+                sidebar_scroll: scrollable::State::new(),
+                scroll: scrollable::State::new(),
+            },
+            Command::none(),
+        )
+    }
 
-   fn title(&self) -> String {
-      self.pages.title().to_string()
-   }
+    fn title(&self) -> String {
+        self.pages.title().to_string()
+    }
 
    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
       match message {
@@ -106,9 +106,9 @@ impl Application for SystemSetting {
       Command::none()
    }
 
-   fn subscription(&self) -> Subscription<Self::Message> {
-      self.pages.subscription().map(Self::Message::PagesMessage)
-   }
+    fn subscription(&self) -> Subscription<Self::Message> {
+        self.pages.subscription().map(Self::Message::PagesMessage)
+    }
 
    fn view(&mut self) -> Element<Self::Message> {
       let search = TextInput::new(&mut self.input_search, "Search", &mut self.search_text, Self::Message::SearchChanged).padding(10).max_width(800).width(Length::Units(500)).size(17)
@@ -182,10 +182,10 @@ impl Application for SystemSetting {
 }
 
 impl SystemSetting {
-   pub fn init() -> iced::Result {
-      let image = image::open(format!("{}/assets/images/icon.png", ROOT_PATH())).expect("Failed to open icon path").into_rgba8();
-      let (width, height) = image.dimensions();
-      let rgba = image.into_raw();
+    pub fn init() -> iced::Result {
+        let image = image::open(format!("{}/assets/images/icon.png", ROOT_PATH())).expect("Failed to open icon path").into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
 
       SystemSetting::run(Settings {
          default_text_size: 13,

@@ -1,8 +1,6 @@
-use iced::{
-   text_input, TextInput, Text, button, Container, Length, Column, Row, Align, Space, Element,
-};
-use crate::gui::styles::{CustomTextInput, CustomButton};
 use crate::gui::addon_widgets::icon_btn;
+use crate::gui::styles::{CustomButton, CustomTextInput};
+use iced::{button, text_input, Align, Column, Container, Element, Length, Row, Space, Text, TextInput};
 
 #[derive(Debug, Default)]
 pub struct AddGroupPage {
@@ -35,7 +33,10 @@ impl AddGroupPage {
    pub fn view(&mut self) -> Element<AddGroupMsg> {
       use AddGroupMsg::*;
       let Self {
-         fullname_state, fullname_val, btn_create_state, btn_cancel_state,
+         fullname_state,
+         fullname_val,
+         btn_create_state,
+         btn_cancel_state,
       } = self;
 
       let lb_grp_name = Text::new("Group name:");
@@ -48,19 +49,16 @@ impl AddGroupPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10)
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(lb_grp_name)
-            .push(txt_grp_name)
-         )
-         .push(Space::with_height(Length::Fill))
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(Space::with_width(Length::Fill))
-            .push(btn_cancel)
-            .push(btn_create)
-         )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+         Column::new()
+            .width(Length::Fill)
+            .padding(20)
+            .spacing(10)
+            .push(Row::new().spacing(10).align_items(Align::Center).push(lb_grp_name).push(txt_grp_name))
+            .push(Space::with_height(Length::Fill))
+            .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_create)),
+      )
+      .width(Length::FillPortion(7))
+      .height(Length::Fill)
+      .into()
    }
 }
