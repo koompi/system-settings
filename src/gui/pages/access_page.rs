@@ -300,7 +300,7 @@ impl AccessPage {
             let cap_styles_view = sub_styles
                .iter_mut()
                .enumerate()
-               .fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).spacing(4).padding(7), |scrollable, (idx, (title, state, _))| {
+               .fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).spacing(4).padding(7).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (title, state, _))| {
                   let btn = Button::new(state, Text::new(*title))
                      .on_press(AccessMessage::SubStyleChanged(idx))
                      .style(if *selected_sub_style == idx { CustomButton::Selected } else { CustomButton::Text });
@@ -415,7 +415,7 @@ impl AccessPage {
             let shortcuts_view = shortcuts_ls
                .iter_mut()
                .enumerate()
-               .fold(Scrollable::new(scroll).width(Length::Fill).height(Length::Fill).spacing(7).padding(7), |scrollable, (idx, (title, is_checked))| {
+               .fold(Scrollable::new(scroll).width(Length::Fill).height(Length::Fill).spacing(7).padding(7).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (title, is_checked))| {
                   let checkbox = Checkbox::new(*is_checked, *title, move |is| AccessMessage::ShortcutToggled(idx, is)).spacing(10).style(CustomCheckbox::Default);
                   scrollable.push(checkbox)
                });

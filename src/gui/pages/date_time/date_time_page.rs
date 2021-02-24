@@ -382,7 +382,7 @@ impl DateTimePage {
       // មាតិកា
       let content = Column::new().width(Length::Fill).align_items(Align::Center)
          .push(tabbar_sec)
-         .push(tabview.height(Length::Fill).padding(20).style(CustomContainer::ForegroundGray))
+         .push(tabview.height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
          .push(bottom_section);
 
       Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()

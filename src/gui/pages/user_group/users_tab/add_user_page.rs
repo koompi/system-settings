@@ -1,7 +1,9 @@
 use iced::{
    text_input, button, pick_list, Button, TextInput, PickList, Text, Container, Length, Column, Row, Align, Space, Element,
 };
-use libkoompi::system_settings::users_groups::AccountType;
+use libkoompi::{
+   system_settings::users_groups::AccountType, helpers::to_account_name
+};
 use crate::gui::styles::{CustomTextInput, CustomButton, CustomSelect};
 use crate::gui::addon_widgets::icon_btn;
 use iced_custom_widget::Icon;
@@ -62,12 +64,12 @@ impl AddUserPage {
          FullNameChanged(val) => {
             self.fullname_val = val;
             if !self.is_usrname_directly_changed {
-               self.username_val = self.fullname_val.to_lowercase().replace(" ", "");
+               self.username_val = to_account_name(&self.fullname_val);
             }
          },
          UserNameChanged(val) => {
             self.is_usrname_directly_changed = true;
-            self.username_val = val.to_lowercase().replace(" ", ""); 
+            self.username_val = to_account_name(&val); 
          },
          PwdChanged(val) => self.pwd_val = val,
          VerifyPwdChanged(val) => self.verify_pwd_val = val,

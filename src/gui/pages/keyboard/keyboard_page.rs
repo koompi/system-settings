@@ -263,13 +263,13 @@ impl KeyboardPage {
             let lb_shortcuts = Text::new("To change a shortcut, select it, click key combination, and then type new keys.").size(15);
 
             // ផ្ទាំងខាងឆ្វេង
-            let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
+            let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (icon, title, state))| {
                col.push(icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar}))
             });
             let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
-            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut))| {
+            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (is_checked, title, shortcut))| {
                let row = Row::new().align_items(Align::Center).padding(4)
                   .push(Checkbox::new(*is_checked, *title, move |is| RightPaneSelectedToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
                   .push(Space::with_width(Length::Fill)).push(Text::new(*shortcut))
@@ -323,7 +323,7 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let inp_src_len = input_sources.len();
-            let left_tab_col = input_sources.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
+            let left_tab_col = input_sources.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (icon, title, state))| {
                let btn = icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(InputSourceLeftTabSelected(idx));
                col.push(
                   if let Some(selected_idx) = input_sources_selected {
@@ -391,7 +391,7 @@ impl KeyboardPage {
                };
    
                Container::new(
-                  Scrollable::new(right_pane_scroll).push(keyboard_image_con)
+                  Scrollable::new(right_pane_scroll).scroller_width(4).scrollbar_width(4).push(keyboard_image_con)
                ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite).into()
             } else {
                add_input_source_sec.view().map(move |msg| AddInputSrcMsg(msg))

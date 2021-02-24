@@ -102,7 +102,7 @@ impl UserGroupPage {
       // មាតិកា
       let content = Column::new().width(Length::Fill)
          .push(tabbar_sec)
-         .push(Container::new(tabview).width(Length::Fill).height(Length::Fill).padding(10).style(CustomContainer::ForegroundGray))
+         .push(Container::new(tabview).width(Length::Fill).height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
          .push(bottom_sec);
 
       Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()

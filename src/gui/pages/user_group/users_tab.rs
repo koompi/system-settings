@@ -88,23 +88,25 @@ impl UsersTab {
       } = self;
 
       let curr_usr = curr_usr.borrow();
+      let curr_is_admin = curr_usr.is_admin();
+      let is_curr_usr = |uid: u16| curr_usr.uid().eq(&uid);
 
       match msg {
          SelectedUsr(idx) => {
             self.selected_user = Some(idx);
             if let Some((user, _)) = ls_users.get(idx) {
                if let UserInfo(user_info_page) = content {
-                  user_info_page.with_user(user, curr_usr.uid().eq(&user.uid()));
+                  user_info_page.with_user(user, is_curr_usr(user.uid()));
                }
             }
          },
          AddClicked => {
-            if curr_usr.is_admin() {
+            if curr_is_admin {
                self.content = AddUser(AddUserPage::new());
             }
          },
          RemoveClicked => {
-            if curr_usr.is_admin() {
+            if curr_is_admin {
                if let Some(selected) = self.selected_user {
                   if let Some((user, _)) = ls_users.get(selected) {
                      match usrgrp_mn.borrow_mut().delete_user(user.username(), false) {
@@ -124,13 +126,20 @@ impl UsersTab {
             if let UserInfo(user_info_page) = content {
                if let Some(idx) = self.selected_user {
                   if let Some((user, _)) = ls_users.get_mut(idx) {
+                     let is_curr_usr = is_curr_usr(user.uid());
+
                      use UserInfoMsg::*;
                      match usr_info_msg {
-                        ChangePwdClicked => self.content = ChangePwd(ChangePwdPage::new(curr_usr.uid().eq(&user.uid()))),
-                        ChangeInfoClicked => self.content = ChangeInfo(ChangeInfoPage::new(user, usrgrp_mn.borrow().all_groups().iter().find(|grp| grp.gid() == user.gid()).map(|grp| grp.name()), usrgrp_mn.borrow().login_shells().to_vec())),
-                        AllowUsrAdminToggled(is_checked) => if curr_usr.is_admin() {
+                        ChangePwdClicked => self.content = ChangePwd(ChangePwdPage::new(is_curr_usr)),
+                        ChangeInfoClicked => {
+                           let usrgrp_ref = usrgrp_mn.borrow();
+                           let groupname = usrgrp_ref.all_groups().iter().find(|grp| grp.gid() == user.gid()).map(|grp| grp.name());
+                           let login_shells = usrgrp_ref.login_shells().to_vec();
+                           self.content = ChangeInfo(ChangeInfoPage::new(user, is_curr_usr, groupname, login_shells));
+                        },
+                        AllowUsrAdminToggled(is_checked) => if curr_is_admin {
                            match user.change_account_type(if is_checked {AccountType::Admin} else {AccountType::default()}) {
-                              Ok(()) => user_info_page.with_user(user, curr_usr.uid().eq(&user.uid())),
+                              Ok(()) => user_info_page.with_user(user, is_curr_usr),
                               Err(err) => eprintln!("{:?}", err),
                            }
                         },
@@ -143,11 +152,13 @@ impl UsersTab {
             if let ChangePwd(change_pwd_page) = content {
                if let Some(idx) = self.selected_user {
                   if let Some((user, _)) = ls_users.get(idx) {
+                     let is_curr_usr = is_curr_usr(user.uid());
+                     
                      use ChangePwdMsg::*;
                      match change_pwd_msg {
-                        CancelClicked => self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin())),
+                        CancelClicked => self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr, curr_is_admin)),
                         ChangeClicked(old_pwd, new_pwd, verify_pwd) => {
-                           if curr_usr.uid().eq(&user.uid()) {
+                           if is_curr_usr {
                               match usrgrp_mn.borrow_mut().change_user_password(user.username(), &old_pwd, &new_pwd, &verify_pwd) {
                                  Ok(is_ok) => if is_ok {
                                     println!("Change password Success")
@@ -156,19 +167,17 @@ impl UsersTab {
                                  }, 
                                  Err(err) => eprintln!("{:?}", err),
                               }
-                           } else {
-                              if curr_usr.is_admin() {
-                                 match usrgrp_mn.borrow_mut().reset_user_password(user.username(), &new_pwd, &verify_pwd) {
-                                    Ok(is_ok) => if is_ok {
-                                       println!("Reset password Success")
-                                    } else {
-                                       println!("can not Reset password")
-                                    },
-                                    Err(err) => eprintln!("{:?}", err),
-                                 }
+                           } else if curr_is_admin {
+                              match usrgrp_mn.borrow_mut().reset_user_password(user.username(), &new_pwd, &verify_pwd) {
+                                 Ok(is_ok) => if is_ok {
+                                    println!("Reset password Success")
+                                 } else {
+                                    println!("can not Reset password")
+                                 },
+                                 Err(err) => eprintln!("{:?}", err),
                               }
                            }
-                           self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin()));
+                           self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr, curr_is_admin));
                         },
                         _ => change_pwd_page.update(change_pwd_msg)
                      }
@@ -177,7 +186,7 @@ impl UsersTab {
             }
          },
          AddUserMSG(add_user_msg) => {
-            if curr_usr.is_admin() {
+            if curr_is_admin {
                if let AddUser(add_user_page) = content {
                   use AddUserMsg::*;
                   match add_user_msg {
@@ -187,12 +196,12 @@ impl UsersTab {
                               if is_user {
                                  if let Some(user) = usrgrp_mn.borrow().user_from_name(user.username.as_str()) {
                                     ls_users.push((user.clone(), button::State::new()));
-                                    self.selected_user = ls_users.iter().map(|(usr, _)| usr).position(|usr| usr.uid() == user.uid());
-                                    self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin()));
+                                    self.selected_user = ls_users.iter().map(|(usr, _)| usr).position(|usr| usr.uid().eq(&user.uid()));
+                                    self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr(user.uid()), curr_is_admin));
                                  }
                               } else {
                                  self.selected_user = Some(0);
-                                 self.content = UserInfo(UserInfoPage::new(&curr_usr, true, curr_usr.is_admin()));
+                                 self.content = UserInfo(UserInfoPage::new(&curr_usr, true, curr_is_admin));
                               };
                            },
                            Err(err) => eprintln!("{:?}", err)
@@ -200,7 +209,7 @@ impl UsersTab {
                      },
                      CancelClicked => {
                         let user = usrgrp_mn.borrow().list_users()[self.selected_user.unwrap_or(0)].clone();
-                        self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin()));
+                        self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr(user.uid()), curr_is_admin));
                      },
                      _ => add_user_page.update(add_user_msg)
                   }
@@ -211,16 +220,13 @@ impl UsersTab {
             if let ChangeInfo(change_info_page) = content {
                if let Some(idx) = self.selected_user {
                   if let Some((user, _)) = ls_users.get(idx) {
+                     let is_curr_usr = is_curr_usr(user.uid());
+
                      use ChangeInfoMsg::*;
                      match change_info_msg {
-                        CancelClicked => self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin())),
+                        CancelClicked => self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr, curr_is_admin)),
                         OkayClicked(usernew) => {
-                           let (uid, usrname, home_dir) = if curr_usr.uid().ne(&user.uid()) {
-                              (Some(usernew.uid.to_string()), Some(usernew.username), Some(usernew.home_dir))
-                           } else {
-                              (None, None, None)
-                           };
-                           match usrgrp_mn.borrow_mut().change_user_info(user.username().to_string(), uid, usernew.gname, usernew.fullname, usrname, usernew.login_shell, home_dir) {
+                           match usrgrp_mn.borrow_mut().change_user_info(user.username().to_string(), usernew.uid.to_string(), usernew.gname, usernew.fullname, usernew.username, usernew.login_shell, usernew.home_dir) {
                               Ok(is_ok) => if is_ok {
                                  println!("edit user success");
                               } else {
@@ -228,7 +234,7 @@ impl UsersTab {
                               },
                               Err(err) => eprintln!("{:?}", err)
                            }
-                           self.content = UserInfo(UserInfoPage::new(&user, curr_usr.uid().eq(&user.uid()), curr_usr.is_admin()))
+                           self.content = UserInfo(UserInfoPage::new(&user, is_curr_usr, curr_is_admin))
                         },
                         _ => change_info_page.update(change_info_msg)
                      }

@@ -50,23 +50,10 @@ impl ChangePwdPage {
    pub fn update(&mut self, msg: ChangePwdMsg) {
       use ChangePwdMsg::*;
       match msg {
-         OldPwdChanged(val) => self.old_pwd_val = val,
-         NewPwdChanged(val) => self.new_pwd_val = val,
-         VerifyPwdChanged(val) => self.verify_pwd_val = val,
+         OldPwdChanged(val) => self.old_pwd_val = val.trim().to_string(),
+         NewPwdChanged(val) => self.new_pwd_val = val.trim().to_string(),
+         VerifyPwdChanged(val) => self.verify_pwd_val = val.trim().to_string(),
          ShowPwdToggled => self.is_show_pwd = !self.is_show_pwd,
-         // {
-            // if self.is_curr_usr {
-            //    match self.user.borrow_mut().change_password(&self.old_pwd_val, &self.new_pwd_val, &self.verify_pwd_val) {
-            //       Ok(()) => println!("Change password Success"),
-            //       Err(err) => eprintln!("{:?}", err),
-            //    }
-            // } else {
-            //    match User::reset_password(self.user.borrow().username(), &self.new_pwd_val, &self.verify_pwd_val) {
-            //       Ok(()) => println!("Reset password Success"),
-            //       Err(err) => eprintln!("{:?}", err),
-            //    }
-            // }
-         // },
          CancelClicked | ChangeClicked(..) => {},
       }
    }

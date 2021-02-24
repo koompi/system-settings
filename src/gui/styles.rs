@@ -148,7 +148,7 @@ impl container::StyleSheet for CustomContainer {
             Primary => Color { a: 0.7, ..ACCENT },
             Success => SUCCESS,
             Warning => WARNING,
-            Transparent(color) => Color { a: 0.3, ..(*color) }
+            Transparent(color) => Color { a: 0.35, ..(*color) }
          }.into()),
          border_radius: match self {
             Segment => 10.0,

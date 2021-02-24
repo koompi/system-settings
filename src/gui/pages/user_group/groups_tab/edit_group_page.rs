@@ -19,9 +19,9 @@ pub struct EditGroupPage {
 #[derive(Debug, Clone)]
 pub enum EditGroupMsg {
    GroupNameChanged(String),
-   GroupNameSubmitted(String),
+   // GroupNameSubmitted(String),
    MemberToggled(usize, bool),
-   OkayClicked(Vec<String>),
+   OkayClicked(String, Vec<String>),
 }
 
 impl EditGroupPage {
@@ -62,7 +62,8 @@ impl EditGroupPage {
       } = self;
 
       let lb_grp_name = Text::new("Group name:");
-      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default).on_submit(GroupNameSubmitted(group_name_val.clone()));
+      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
+         // .on_submit(GroupNameSubmitted(group_name_val.clone()));
 
       let scrollable_members = ls_members.iter_mut().enumerate().fold(Scrollable::new(scroll_members).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (is_checked, user))| {
          let chb_member = Checkbox::new(*is_checked, user.fullname().as_str(), move |b| MemberToggled(idx, b)).width(Length::Fill).spacing(10).style(CustomCheckbox::Default);
@@ -78,7 +79,7 @@ impl EditGroupPage {
 
       let mut btn_okay = icon_btn(btn_ok_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
       if self.is_changed {
-         btn_okay = btn_okay.on_press(OkayClicked(ls_members.iter().filter(|(is_checked, _)| *is_checked).map(|(_, usr)| usr.username().to_owned()).collect()));
+         btn_okay = btn_okay.on_press(OkayClicked(group_name_val.clone(), ls_members.iter().filter(|(is_checked, _)| *is_checked).map(|(_, usr)| usr.username().to_owned()).collect()));
       }
 
       Container::new(

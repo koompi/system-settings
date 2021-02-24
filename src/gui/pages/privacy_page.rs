@@ -178,7 +178,7 @@ impl PrivacyPage {
             } = privacy_tab;
 
             // ផ្ទាំងខាងឆ្វេង
-            let left_tab_col = privacy_tabs.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |scrollable, (idx, (icon, title, state))| {
+            let left_tab_col = privacy_tabs.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (icon, title, state))| {
                let btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(30)).push(Text::new(*title))).width(Length::Fill).on_press(PrivacyTabSelected(idx)).style(if *selected_privacy_tab == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar});
                scrollable.push(btn)
             });
@@ -192,7 +192,7 @@ impl PrivacyPage {
                main_view_col = main_view_col.push(Checkbox::new(*is_checked, *title, EnablePrivacyToggled));
             }
             main_view_col = main_view_col.push(Text::new(*hint));
-            let apps_list_view = ls_apps.iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).width(Length::Fill).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, icon, title))| {
+            let apps_list_view = ls_apps.iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).width(Length::Fill).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (is_checked, icon, title))| {
                let row = Row::new().width(Length::Fill).align_items(Align::Center).padding(4)
                   .push(Checkbox::new(*is_checked, *title, move |is| AppsPrivacyToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
                   // .push(Space::with_width(Length::Fill))

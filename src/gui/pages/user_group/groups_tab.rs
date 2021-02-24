@@ -124,23 +124,24 @@ impl GroupsTab {
                   if let Some((grp, _)) = ls_grps.get_mut(idx) {
                      use EditGroupMsg::*;
                      match edit_group_msg {
-                        GroupNameSubmitted(grp_name) => {
-                           match usrgrp_mn.borrow_mut().change_group_name(grp.name(), &grp_name) {
-                              Ok(is_ok) => if is_ok {
-                                 println!("change group name success")
-                              } else {
-                                 println!("can not change group name")
-                              },
-                              Err(err) => eprintln!("{:?}", err)
-                           }
-                           edit_group_page.with_grp(grp);
-                        },
-                        OkayClicked(ls_members) => {
+                        // GroupNameSubmitted(grp_name) => {
+                        //    println!("Submitted");
+                        //    edit_group_page.with_grp(grp);
+                        // },
+                        OkayClicked(grp_name, ls_members) => {
                            match usrgrp_mn.borrow_mut().change_group_members(grp.name(), ls_members.iter().map(|usr| usr.as_str()).collect()) {
                               Ok(is_ok) => if is_ok {
                                  println!("change group members success")
                               } else {
                                  println!("can not change group members")
+                              },
+                              Err(err) => eprintln!("{:?}", err)
+                           }
+                           match usrgrp_mn.borrow_mut().change_group_name(grp.name(), &grp_name) {
+                              Ok(is_ok) => if is_ok {
+                                 println!("change group name success")
+                              } else {
+                                 println!("can not change group name")
                               },
                               Err(err) => eprintln!("{:?}", err)
                            }

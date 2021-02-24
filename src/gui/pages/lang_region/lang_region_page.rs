@@ -349,7 +349,7 @@ impl LangRegionPage {
             let btn_group = Container::new(Row::new().push(btn_add).push(btn_remove)).width(Length::Fill).style(CustomContainer::Header);
             let btn_shift_group = Container::new(Column::new().spacing(10).push(btn_up).push(btn_down)).height(Length::Fill).center_y();
 
-            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4), |scroll, (idx, (prefered_lang, state))| {
+            let lang_group = prefered_langs.iter_mut().enumerate().fold(Scrollable::new(prefered_lang_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scroll, (idx, (prefered_lang, state))| {
                let content = Column::new().spacing(4)
                   .push(Text::new(format!("{} {}", prefered_lang.lang, if idx == 0 {"(Primary)"} else {""})))
                   .push(Text::new(prefered_lang.reg.as_str()).size(12).color(HOVERED));
@@ -510,7 +510,7 @@ impl LangRegionPage {
 
             Container::new(
                Row::new()
-               .push(Space::with_width(Length::Units(10)))
+               .push(Space::with_width(Length::Units(15)))
                .push(
                   Column::new().spacing(10).height(Length::Fill)
                   .push(Space::with_height(Length::Units(0)))
@@ -520,7 +520,7 @@ impl LangRegionPage {
                      .push(left_pane.width(Length::FillPortion(3)))
                      .push(right_pane.width(Length::FillPortion(7)))
                   )
-                  .push(Space::with_height(Length::Units(10)))
+                  .push(Space::with_height(Length::Units(15)))
                )
             )
          }
@@ -540,7 +540,7 @@ impl LangRegionPage {
             );
 
             let ls_locales = locale_mn.list_langs_regions().iter().map(|(_, lang)| lang.to_string()).collect::<Vec<String>>();
-            let apps_group = app_list.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).padding(7).spacing(4), |scroll, (idx, (icon, title, pl_state, selected_lang, state))| {
+            let apps_group = app_list.iter_mut().enumerate().fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scroll, (idx, (icon, title, pl_state, selected_lang, state))| {
                let content = Row::new().spacing(7).padding(4).align_items(Align::Center)
                   .push(IconBrand::new(*icon).size(30))
                   .push(Text::new(title.as_str()))
@@ -557,7 +557,7 @@ impl LangRegionPage {
             });
 
             Container::new(
-               Column::new().spacing(10).padding(20)
+               Column::new().spacing(10).padding(15)
                .push(lb_customize)
                .push(
                   Container::new(apps_group).height(Length::Fill).padding(7).style(CustomContainer::ForegroundWhite)

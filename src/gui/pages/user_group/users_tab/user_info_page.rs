@@ -4,7 +4,7 @@ use iced::{
    button, Checkbox, Text, Container, Length, Column, Row, Space, Element, Button, Image, Align,
 };
 use crate::gui::styles::{CustomButton, CustomCheckbox, CustomContainer, FOREGROUND};
-use iced_custom_widget::{Stack};
+use iced_custom_widget::Stack;
 
 #[derive(Debug, Default)]
 pub struct UserInfoPage {
@@ -59,21 +59,22 @@ impl UserInfoPage {
 
       let profile = Image::new(profile_path.to_path_buf()).width(Length::Units(75)).height(Length::Units(75));
       let txt_username = Text::new(fullname.as_str());
-      let btn_change_pwd = Button::new(btn_change_pwd_state, Text::new(format!("  {}  ", if self.is_curr_usr {"Change Password"} else {"Reset Password"})))
-         .on_press(ChangePwdClicked).style(CustomButton::Default);
-
-      let chb_allow_usr_admin: Element<_> = if self.allow_usr_admin && !self.is_curr_usr {
-         Checkbox::new(self.is_admin, "Allow administrator access", AllowUsrAdminToggled).spacing(10).style(CustomCheckbox::Default).into()
+      let mut btn_change_info = Button::new(btn_change_info_state, Text::new("  Change Information  ")).style(CustomButton::Default);
+      let chb_allow_usr_admin = Checkbox::new(self.is_admin, "Allow administrator access", AllowUsrAdminToggled).spacing(10).style(CustomCheckbox::Default);
+      let sec_allow_usr_admin: Element<_> = if self.allow_usr_admin && !self.is_curr_usr {
+         chb_allow_usr_admin.into()
       } else {
          Stack::new()
-         .push(Checkbox::new(self.is_admin, "Allow administrator access", AllowUsrAdminToggled).spacing(10).style(CustomCheckbox::Default), None)
-         .push( 
-            Container::new(Row::new()).width(Length::Units(200)).height(Length::Units(25)).style(CustomContainer::Transparent(FOREGROUND)),
-            None
-         ).into()
-        
+         .push(chb_allow_usr_admin, None)
+         .push(Container::new(Row::new()).width(Length::Units(200)).height(Length::Units(25)).style(CustomContainer::Transparent(FOREGROUND)), None).into()
       };
-      let btn_change_info = Button::new(btn_change_info_state, Text::new("  Change Information  ")).on_press(ChangeInfoClicked).style(CustomButton::Default);
+
+      let mut btn_change_pwd = Button::new(btn_change_pwd_state, Text::new(format!("  {}  ", if self.is_curr_usr {"Change Password"} else {"Reset Password"})))
+         .style(CustomButton::Default);
+      if  self.allow_usr_admin || self.is_curr_usr {
+         btn_change_info = btn_change_info.on_press(ChangeInfoClicked);
+         btn_change_pwd = btn_change_pwd.on_press(ChangePwdClicked);
+      }
 
       Container::new(
          Column::new().padding(20)
@@ -82,13 +83,13 @@ impl UserInfoPage {
             .push(profile)
             .push(txt_username)
             .push(Space::with_width(Length::Fill))
-            .push(btn_change_pwd)
+            .push(btn_change_info)
          )
          .push(
             Row::new().align_items(Align::Center)
-            .push(chb_allow_usr_admin)
+            .push(sec_allow_usr_admin)
             .push(Space::with_width(Length::Fill))
-            .push(btn_change_info)
+            .push(btn_change_pwd)
          )
       ).width(Length::FillPortion(7)).height(Length::Fill).into()
    }
