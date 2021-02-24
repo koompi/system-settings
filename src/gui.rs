@@ -1,8 +1,8 @@
 #[macro_use]
 mod pages;
+mod addon_widgets;
 mod pref;
 mod root;
 mod styles;
-mod addon_widgets;
 
 pub use root::SystemSetting;
