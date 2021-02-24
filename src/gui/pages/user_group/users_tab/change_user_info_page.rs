@@ -1,10 +1,8 @@
-use iced::{
-   text_input, button, pick_list, TextInput, PickList, Text, Container, Length, Column, Row, Align, Space, Element,
-};
-use libkoompi::system_settings::users_groups::User;
-use crate::gui::styles::{CustomTextInput, CustomButton, CustomSelect};
 use crate::gui::addon_widgets::icon_btn;
+use crate::gui::styles::{CustomButton, CustomSelect, CustomTextInput};
+use iced::{button, pick_list, text_input, Align, Column, Container, Element, Length, PickList, Row, Space, Text, TextInput};
 use iced_custom_widget::{number_input, NumberInput};
+use libkoompi::system_settings::users_groups::User;
 
 #[derive(Debug, Default)]
 pub struct ChangeInfoPage {
@@ -89,12 +87,12 @@ impl ChangeInfoPage {
                match res {
                   Response::Okay(file_path) => self.home_dir = file_path.into_os_string().into_string().unwrap(),
                   // Response::Cancel => has_changed = false,
-                  _ => has_changed = false
+                  _ => has_changed = false,
                }
             } else {
                has_changed = false
             }
-         },
+         }
          CancelClicked | OkayClicked(_) => has_changed = false,
       }
       self.is_changed = has_changed;
@@ -103,24 +101,31 @@ impl ChangeInfoPage {
    pub fn view(&mut self) -> Element<ChangeInfoMsg> {
       use ChangeInfoMsg::*;
       let Self {
-         uid_state, uid, fullname_state, fullname, username_state, username,
-         login_shell_state, login_shell, home_dir_state, home_dir, groupname_state, groupname, 
-         btn_browse_home_dir, btn_ok_state, btn_cancel_state, login_shells, ..
+         uid_state,
+         uid,
+         fullname_state,
+         fullname,
+         username_state,
+         username,
+         login_shell_state,
+         login_shell,
+         home_dir_state,
+         home_dir,
+         groupname_state,
+         groupname,
+         btn_browse_home_dir,
+         btn_ok_state,
+         btn_cancel_state,
+         login_shells,
+         ..
       } = self;
-      
       let lb_user_id = Text::new("User ID");
       let lb_fullname = Text::new("Full Name:");
       let lb_username = Text::new("User Name:");
       let lb_group_name = Text::new("Group Name:");
       let lb_login_shell = Text::new("Login Shell:");
       let lb_home_dir = Text::new("Home Directory:");
-      let lb_sec = Column::new().spacing(20)
-         .push(lb_user_id)
-         .push(lb_fullname)
-         .push(lb_username)
-         .push(lb_group_name)
-         .push(lb_login_shell)
-         .push(lb_home_dir);
+      let lb_sec = Column::new().spacing(20).push(lb_user_id).push(lb_fullname).push(lb_username).push(lb_group_name).push(lb_login_shell).push(lb_home_dir);
       let txt_user_id = NumberInput::new(uid_state, *uid, 2000, UIDChanged).min(1000);
       let txt_fullname = TextInput::new(fullname_state, "", &fullname, FullNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let txt_username = TextInput::new(username_state, "", &username, UserNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
@@ -128,17 +133,14 @@ impl ChangeInfoPage {
       let pl_login_shell = PickList::new(login_shell_state, login_shells.clone(), login_shell.clone(), LoginShellChanged).style(CustomSelect::Primary);
       let txt_home_dir = TextInput::new(home_dir_state, "", &home_dir, HomeDirChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
       let btn_browse_home = icon_btn(btn_browse_home_dir, '\u{f07b}', "Browse", None).on_press(BrowseClicked).style(CustomButton::Default);
-      let info_sec = Column::new().spacing(7)
+      let info_sec = Column::new()
+         .spacing(7)
          .push(txt_user_id)
          .push(txt_fullname)
          .push(txt_username)
          .push(txt_group_name)
          .push(pl_login_shell)
-         .push(
-            Row::new().spacing(5).align_items(Align::Center)
-            .push(txt_home_dir)
-            .push(btn_browse_home)
-         );
+         .push(Row::new().spacing(5).align_items(Align::Center).push(txt_home_dir).push(btn_browse_home));
 
       let mut btn_okay = icon_btn(btn_ok_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
       let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
@@ -157,19 +159,17 @@ impl ChangeInfoPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10).align_items(Align::Center)
-         .push(
-            Row::new().spacing(10).width(Length::Units(400)).align_items(Align::Center)
-            .push(lb_sec)
-            .push(info_sec)
-         )
-         .push(Space::with_height(Length::Fill))
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(Space::with_width(Length::Fill))
-            .push(btn_cancel)
-            .push(btn_okay)
-         )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+         Column::new()
+            .width(Length::Fill)
+            .padding(20)
+            .spacing(10)
+            .align_items(Align::Center)
+            .push(Row::new().spacing(10).width(Length::Units(400)).align_items(Align::Center).push(lb_sec).push(info_sec))
+            .push(Space::with_height(Length::Fill))
+            .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_okay)),
+      )
+      .width(Length::FillPortion(7))
+      .height(Length::Fill)
+      .into()
    }
 }

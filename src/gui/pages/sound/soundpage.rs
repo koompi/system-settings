@@ -1,4 +1,5 @@
 use super::audio::{AudioTab, AudioTabMsg};
+use super::configure::{ConfigureAudio, ConfigureAudioMsg};
 use super::soundeffect::{SndEffect, SndEffectMsg};
 use crate::gui::styles::containers::ContainerStyle;
 use iced::{scrollable, Align, Column, Container, Element, Length, Row, Rule, Scrollable, Text};
@@ -10,6 +11,7 @@ pub struct SoundPage {
     choice: Choice,
     scroll_content: scrollable::State,
     auddio_tab: AudioTab,
+    configure: ConfigureAudio,
     sound_effects: SndEffect,
 }
 impl SoundPage {
@@ -17,6 +19,7 @@ impl SoundPage {
         Self {
             sound_effects: SndEffect::new(),
             auddio_tab: AudioTab::new(),
+            configure: ConfigureAudio::new(),
             ..Default::default()
         }
     }
@@ -25,6 +28,7 @@ impl SoundPage {
             SoundMessage::TabSelect(choice) => self.choice = choice,
             SoundMessage::SndEffectMsg(msg) => self.sound_effects.update(msg),
             SoundMessage::AudioTabMsg(msg) => self.auddio_tab.update(msg),
+            SoundMessage::ConfigureAudioMsg(msg) => self.configure.update(msg),
         }
     }
     pub fn view(&mut self) -> Element<SoundMessage> {
@@ -33,10 +37,12 @@ impl SoundPage {
             .align_items(Align::Center)
             .spacing(10)
             .push(Tab::new(Choice::A, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f028}', "Audio")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::B, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f5fd}', "SoundEffect")).width(Length::Fill).height(Length::Units(50)));
+            .push(Tab::new(Choice::B, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f5fd}', "SoundEffect")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::C, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f1de}', "Configure")).width(Length::Fill).height(Length::Units(50)));
         let contnet = Column::new().height(Length::Fill).align_items(Align::Center).padding(20).push(match self.choice {
             Choice::A => Container::new(self.auddio_tab.view().map(move |msg| SoundMessage::AudioTabMsg(msg))),
             Choice::B => Container::new(self.sound_effects.view().map(move |msg| SoundMessage::SndEffectMsg(msg))),
+            Choice::C => Container::new(self.configure.view().map(move |msg| SoundMessage::ConfigureAudioMsg(msg))),
         });
         let netsidebar_scroll = Scrollable::new(&mut self.scroll_content).push(row).padding(10).scrollbar_width(4).scroller_width(4);
         let whole_content = Row::new()
@@ -59,12 +65,14 @@ pub enum SoundMessage {
     TabSelect(Choice),
     SndEffectMsg(SndEffectMsg),
     AudioTabMsg(AudioTabMsg),
+    ConfigureAudioMsg(ConfigureAudioMsg),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Choice {
     A,
     B,
+    C,
 }
 impl Default for Choice {
     fn default() -> Self {
