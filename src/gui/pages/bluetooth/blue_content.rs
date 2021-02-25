@@ -69,11 +69,15 @@ impl BlueContent {
             BlueConentMsg::DevRefreshed => {
                 self.bluedata.get_data().clear();
                 let length = self.vector_bluetooths.len();
-                for _ in 0..=length - 1 {
-                    self.vector_bluetooths.pop();
-                }
-                for new_data in self.get_blueaddress() {
-                    self.vector_bluetooths.push((BluetoothDevType::Computer, format!("{} {}", new_data.0, new_data.1), BluetoothStatus::NoConnected));
+                if length != 0 {
+                    for _ in 0..=length - 1 {
+                        self.vector_bluetooths.pop();
+                    }
+                    for new_data in self.get_blueaddress() {
+                        self.vector_bluetooths.push((BluetoothDevType::Computer, format!("{} {}", new_data.0, new_data.1), BluetoothStatus::NoConnected));
+                    }
+                } else {
+                    {}
                 }
             }
             BlueConentMsg::DevShowNameless(is_show) => {
