@@ -131,9 +131,9 @@ impl AddUserPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10).align_items(Align::Center)
+         Column::new().width(Length::Fill).spacing(10).align_items(Align::Center)
          .push(
-            Row::new().spacing(10).align_items(Align::Center)
+            Row::new().padding(10).spacing(10).align_items(Align::Center)
             .push(lb_sec)
             .push(info_sec)
          )
@@ -144,6 +144,6 @@ impl AddUserPage {
             .push(btn_cancel)
             .push(btn_create)
          )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+      ).width(Length::Fill).height(Length::Fill).into()
    }
 }

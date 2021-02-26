@@ -87,7 +87,7 @@ impl ChangePwdPage {
          .push(Row::new().spacing(5).align_items(Align::Center).push(txt_new_pwd).push(btn_show_pwd))
          .push(txt_verify_pwd);
 
-      let mut btn_change = icon_btn(btn_change_state, '\u{f00c}', "Change Password", None).style(CustomButton::Primary);
+      let mut btn_change = icon_btn(btn_change_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
       let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
    
       if (!self.is_curr_usr || !old_pwd_val.is_empty()) && (!new_pwd_val.is_empty() && new_pwd_val.as_str().eq(verify_pwd_val.as_str()))  {
@@ -95,9 +95,9 @@ impl ChangePwdPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10).align_items(Align::Center)
+         Column::new().width(Length::Fill).spacing(10).align_items(Align::Center)
          .push(
-            Row::new().spacing(10).align_items(Align::Center)
+            Row::new().padding(10).spacing(10).align_items(Align::Center)
             .push(lb_sec)
             .push(input_sec)
          )
@@ -108,6 +108,6 @@ impl ChangePwdPage {
             .push(btn_cancel)
             .push(btn_change)
          )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+      ).width(Length::Fill).height(Length::Fill).into()
    }
 }
