@@ -49,16 +49,10 @@ impl AddGroupPage {
       }
 
       Container::new(
-         Column::new()
-            .width(Length::Fill)
-            .padding(20)
-            .spacing(10)
-            .push(Row::new().spacing(10).align_items(Align::Center).push(lb_grp_name).push(txt_grp_name))
-            .push(Space::with_height(Length::Fill))
-            .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_create)),
-      )
-      .width(Length::FillPortion(7))
-      .height(Length::Fill)
-      .into()
+         Column::new().width(Length::Fill).spacing(10)
+         .push(Row::new().spacing(10).align_items(Align::Center).push(lb_grp_name).push(txt_grp_name))
+         .push(Space::with_height(Length::Fill))
+         .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_create)),
+      ).width(Length::Fill).height(Length::Fill).padding(10).into()
    }
 }

@@ -283,7 +283,7 @@ impl PageModel {
     fn title(&self) -> &str {
         use PageModel::*;
         match self {
-            HomePage => "System Setting",
+            HomePage => "System Settings",
             GeneralPage { .. } => "General",
             DateTimePageModel { .. } => "Date & Time",
             LanguagePageModel { .. } => "Language & Region",
