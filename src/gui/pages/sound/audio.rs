@@ -153,13 +153,23 @@ impl AudioTab {
         match msg {
             AudioTabMsg::InputChanged(val) => {
                 for dev in &self.list_sources {
-                    self.source_output.set_device_volume_by_name(&dev.0, val / 100.0);
+                    match self.source_output.set_device_volume_by_name(&dev.0, val / 100.0) {
+                        Ok(()) => {}
+                        Err(e) => {
+                            eprintln!("Error: {:?}", e);
+                        }
+                    }
                 }
                 self.input_val = val;
             }
             AudioTabMsg::OutputChanged(val) => {
                 for dev in &self.list_sinks {
-                    self.sink_input.set_device_volume_by_name(&dev.0, val / 100.0);
+                    match self.sink_input.set_device_volume_by_name(&dev.0, val / 100.0) {
+                        Ok(()) => {}
+                        Err(e) => {
+                            eprintln!("Error: {:?}", e);
+                        }
+                    }
                 }
                 self.output_val = val;
             }
