@@ -75,6 +75,15 @@ impl ChangeInfoPage {
       }
    }
 
+   pub fn with_user(&mut self, user: &User, is_curr_usr: bool, groupname: Option<&String>) {
+      self.is_curr_usr = is_curr_usr; 
+      self.uid = user.uid();
+      self.groupname = groupname.unwrap_or(&String::default()).to_string();
+      self.username = user.username().clone();
+      self.fullname = user.fullname().clone();
+      self.is_changed = false;
+   }
+
    pub fn update(&mut self, msg: ChangeInfoMsg) {
       use nfd2::Response;
       use ChangeInfoMsg::*;
@@ -162,9 +171,9 @@ impl ChangeInfoPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10).align_items(Align::Center)
+         Column::new().width(Length::Fill).spacing(10).align_items(Align::Center)
          .push(
-            Row::new().spacing(10).width(Length::Units(400)).align_items(Align::Center)
+            Row::new().padding(10).spacing(10).width(Length::Units(400)).align_items(Align::Center)
             .push(lb_sec)
             .push(info_sec)
          )
@@ -175,6 +184,6 @@ impl ChangeInfoPage {
             .push(btn_cancel)
             .push(btn_okay)
          )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+      ).width(Length::Fill).height(Length::Fill).into()
    }
 }

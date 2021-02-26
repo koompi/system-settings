@@ -19,13 +19,13 @@ pub struct EditGroupPage {
 #[derive(Debug, Clone)]
 pub enum EditGroupMsg {
    GroupNameChanged(String),
-   // GroupNameSubmitted(String),
+   GroupNameSubmitted(String),
    MemberToggled(usize, bool),
    OkayClicked(String, Vec<String>),
 }
 
 impl EditGroupPage {
-   pub fn new(group: &Group, ls_users: Vec<&User>) -> Self {
+   pub fn new(group: &Group, ls_users: &[User]) -> Self {
       let grp_members = group.members();
       Self {
          group_name_val: group.formatted_name(),
@@ -35,16 +35,20 @@ impl EditGroupPage {
       }
    }
 
-   pub fn with_grp(&mut self, group: &Group) {
+   pub fn with_grp(&mut self, group: &Group, ls_users: &[User]) {
       self.group_name_val = group.formatted_name();
       self.ls_members = self.ls_users.iter().map(|usr| (group.members().contains(usr.username()), usr.to_owned())).collect();
+      self.ls_users = ls_users.to_vec();
       self.is_changed = false;
    }
 
    pub fn update(&mut self, msg: EditGroupMsg) {
       use EditGroupMsg::*;
       match msg {
-         GroupNameChanged(val) => self.group_name_val = val,
+         GroupNameChanged(val) => {
+            self.group_name_val = val;
+            if !self.is_changed { self.is_changed = true; }
+         },
          MemberToggled(idx, is_checked) => {
             if let Some(member) = self.ls_members.get_mut(idx) {
                member.0 = is_checked;
@@ -58,17 +62,19 @@ impl EditGroupPage {
    pub fn view(&mut self) -> Element<EditGroupMsg> {
       use EditGroupMsg::*;
       let Self {
-         group_name_state, group_name_val, ls_members, scroll_members, btn_ok_state, ..
+         group_name_state, group_name_val ,ls_members, scroll_members, btn_ok_state, ..
       } = self;
 
       let lb_grp_name = Text::new("Group name:");
-      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default);
-         // .on_submit(GroupNameSubmitted(group_name_val.clone()));
+      let txt_grp_name = TextInput::new(group_name_state, "Group name", &group_name_val, GroupNameChanged).padding(7).width(Length::Fill).style(CustomTextInput::Default)
+         .on_submit(GroupNameSubmitted(group_name_val.clone()));
 
-      let scrollable_members = ls_members.iter_mut().enumerate().fold(Scrollable::new(scroll_members).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (is_checked, user))| {
-         let chb_member = Checkbox::new(*is_checked, user.fullname().as_str(), move |b| MemberToggled(idx, b)).width(Length::Fill).spacing(10).style(CustomCheckbox::Default);
-         scrollable.push(chb_member)
-      });
+      let scrollable_members = ls_members.iter_mut().enumerate().fold(
+         Scrollable::new(scroll_members).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (is_checked, user))| {
+            let chb_member = Checkbox::new(*is_checked, user.fullname().as_str(), move |b| MemberToggled(idx, b)).width(Length::Fill).spacing(10).style(CustomCheckbox::Default);
+            scrollable.push(chb_member)
+         }
+      );
       let member_pane = Container::new(
          Column::new()
          .push(
@@ -83,7 +89,7 @@ impl EditGroupPage {
       }
 
       Container::new(
-         Column::new().width(Length::Fill).padding(20).spacing(10)
+         Column::new().width(Length::Fill).spacing(10)
          .push(
             Row::new().spacing(10).align_items(Align::Center)
             .push(lb_grp_name)
@@ -95,6 +101,6 @@ impl EditGroupPage {
             .push(Space::with_width(Length::Fill))
             .push(btn_okay)
          )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+      ).width(Length::Fill).height(Length::Fill).into()
    }
 }

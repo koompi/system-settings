@@ -4,7 +4,7 @@ mod edit_group_page;
 use {
    add_group_page::{AddGroupPage, AddGroupMsg}, edit_group_page::{EditGroupPage, EditGroupMsg},
 };
-use std::{cell::RefCell, rc::Rc};
+use std::cell::{RefCell, RefMut};
 use libkoompi::system_settings::users_groups::{UsersGroupsManager, Group, User};
 use iced::{
    button, scrollable, Scrollable, Button, Text, Container, Length, Column, Row, Element,
@@ -36,7 +36,7 @@ pub enum ContentPage {
 
 impl Default for ContentPage {
    fn default() -> Self {
-      Self::EditGroup(EditGroupPage::default())
+      Self::Empty
    }
 }
 
@@ -50,20 +50,17 @@ pub enum GroupsMsg {
 }
 
 impl GroupsTab {
-   pub fn new(usrgrp_mn: Rc<RefCell<UsersGroupsManager>>) -> Self {
+   pub fn new(usrgrp_mn: RefMut<UsersGroupsManager>) -> Self {
       use ContentPage::*;
-      let usrgrp_mn_ptr = Rc::into_raw(usrgrp_mn);
-      let usrgrp_mn = unsafe { &*usrgrp_mn_ptr };
-      let usrgrp_ref = usrgrp_mn.borrow();
-      let list_users = usrgrp_ref.list_users();
-      let list_groups = usrgrp_ref.list_groups();
+      let list_users = usrgrp_mn.list_users();
+      let list_groups = usrgrp_mn.list_groups();
       let curr_group = list_groups.first();
 
       Self {
-         usrgrp_mn: usrgrp_mn.clone(),
+         usrgrp_mn: RefCell::new(usrgrp_mn.clone()),
          curr_usr_is_admin: list_users.first().map(|usr| usr.is_admin()).unwrap_or(false),
-         ls_grps: list_groups.iter().map(ToOwned::to_owned).map(|grp| (grp.clone(), button::State::new())).collect(),
-         ls_users: list_users.iter().map(ToOwned::to_owned).map(|usr| usr.clone()).collect(),
+         ls_grps: list_groups.iter().map(|grp| (grp.to_owned(), button::State::new())).collect(),
+         ls_users: list_users.to_vec(),
          selected_grp: curr_group.map(|_| 0),
          content: if let Some(curr_group) = curr_group {
             EditGroup(EditGroupPage::new(curr_group, list_users))
@@ -87,12 +84,13 @@ impl GroupsTab {
       } = self;
 
       let is_admin = self.curr_usr_is_admin;
+
       match msg {
          SelecteGroup(idx) => {
             self.selected_grp = Some(idx);
             if let EditGroup(edit_group_page) = content {
-               if let Some((group, _)) = ls_grps.get_mut(idx) {
-                  edit_group_page.with_grp(group);
+               if let Some((grp, _)) = ls_grps.get(idx) {
+                  edit_group_page.with_grp(grp, ls_users.as_slice());
                }
             }
          },
@@ -104,10 +102,17 @@ impl GroupsTab {
          RemoveClicked => {
             if is_admin {
                if let Some(idx) = self.selected_grp {
-                  if let Some((group, _)) = ls_grps.get(idx) {
-                     match usrgrp_mn.borrow_mut().delete_group(group.name()) {
+                  if let Some((grp, _)) = ls_grps.get(idx) {
+                     match usrgrp_mn.borrow_mut().delete_group(grp.name()) {
                         Ok(is_ok) => if is_ok {
                            ls_grps.remove(idx);
+                           if let Some((grp, _)) = ls_grps.first() {
+                              self.selected_grp = Some(0);
+                              self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                           } else {
+                              self.selected_grp = None;
+                              self.content = Empty;
+                           }
                         } else {
                            println!("can not delete group");
                         },
@@ -115,7 +120,6 @@ impl GroupsTab {
                      }
                   }
                }
-               self.selected_grp = None;
             }
          },
          EditGroupMSG(edit_group_msg) => {
@@ -124,28 +128,34 @@ impl GroupsTab {
                   if let Some((grp, _)) = ls_grps.get_mut(idx) {
                      use EditGroupMsg::*;
                      match edit_group_msg {
-                        // GroupNameSubmitted(grp_name) => {
-                        //    println!("Submitted");
-                        //    edit_group_page.with_grp(grp);
-                        // },
+                        GroupNameSubmitted(grp_name) => {
+                           println!("Group name submitted: {}", grp_name);
+                           // edit_group_page.with_grp(&grp, ls_users.as_slice());
+                        },
                         OkayClicked(grp_name, ls_members) => {
-                           match usrgrp_mn.borrow_mut().change_group_members(grp.name(), ls_members.iter().map(|usr| usr.as_str()).collect()) {
-                              Ok(is_ok) => if is_ok {
-                                 println!("change group members success")
-                              } else {
-                                 println!("can not change group members")
-                              },
-                              Err(err) => eprintln!("{:?}", err)
+                           {
+                              match usrgrp_mn.borrow_mut().change_group_members(grp.name(), ls_members.iter().map(|usr| usr.as_str()).collect()) {
+                                 Ok(newgrp) => if let Some(newgrp) = newgrp {
+                                    println!("change group members success");
+                                    *grp = newgrp;
+                                 } else {
+                                    println!("did not change group members")
+                                 },
+                                 Err(err) => eprintln!("{:?}", err)
+                              }
+                           } 
+                           {
+                              match usrgrp_mn.borrow_mut().change_group_name(grp.name(), &grp_name) {
+                                 Ok(newgrp) => if let Some(newgrp) = newgrp {
+                                    println!("change group name success");
+                                    *grp = newgrp;
+                                 } else {
+                                    println!("did not change group name")
+                                 },
+                                 Err(err) => eprintln!("{:?}", err)
+                              }
                            }
-                           match usrgrp_mn.borrow_mut().change_group_name(grp.name(), &grp_name) {
-                              Ok(is_ok) => if is_ok {
-                                 println!("change group name success")
-                              } else {
-                                 println!("can not change group name")
-                              },
-                              Err(err) => eprintln!("{:?}", err)
-                           }
-                           edit_group_page.with_grp(grp);
+                           edit_group_page.with_grp(&grp, ls_users.as_slice());
                         },
                         _ => edit_group_page.update(edit_group_msg)
                      }
@@ -158,16 +168,18 @@ impl GroupsTab {
                use AddGroupMsg::*;
                match add_group_msg {
                   CreateClicked(group_name) => match usrgrp_mn.borrow_mut().create_group(group_name.as_str()) {
-                     Ok(is_ok) => if is_ok {
-                        if let Some(group) = usrgrp_mn.borrow().group_from_name(group_name.as_str()) {
-                           ls_grps.push((group.clone(), button::State::new()));
-                           self.selected_grp = ls_grps.iter().map(|(grp, _)| grp).position(|grp| grp.gid() == group.gid());
-                           self.content = EditGroup(EditGroupPage::new(group, ls_users.iter().map(|usr| usr).collect()));
+                     Ok(grp) => if let Some(grp) = grp {
+                        ls_grps.push((grp.to_owned(), button::State::new()));
+                        self.selected_grp = Some(ls_grps.len()-1);
+                        if let Some((grp, _)) = ls_grps.last() {
+                           self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                        } else {
+                           self.content = Empty;
                         }
                      } else {
                         if let Some(idx) = self.selected_grp {
-                           if let Some((grp, _)) = ls_grps.get_mut(idx) {
-                              self.content = EditGroup(EditGroupPage::new(grp, ls_users.iter().map(|usr| usr).collect()));
+                           if let Some((grp, _)) = ls_grps.get(idx) {
+                              self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
                            }
                         } else {
                            self.content = Empty;
@@ -177,8 +189,8 @@ impl GroupsTab {
                   },
                   CancelClicked => {
                      if let Some(idx) = self.selected_grp {
-                        if let Some((grp, _)) = ls_grps.get_mut(idx) {
-                           self.content = EditGroup(EditGroupPage::new(grp, ls_users.iter().map(|usr| usr).collect()));
+                        if let Some((grp, _)) = ls_grps.get(idx) {
+                           self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
                         }
                      } else {
                         self.content = Empty;
@@ -234,13 +246,13 @@ impl GroupsTab {
          EditGroup(edit_group_page) => edit_group_page.view().map(|msg| EditGroupMSG(msg)),
          Empty => Container::new(
             Text::new("There is no groups available")
-         ).width(Length::FillPortion(7)).height(Length::Fill).center_x().center_y().into()
+         ).width(Length::Fill).height(Length::Fill).center_x().center_y().into()
       };
 
       Container::new(
          Row::new().width(Length::Fill).spacing(10)
          .push(group_pane)
-         .push(right_sec)
+         .push(Container::new(right_sec).width(Length::FillPortion(7)))
       ).width(Length::Fill).height(Length::Fill).into()
    }
 }

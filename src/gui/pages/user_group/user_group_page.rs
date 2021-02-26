@@ -5,9 +5,9 @@ use super::{
 use std::{cell::RefCell, rc::Rc};
 use libkoompi::system_settings::users_groups::UsersGroupsManager;
 use crate::gui::addon_widgets::tabbar;
-use crate::gui::styles::{CustomContainer, CustomButton};
+use crate::gui::styles::CustomContainer;
 use iced::{
-   button, Button, Text, Container, Length, Column, Row, Align, Element, Space
+   button, Container, Length, Column, Text, Element
 };
 
 #[derive(Debug, Default)]
@@ -15,9 +15,20 @@ pub struct UserGroupPage {
    usrgrp_mn: Rc<RefCell<UsersGroupsManager>>,
    tabbar_state: Vec<(&'static str, button::State)>,
    curr_tab_idx: usize,
-   users_tab: UsersTab,
-   groups_tab: GroupsTab,
-   btn_option_state: button::State   
+   content: ContentPage,
+}
+
+#[derive(Debug)]
+pub enum ContentPage {
+   Users(UsersTab),
+   Groups(GroupsTab),
+   Empty
+}
+
+impl Default for ContentPage {
+   fn default() -> Self {
+      Self::Empty
+   }
 }
 
 #[derive(Debug, Clone)]
@@ -25,26 +36,25 @@ pub enum UserGroupMsg {
    TabChanged(usize),
    UsersMSG(UsersMsg),
    GroupsMSG(GroupsMsg),
-   OptionClicked,
 }
 
 impl UserGroupPage {
    pub fn new() -> Self {
+      use ContentPage::*;
       let tabs = vec![
          ("Users", button::State::new()),
          ("Groups", button::State::new()),
       ];
+
       match UsersGroupsManager::new() {
          Ok(usrgrp_mn) => {
             let usrgrp_mn = Rc::new(RefCell::new(usrgrp_mn));
 
             Self {
-               users_tab: UsersTab::new(Rc::clone(&usrgrp_mn)),
-               groups_tab: GroupsTab::new(Rc::clone(&usrgrp_mn)),
+               content: Users(UsersTab::new(usrgrp_mn.borrow_mut())),
                usrgrp_mn,
                tabbar_state: tabs,
-               curr_tab_idx: 0,
-               btn_option_state: button::State::new(),
+               ..Self::default()
             }
          },
          Err(err) => {
@@ -56,27 +66,41 @@ impl UserGroupPage {
 
    pub fn update(&mut self, msg: UserGroupMsg) {
       use UserGroupMsg::*;
+      use ContentPage::*;
       let Self {
-         users_tab,
-         groups_tab,
+         usrgrp_mn,
+         content,
          ..
       } = self;
 
       match msg {
-         TabChanged(idx) => self.curr_tab_idx = idx,
-         UsersMSG(users_msg) => users_tab.update(users_msg),
-         GroupsMSG(groups_msg) => groups_tab.update(groups_msg),
-         OptionClicked => {} 
+         TabChanged(idx) => {
+            self.curr_tab_idx = idx;
+            match idx {
+               0 => self.content = Users(UsersTab::new(usrgrp_mn.borrow_mut())),
+               1 => self.content = Groups(GroupsTab::new(usrgrp_mn.borrow_mut())),
+               _ => self.content = Empty,
+            }
+         },
+         UsersMSG(users_msg) => {
+            if let Users(users_tab) = content {
+               users_tab.update(users_msg);
+            }
+         },
+         GroupsMSG(groups_msg) => {
+            if let Groups(groups_tab) = content {
+               groups_tab.update(groups_msg);
+            }
+         }, 
       }
    }
 
    pub fn view(&mut self) -> Element<UserGroupMsg> {
+      use ContentPage::*;
       use UserGroupMsg::*;
       let Self {
          tabbar_state,
-         users_tab,
-         groups_tab,
-         btn_option_state,   
+         content,
          ..
       } = self;
 
@@ -84,26 +108,18 @@ impl UserGroupPage {
       let tabbar_sec = tabbar(tabbar_state, self.curr_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
-      let tabview = match self.curr_tab_idx {
-         0 => users_tab.view().map(|msg| UsersMSG(msg)),
-         1 => groups_tab.view().map(|msg| GroupsMSG(msg)),
-         _ => Row::new().into()
+      let tabview = match content {
+         Users(users_tab) => users_tab.view().map(|msg| UsersMSG(msg)),
+         Groups(groups_tab) => groups_tab.view().map(|msg| GroupsMSG(msg)),
+         Empty => Container::new(
+            Text::new("There is no content available")
+         ).width(Length::Fill).height(Length::Fill).style(CustomContainer::Header).center_x().center_y().into()
       };
-
-      // ផ្នែកខាងក្រោម
-      let btn_opt = Button::new(btn_option_state, Text::new("Options")).on_press(OptionClicked).style(CustomButton::Default);
-
-      let bottom_sec = Container::new(
-         Row::new().padding(15).spacing(10).align_items(Align::Center)
-         .push(Space::with_width(Length::Fill))
-         .push(btn_opt)
-      ).width(Length::Fill).align_x(Align::End);
 
       // មាតិកា
       let content = Column::new().width(Length::Fill)
          .push(tabbar_sec)
-         .push(Container::new(tabview).width(Length::Fill).height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
-         .push(bottom_sec);
+         .push(Container::new(tabview).width(Length::Fill).height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray));
 
       Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
    }
