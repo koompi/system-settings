@@ -1,4 +1,4 @@
-use crate::gui::styles::{CustomButton, CustomContainer, ACCENT};
+use crate::gui::styles::{CustomButton, CustomContainer, PRIMARY};
 use crate::helpers::ROOT_PATH;
 use iced::{button, Align, Button, Column, Container, Element, Length, Row, Space, Svg, Text};
 use sysinfo::{DiskExt, System, SystemExt};
@@ -14,6 +14,7 @@ pub enum InfoMessage {
 #[derive(Debug, Clone, Default)]
 pub struct InfoPage {
     os_name: String,
+    os_vers: String,
     os_url_state: button::State,
     os_url: String,
     libkoompi_vers: String,
@@ -34,14 +35,16 @@ impl InfoPage {
     pub fn new() -> Self {
         let system = System::new_all();
         let (storage_total_in_bytes, storage_available_in_bytes) = system.get_disks().iter().fold((0, 0), |(st_total, st_avai), disk| (st_total + disk.get_total_space(), st_avai + disk.get_available_space()));
+         let os_release = sys_info::linux_os_release().expect("not linux");
 
         Self {
-            os_name: system.get_name().unwrap_or_default(),
+            os_name: os_release.pretty_name().to_string(),
+            os_vers: os_release.version.unwrap_or_default(),
             os_url_state: button::State::new(),
-            os_url: "https://www.koompi.com".to_owned(),
+            os_url: os_release.home_url.unwrap_or_default(),
             libkoompi_vers: "1.0.1".to_owned(),
             iced_vers: "1.2.0".to_owned(),
-            kernel_vers: sys_info::os_release().unwrap_or_default(),
+            kernel_vers: system.get_kernel_version().unwrap_or_default(),
             os_type: sys_info::os_type().unwrap_or_default(),
             cpu_num: sys_info::cpu_num().unwrap_or_default(),
             cpu_speed: sys_info::cpu_speed().unwrap_or_default() as f32 / 1000.0,
@@ -65,6 +68,7 @@ impl InfoPage {
     pub fn view(&mut self) -> Element<InfoMessage> {
         let InfoPage {
             os_name,
+            os_vers,
             os_url_state,
             os_url,
             os_type,
@@ -83,8 +87,8 @@ impl InfoPage {
 
         // ផ្នែកក្បាល
         let logo = Svg::from_path(format!("{}/assets/images/koompi-logo.svg", ROOT_PATH())).width(Length::Units(100)).height(Length::Units(100));
-        let txt_os_name = Text::new(os_name.as_str()).size(20);
-        let btn_os_url = Button::new(os_url_state, Text::new(os_url.as_str()).color(ACCENT)).on_press(InfoMessage::OpenUrl).style(CustomButton::Text);
+        let txt_os_name = Text::new(format!("{} {}", os_name, os_vers)).size(20);
+        let btn_os_url = Button::new(os_url_state, Text::new(os_url.as_str()).color(PRIMARY)).on_press(InfoMessage::OpenUrl).style(CustomButton::Text);
         let header_sec = Container::new(
             Row::new()
                 .spacing(15)

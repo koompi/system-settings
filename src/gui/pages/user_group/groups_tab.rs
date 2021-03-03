@@ -5,7 +5,7 @@ use crate::gui::styles::{CustomButton, CustomContainer};
 use iced::{button, scrollable, Button, Column, Container, Element, Length, Row, Scrollable, Text};
 use iced_custom_widget::Icon;
 use libkoompi::system_settings::users_groups::{Group, User, UsersGroupsManager};
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use {
    add_group_page::{AddGroupMsg, AddGroupPage},
    edit_group_page::{EditGroupMsg, EditGroupPage},
@@ -15,8 +15,8 @@ use {
 pub struct GroupsTab {
    usrgrp_mn: RefCell<UsersGroupsManager>,
    curr_usr_is_admin: bool,
-   ls_grps: Vec<(Group, button::State)>,
-   ls_users: Vec<User>,
+   ls_grps: Vec<(RefCell<Group>, button::State)>,
+   ls_users: RefCell<Vec<User>>,
    selected_grp: Option<usize>,
    scroll_grps: scrollable::State,
    add_state: button::State,
@@ -49,19 +49,21 @@ pub enum GroupsMsg {
 }
 
 impl GroupsTab {
-   pub fn new(usrgrp_mn: RefMut<UsersGroupsManager>) -> Self {
+   pub fn new(usrgrp_mn: &mut UsersGroupsManager, ls_grps: &mut Vec<Group>, ls_usrs: &mut Vec<User>, curr_usr_is_admin: bool) -> Self {
       use ContentPage::*;
-      let list_users = usrgrp_mn.list_users();
-      let list_groups = usrgrp_mn.list_groups();
-      let curr_group = list_groups.first();
+      let curr_group = ls_grps.first();
 
       Self {
          usrgrp_mn: RefCell::new(usrgrp_mn.clone()),
-         curr_usr_is_admin: list_users.first().map(|usr| usr.is_admin()).unwrap_or(false),
-         ls_grps: list_groups.iter().map(|grp| (grp.to_owned(), button::State::new())).collect(),
-         ls_users: list_users.to_vec(),
+         curr_usr_is_admin,
+         ls_grps: ls_grps.iter().map(|grp| (RefCell::new(grp.to_owned()), button::State::new())).collect(),
+         ls_users: RefCell::new(ls_usrs.to_vec()),
          selected_grp: curr_group.map(|_| 0),
-         content: if let Some(curr_group) = curr_group { EditGroup(EditGroupPage::new(curr_group, list_users)) } else { Empty },
+         content: if let Some(curr_group) = curr_group { 
+            EditGroup(EditGroupPage::new(curr_group, ls_usrs.as_slice(), curr_usr_is_admin)) 
+         } else { 
+            Empty 
+         },
          ..Self::default()
       }
    }
@@ -73,13 +75,14 @@ impl GroupsTab {
       let Self { usrgrp_mn, ls_grps, ls_users, content, .. } = self;
 
       let is_admin = self.curr_usr_is_admin;
+      let ls_users = ls_users.borrow();
 
       match msg {
          SelecteGroup(idx) => {
             self.selected_grp = Some(idx);
             if let EditGroup(edit_group_page) = content {
                if let Some((grp, _)) = ls_grps.get(idx) {
-                  edit_group_page.with_grp(grp, ls_users.as_slice());
+                  edit_group_page.with_grp(&grp.borrow(), ls_users.as_slice());
                }
             }
          }
@@ -91,14 +94,16 @@ impl GroupsTab {
          RemoveClicked => {
             if is_admin {
                if let Some(idx) = self.selected_grp {
-                  if let Some((grp, _)) = ls_grps.get(idx) {
+                  if let Some((group, _)) = ls_grps.get(idx) {
+                     let grp = group.borrow();
                      match usrgrp_mn.borrow_mut().delete_group(grp.name()) {
                         Ok(is_ok) => {
                            if is_ok {
+                              std::mem::drop(grp);
                               ls_grps.remove(idx);
                               if let Some((grp, _)) = ls_grps.first() {
                                  self.selected_grp = Some(0);
-                                 self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                                 self.content = EditGroup(EditGroupPage::new(&grp.borrow(), ls_users.as_slice(), self.curr_usr_is_admin));
                               } else {
                                  self.selected_grp = None;
                                  self.content = Empty;
@@ -116,8 +121,9 @@ impl GroupsTab {
          EditGroupMSG(edit_group_msg) => {
             if let EditGroup(edit_group_page) = content {
                if let Some(idx) = self.selected_grp {
-                  if let Some((grp, _)) = ls_grps.get_mut(idx) {
+                  if let Some((group, _)) = ls_grps.get_mut(idx) {
                      use EditGroupMsg::*;
+                     let mut grp = group.borrow_mut();
                      match edit_group_msg {
                         GroupNameSubmitted(grp_name) => {
                            println!("Group name submitted: {}", grp_name);
@@ -165,17 +171,17 @@ impl GroupsTab {
                   CreateClicked(group_name) => match usrgrp_mn.borrow_mut().create_group(group_name.as_str()) {
                      Ok(grp) => {
                         if let Some(grp) = grp {
-                           ls_grps.push((grp.to_owned(), button::State::new()));
+                           ls_grps.push((RefCell::new(grp.to_owned()), button::State::new()));
                            self.selected_grp = Some(ls_grps.len() - 1);
                            if let Some((grp, _)) = ls_grps.last() {
-                              self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                              self.content = EditGroup(EditGroupPage::new(&grp.borrow(), ls_users.as_slice(), self.curr_usr_is_admin));
                            } else {
                               self.content = Empty;
                            }
                         } else {
                            if let Some(idx) = self.selected_grp {
                               if let Some((grp, _)) = ls_grps.get(idx) {
-                                 self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                                 self.content = EditGroup(EditGroupPage::new(&grp.borrow(), ls_users.as_slice(), self.curr_usr_is_admin));
                               }
                            } else {
                               self.content = Empty;
@@ -187,7 +193,7 @@ impl GroupsTab {
                   CancelClicked => {
                      if let Some(idx) = self.selected_grp {
                         if let Some((grp, _)) = ls_grps.get(idx) {
-                           self.content = EditGroup(EditGroupPage::new(grp, ls_users.as_slice()));
+                           self.content = EditGroup(EditGroupPage::new(&grp.borrow(), ls_users.as_slice(), self.curr_usr_is_admin));
                         }
                      } else {
                         self.content = Empty;
@@ -215,10 +221,9 @@ impl GroupsTab {
       } = self;
 
       let is_admin = self.curr_usr_is_admin;
-      let scrollable_group = ls_grps
-         .iter_mut()
-         .enumerate()
-         .fold(Scrollable::new(scroll_grps).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (group, state))| {
+      let scrollable_group = ls_grps.iter_mut().enumerate()
+         .fold(Scrollable::new(scroll_grps).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (grp, state))| {
+            let group = grp.borrow();
             let mut btn = Button::new(state, Text::new(group.formatted_name())).width(Length::Fill).style(if let Some(selected) = *selected_grp {
                if selected == idx {
                   CustomButton::Selected
@@ -229,7 +234,9 @@ impl GroupsTab {
                CustomButton::Text
             });
             if let EditGroup(_) = content {
-               btn = btn.on_press(SelecteGroup(idx));
+               if is_admin {
+                  btn = btn.on_press(SelecteGroup(idx));
+               }
             }
             scrollable.push(btn)
          });
@@ -242,10 +249,12 @@ impl GroupsTab {
          btn_remove = btn_remove.on_press(RemoveClicked);
       }
       let btn_group = Container::new(Row::new().push(btn_add).push(btn_remove)).width(Length::Fill).style(CustomContainer::Header);
-      let group_pane = Container::new(Column::new().push(Container::new(Text::new("Groups")).width(Length::Fill).padding(7).style(CustomContainer::Header)).push(scrollable_group).push(btn_group))
-         .height(Length::Fill)
-         .width(Length::FillPortion(3))
-         .style(CustomContainer::ForegroundWhite);
+      let group_pane = Container::new(
+         Column::new()
+         .push(Container::new(Text::new("Groups")).width(Length::Fill).padding(7).style(CustomContainer::Header))
+         .push(scrollable_group)
+         .push(btn_group)
+      ).height(Length::Fill).width(Length::FillPortion(3)).style(CustomContainer::ForegroundWhite);
 
       let right_sec = match content {
          AddGroup(add_group_page) => add_group_page.view().map(|msg| AddGroupMSG(msg)),
@@ -253,9 +262,10 @@ impl GroupsTab {
          Empty => Container::new(Text::new("There is no groups available")).width(Length::Fill).height(Length::Fill).center_x().center_y().into(),
       };
 
-      Container::new(Row::new().width(Length::Fill).spacing(10).push(group_pane).push(Container::new(right_sec).width(Length::FillPortion(7))))
-         .width(Length::Fill)
-         .height(Length::Fill)
-         .into()
+      Container::new(
+         Row::new().width(Length::Fill).spacing(10)
+         .push(group_pane)
+         .push(Container::new(right_sec).width(Length::FillPortion(7)))
+      ).width(Length::Fill).height(Length::Fill).into()
    }
 }
