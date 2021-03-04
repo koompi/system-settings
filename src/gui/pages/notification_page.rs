@@ -8,6 +8,7 @@ use iced::{
     button, pick_list, text_input, Align, Button, Checkbox, Column, Container, Element,
     HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput,
 };
+use crate::select_display;
 use vedas_core::macros::select;
 
 #[derive(Debug, Clone)]

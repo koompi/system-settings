@@ -1,5 +1,5 @@
 #[macro_use]
-mod general_page;
+mod general;
 mod access_page;
 mod battery_page;
 mod bluetooth;
@@ -24,7 +24,7 @@ use bluetooth::{BluetoothMessage, BluetoothPage};
 use date_time::{DateTimeMessage, DateTimePage};
 use desktop_page::{DesktopMessage, DesktopPage};
 use display_page::{DisplayMessage, DisplayPage};
-use general_page::{General, GeneralMessage};
+use general::{General, GeneralMessage};
 use iced::{Container, Element, Length, Space, Subscription};
 use keyboard::{KeyboardMessage, KeyboardPage};
 use lang_region::{LangRegionMessage, LangRegionPage};
