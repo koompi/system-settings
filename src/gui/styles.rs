@@ -131,7 +131,7 @@ impl container::StyleSheet for CustomContainer {
             ForegroundWhite => Color::WHITE,
             ForegroundGray | Segment => FOREGROUND,
             Hovered => Color {
-               a: 0.5,
+               a: 0.3,
                ..HOVERED
             },
             FadedBrightForeground => Color {

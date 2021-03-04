@@ -367,6 +367,7 @@ impl LangRegionPage {
                .push(
                   Container::new(
                      Column::new()
+                     .push(Container::new(lb_prefered_lang).padding(7).width(Length::Fill).style(CustomContainer::Header))
                      .push(lang_group)
                      .push(btn_group)
                   ).width(Length::Fill).height(Length::Fill).style(CustomContainer::ForegroundWhite)
@@ -514,7 +515,6 @@ impl LangRegionPage {
                .push(
                   Column::new().spacing(10).height(Length::Fill)
                   .push(Space::with_height(Length::Units(0)))
-                  .push(lb_prefered_lang)
                   .push(
                      Row::new().spacing(10)
                      .push(left_pane.width(Length::FillPortion(3)))

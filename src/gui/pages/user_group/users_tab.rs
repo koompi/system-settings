@@ -168,7 +168,7 @@ impl UsersTab {
                               }
                            }
                         }
-                        ChangeGroupClicked => {
+                        ChangeGroupsClicked => {
                            let usrgrp_ref = usrgrp_mn.borrow();
                            let all_groups = usrgrp_ref.all_groups();
                            self.content = ChangeGroups(ChangeGroupsPage::new(&usr, all_groups));
