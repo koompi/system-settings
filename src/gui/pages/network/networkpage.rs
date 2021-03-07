@@ -4,8 +4,8 @@ use super::wireless::{Wireless, WirelessMsg};
 use crate::gui::styles::containers::ContainerStyle;
 use iced::{scrollable, Align, Column, Container, Element, Length, Row, Rule, Scrollable, Text};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Tab;
+use icw::components::{Icon, Icons};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Choice {
     A,
@@ -73,14 +73,18 @@ impl NetworkPage {
             .width(Length::Fill)
             .align_items(Align::Center)
             .spacing(10)
-            .push(Tab::new(Choice::A, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f796}', "Ethernet")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::B, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f1eb}', "Wireless")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::C, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f6ff}', "DSL")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::D, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f3ed}', "VPN")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::E, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f7ba}', "System Proxy")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::F, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f7b9}', "Application Proxy")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::G, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f0c1}', "Personal Hotspot")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::H, Some(self.choice), NetMessage::TabSelect, tab_content('\u{f05a}', "Network Details")).width(Length::Fill).height(Length::Units(50)));
+            .push(Tab::new(Choice::A, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::DiceFive, "Ethernet")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::B, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::Wifi, "Wireless")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::C, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::NeutralFace, "DSL")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::D, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::Link, "VPN")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::E, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::Share, "System Proxy")).width(Length::Fill).height(Length::Units(50)))
+            .push(
+                Tab::new(Choice::F, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::ParachuteBox, "Application Proxy"))
+                    .width(Length::Fill)
+                    .height(Length::Units(50)),
+            )
+            .push(Tab::new(Choice::G, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::Link, "Personal Hotspot")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::H, Some(self.choice), NetMessage::TabSelect, tab_content(Icons::Info, "Network Details")).width(Length::Fill).height(Length::Units(50)));
         let contnet = Column::new().height(Length::Fill).align_items(Align::Center).padding(20).push(match self.choice {
             Choice::A => self.wire.view().map(move |msg| NetMessage::WireMsg(msg)),
             Choice::B => self.wireless.view().map(move |msg| NetMessage::WirelessMsg(msg)),
@@ -105,6 +109,6 @@ impl NetworkPage {
         Container::new(container).style(ContainerStyle::LightGray).width(Length::Fill).height(Length::Fill).padding(10).center_x().center_y().into()
     }
 }
-fn tab_content<'a>(unicode: char, name: &str) -> Row<'a, NetMessage> {
-    Row::new().push(Icon::new(unicode).size(24)).push(Text::new(name).size(16)).align_items(Align::Center).spacing(8)
+fn tab_content<'a>(icon: Icons, name: &str) -> Row<'a, NetMessage> {
+    Row::new().push(Icon::new(icon).size(24)).push(Text::new(name).size(16)).align_items(Align::Center).spacing(8)
 }

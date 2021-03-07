@@ -1,7 +1,7 @@
 use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle, textinput::InputStyle};
 use iced::{button, text_input, Align, Button, Column, Container, Element, HorizontalAlignment, Length, Text, TextInput, VerticalAlignment};
 use iced_custom_widget as icw;
-use icw::components::Icon;
+use icw::components::{Icon, Icons};
 #[derive(Default, Debug, Clone)]
 pub struct BluetoothSettings {
     connected_host: text_input::State,
@@ -47,7 +47,7 @@ impl BluetoothSettings {
             .spacing(10)
             .padding(10)
             .height(Length::Fill)
-            .push(Button::new(&mut self.hide_btn, Icon::new('\u{f104}')).on_press(BluetoothSettingsMsg::HideSettings).style(ButtonStyle::Circular(86, 101, 115, 1.0)))
+            .push(Button::new(&mut self.hide_btn, Icon::new(Icons::Stream)).on_press(BluetoothSettingsMsg::HideSettings).style(ButtonStyle::Circular(86, 101, 115, 1.0)))
             .push(Column::new().align_items(Align::Center).width(Length::Fill).push(Text::new("Connected Host Bluetooth").size(16)))
             .push(
                 TextInput::new(&mut self.connected_host, &self.connected_host_val, "", BluetoothSettingsMsg::BluetothNameChanged)

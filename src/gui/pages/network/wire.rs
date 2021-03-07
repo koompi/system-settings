@@ -2,8 +2,8 @@
 use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle};
 use iced::{button, Align, Button, Column, Container, Element, Length, Space, Text};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Toggler;
+use icw::components::{Icon, Icons};
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Wire {
     is_enable: bool,
@@ -41,7 +41,7 @@ impl Wire {
             )
             .push(Space::with_height(Length::Fill))
             .push(
-                Button::new(&mut self.add_net_con, Icon::new('\u{f067}').size(24))
+                Button::new(&mut self.add_net_con, Icon::new(Icons::Ad).size(24))
                     .style(ButtonStyle::BigCircular(86, 101, 115, 1.0))
                     .padding(10)
                     .width(Length::Units(50))

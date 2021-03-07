@@ -3,8 +3,8 @@ use crate::gui::styles::{buttons::ButtonStyle, rules::RuleStyle};
 use async_std::task;
 use iced::{button, scrollable, text_input, Align, Button, Column, Container, Element, Length, Row, Rule, Scrollable, Space, Text, TextInput};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Toggler;
+use icw::components::{Icon, Icons};
 use libkoompi::system_settings::network::{get_accesspoints, wifi::Connectivity, wifi::WifiInterface, Wifi};
 use std::sync::mpsc;
 #[derive(Default, Debug, Clone)]
@@ -36,7 +36,7 @@ pub struct Wireless {
 struct WifiProperty {
     pub detail: button::State,
     pub status: bool,
-    pub settings_icon: char,
+    pub settings_icon: Icons,
     pub settings: button::State,
     pub ssid: String,
     pub connect: button::State,
@@ -90,7 +90,7 @@ fn get_list_ssid() -> Vec<WifiProperty> {
                 let mut wifi_props: WifiProperty = WifiProperty::new();
                 wifi_props.ssid = accesspoint.ssid;
                 wifi_props.detail = button::State::new();
-                wifi_props.settings_icon = '\u{f1eb}';
+                wifi_props.settings_icon = Icons::Key;
                 wifi_props.settings = button::State::new();
                 wifi_props.connect = button::State::new();
                 wifi_props.input_passwd = text_input::State::new();
@@ -353,18 +353,18 @@ impl Wireless {
                                 .align_items(Align::Center)
                                 .spacing(8)
                                 .padding(10)
-                                .push(if wifi_prop.status { Icon::new('\u{f3ed}').size(16) } else { Icon::new('\u{f09c}').size(16) })
-                                .push(Icon::new('\u{f1eb}').size(24))
+                                .push(if wifi_prop.status { Icon::new(Icons::Key).size(16) } else { Icon::new(Icons::Unlock).size(16) })
+                                .push(Icon::new(Icons::Wifi).size(24))
                                 .push(Text::new(wifi_prop.ssid.as_str()).size(16))
                                 .push(Space::with_width(Length::Fill))
                                 .push(if wifi_prop.is_disable {
-                                    Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string))).style(ButtonStyle::Transparent)
+                                    Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new(Icons::Key)).push(Text::new(&wifi_prop.button_string))).style(ButtonStyle::Transparent)
                                 } else {
-                                    Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string)))
+                                    Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new(Icons::Unlock)).push(Text::new(&wifi_prop.button_string)))
                                         .style(ButtonStyle::Transparent)
                                         .on_press(WirelessMsg::ConnectButton(wifi_prop.ssid.clone()))
                                 })
-                                .push(Button::new(&mut wifi_prop.settings, Icon::new('\u{f105}')).on_press(WirelessMsg::ShowSettings).style(ButtonStyle::Transparent))
+                                .push(Button::new(&mut wifi_prop.settings, Icon::new(Icons::Sign)).on_press(WirelessMsg::ShowSettings).style(ButtonStyle::Transparent))
                         } else {
                             counter += 1;
                             Row::new().width(Length::Units(0)).height(Length::Units(0))
@@ -381,18 +381,18 @@ impl Wireless {
                             .align_items(Align::Center)
                             .padding(10)
                             .spacing(8)
-                            .push(if wifi_prop.status { Icon::new('\u{f3ed}').size(16) } else { Icon::new('\u{f09c}').size(16) })
-                            .push(Icon::new('\u{f1eb}').size(24))
+                            .push(if wifi_prop.status { Icon::new(Icons::Key).size(16) } else { Icon::new(Icons::Unlock).size(16) })
+                            .push(Icon::new(Icons::Wifi).size(24))
                             .push(Text::new(wifi_prop.ssid.as_str()).size(16))
                             .push(Space::with_width(Length::Fill))
                             .push(if wifi_prop.is_disable {
-                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string))).style(ButtonStyle::Transparent)
+                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new(Icons::Key)).push(Text::new(&wifi_prop.button_string))).style(ButtonStyle::Transparent)
                             } else {
-                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new('\u{f1e6}')).push(Text::new(&wifi_prop.button_string)))
+                                Button::new(&mut wifi_prop.connect, Row::new().align_items(Align::Center).spacing(10).push(Icon::new(Icons::Unlock)).push(Text::new(&wifi_prop.button_string)))
                                     .style(ButtonStyle::Transparent)
                                     .on_press(WirelessMsg::ConnectButton(wifi_prop.ssid.clone()))
                             })
-                            .push(Button::new(&mut wifi_prop.settings, Icon::new('\u{f105}')).on_press(WirelessMsg::ShowSettings).style(ButtonStyle::Transparent)),
+                            .push(Button::new(&mut wifi_prop.settings, Icon::new(Icons::Sign)).on_press(WirelessMsg::ShowSettings).style(ButtonStyle::Transparent)),
                     )
                     .push(if wifi_prop.is_shown {
                         Container::new(
@@ -423,8 +423,8 @@ impl Wireless {
                                     .push(Text::new("Wireless Network Adapter").size(24))
                                     .push(Space::with_width(Length::Fill))
                                     .spacing(10)
-                                    .push(Button::new(&mut self.search_wifi, Icon::new('\u{f002}')).style(ButtonStyle::Transparent).on_press(WirelessMsg::SearchWifi))
-                                    .push(Button::new(&mut self.refresh_wifi, Icon::new('\u{f2f9}')).style(ButtonStyle::Transparent).on_press(WirelessMsg::RefreshWifi))
+                                    .push(Button::new(&mut self.search_wifi, Icon::new(Icons::Search)).style(ButtonStyle::Transparent).on_press(WirelessMsg::SearchWifi))
+                                    .push(Button::new(&mut self.refresh_wifi, Icon::new(Icons::Seedling)).style(ButtonStyle::Transparent).on_press(WirelessMsg::RefreshWifi))
                                     .push(Toggler::new(self.is_active, String::from(""), WirelessMsg::EnableWireless).width(Length::Shrink)),
                             )
                             .push(if self.is_shown_search {

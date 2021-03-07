@@ -1,9 +1,9 @@
-use super::blue_content::{blue_backend::BluetoothData, BlueConentMsg, BlueContent};
+use super::blue_content::{BlueConentMsg, BlueContent};
 use super::bluesettings::{BluetoothSettings, BluetoothSettingsMsg};
 use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle, rules::RuleStyle, textinput::InputStyle};
 use iced::{button, scrollable, text_input, Align, Button, Column, Container, Element, Length, Row, Rule, Scrollable, Space, Text, TextInput};
 use iced_custom_widget as icw;
-use icw::components::{Icon, Toggler};
+use icw::components::{Icon, Icons, Toggler};
 #[derive(Default, Debug, Clone)]
 pub struct BluetoothPage {
     is_enable: bool,
@@ -15,7 +15,6 @@ pub struct BluetoothPage {
     refresh: button::State,
     device_name: String,
     dev_name: text_input::State,
-    bluedata: BluetoothData,
     dev_name_val: String,
     bluetooth_settings: BluetoothSettings,
     scroll_area: scrollable::State,
@@ -51,10 +50,6 @@ impl BluetoothPage {
             BluetoothMessage::BluetoothSettingsMsg(msg) => self.bluetooth_settings.update(msg),
             BluetoothMessage::DevEnabled(is_enable) => {
                 self.is_enable = is_enable;
-                match self.bluedata.turn_on_or_off(is_enable) {
-                    Ok(_success) => {}
-                    Err(e) => eprintln!("Error: {:?}", e),
-                }
             }
             BluetoothMessage::DevSettingsShown => self.is_shown_settings = !self.is_shown_settings,
             BluetoothMessage::DevAllowed(is_allow) => self.is_allowed = is_allow,
@@ -75,7 +70,7 @@ impl BluetoothPage {
                                     .style(InputStyle::InkBorder),
                             )
                         } else {
-                            Row::new().push(Button::new(&mut self.edit_dev, Icon::new('\u{f304}')).on_press(BluetoothMessage::DevEdited).style(ButtonStyle::Transparent))
+                            Row::new().push(Button::new(&mut self.edit_dev, Icon::new(Icons::Edit)).on_press(BluetoothMessage::DevEdited).style(ButtonStyle::Transparent))
                         }))
                         .push(Toggler::new(self.is_enable, String::from(""), BluetoothMessage::DevEnabled).width(Length::FillPortion(1))),
                 )
@@ -93,12 +88,12 @@ impl BluetoothPage {
         .style(ContainerStyle::LightGrayCircle);
         let know_devices = Column::new().spacing(10).push(Text::new("My Devices").size(24)).push(
             Column::new().padding(10).width(Length::Fill).height(Length::Shrink).push(
-                Row::new().spacing(6).push(Icon::new('\u{f10b}')).push(Text::new("Linux")).push(Space::with_width(Length::Fill)).push(
-                    Row::new()
-                        .align_items(Align::Center)
-                        .spacing(4)
-                        .push(Text::new("Not Connected"))
-                        .push(Button::new(&mut self.show_settings, Icon::new('\u{f105}')).on_press(BluetoothMessage::DevSettingsShown).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
+                Row::new().spacing(6).push(Icon::new(Icons::DiceFive)).push(Text::new("Linux")).push(Space::with_width(Length::Fill)).push(
+                    Row::new().align_items(Align::Center).spacing(4).push(Text::new("Not Connected")).push(
+                        Button::new(&mut self.show_settings, Icon::new(Icons::ArrowRight))
+                            .on_press(BluetoothMessage::DevSettingsShown)
+                            .style(ButtonStyle::Circular(86, 101, 115, 1.0)),
+                    ),
                 ),
             ),
         );

@@ -4,8 +4,8 @@ use super::soundeffect::{SndEffect, SndEffectMsg};
 use crate::gui::styles::containers::ContainerStyle;
 use iced::{scrollable, Align, Column, Container, Element, Length, Row, Rule, Scrollable, Text};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Tab;
+use icw::components::{Icon, Icons};
 #[derive(Default)]
 pub struct SoundPage {
     choice: Choice,
@@ -36,9 +36,9 @@ impl SoundPage {
             .width(Length::Fill)
             .align_items(Align::Center)
             .spacing(10)
-            .push(Tab::new(Choice::A, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f028}', "Audio")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::B, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f5fd}', "SoundEffect")).width(Length::Fill).height(Length::Units(50)))
-            .push(Tab::new(Choice::C, Some(self.choice), SoundMessage::TabSelect, tab_content('\u{f1de}', "Configure")).width(Length::Fill).height(Length::Units(50)));
+            .push(Tab::new(Choice::A, Some(self.choice), SoundMessage::TabSelect, tab_content(Icons::AudioDescription, "Audio")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::B, Some(self.choice), SoundMessage::TabSelect, tab_content(Icons::AudioFile, "SoundEffect")).width(Length::Fill).height(Length::Units(50)))
+            .push(Tab::new(Choice::C, Some(self.choice), SoundMessage::TabSelect, tab_content(Icons::BarChart, "Configure")).width(Length::Fill).height(Length::Units(50)));
         let contnet = Column::new().height(Length::Fill).align_items(Align::Center).padding(20).push(match self.choice {
             Choice::A => Container::new(self.auddio_tab.view().map(move |msg| SoundMessage::AudioTabMsg(msg))),
             Choice::B => Container::new(self.sound_effects.view().map(move |msg| SoundMessage::SndEffectMsg(msg))),
@@ -57,7 +57,7 @@ impl SoundPage {
         Container::new(container).style(ContainerStyle::LightGray).width(Length::Fill).height(Length::Fill).padding(10).center_x().center_y().into()
     }
 }
-fn tab_content<'l>(unicode: char, name: &str) -> Row<'l, SoundMessage> {
+fn tab_content<'l>(unicode: Icons, name: &str) -> Row<'l, SoundMessage> {
     Row::new().push(Icon::new(unicode).size(24)).push(Text::new(name).size(16)).align_items(Align::Center).spacing(8)
 }
 #[derive(Debug, Clone)]

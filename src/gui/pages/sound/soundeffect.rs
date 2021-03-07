@@ -3,8 +3,8 @@
 use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle};
 use iced::{button, Align, Button, Column, Container, Element, Length, Row, Space, Text};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Toggler;
+use icw::components::{Icon, Icons};
 use std::fmt;
 use std::path::PathBuf;
 #[derive(Default, Debug, Clone)]
@@ -125,7 +125,7 @@ impl SndEffect {
                             )
                             // .push(Space::with_width(Length::Fill))
                             .push(
-                                Button::new(state, Icon::new(if effect_enable && current_tick == idx { '\u{f058}' } else { '\u{f111}' }))
+                                Button::new(state, Icon::new(if effect_enable && current_tick == idx { Icons::CheckCircle } else { Icons::Check }))
                                     .padding(4)
                                     .style(ButtonStyle::Transparent)
                                     .on_press(SndEffectMsg::EnableEffect(idx)),

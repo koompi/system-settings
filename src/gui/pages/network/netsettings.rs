@@ -2,8 +2,8 @@
 use crate::gui::styles::{buttons::ButtonStyle, containers::ContainerStyle, picklist::PickListStyle, rules::RuleStyle, textinput::InputStyle};
 use iced::{button, pick_list, scrollable, text_input, Align, Button, Column, Container, Element, HorizontalAlignment, Length, PickList, Row, Rule, Scrollable, Space, Text, TextInput, VerticalAlignment};
 use iced_custom_widget as icw;
-use icw::components::Icon;
 use icw::components::Toggler;
+use icw::components::{Icon, Icons};
 use std::fmt;
 #[derive(Default, Debug, Clone)]
 pub struct NetSettings {
@@ -567,7 +567,7 @@ impl NetSettings {
                                                 .width(Length::FillPortion(2))
                                         })
                                         .push(
-                                            Button::new(&mut self.toggle_show_passwd, Icon::new(if self.is_shown_passwd { '\u{f06e}' } else { '\u{f070}' }))
+                                            Button::new(&mut self.toggle_show_passwd, Icon::new(if self.is_shown_passwd { Icons::Eye } else { Icons::EyeSlash }))
                                                 .style(ButtonStyle::Circular(86, 101, 115, 1.0))
                                                 .on_press(NetSettingsMsg::ToggleShownPasswd),
                                         ),
@@ -611,7 +611,7 @@ impl NetSettings {
                                                 .width(Length::FillPortion(2))
                                         })
                                         .push(
-                                            Button::new(&mut self.toggle_show_passwd, Icon::new(if self.is_shown_passwd { '\u{f06e}' } else { '\u{f070}' }))
+                                            Button::new(&mut self.toggle_show_passwd, Icon::new(if self.is_shown_passwd { Icons::Eye } else { Icons::EyeSlash }))
                                                 .style(ButtonStyle::Circular(65, 203, 126, 1.0))
                                                 .on_press(NetSettingsMsg::ToggleShownPasswd),
                                         ),
@@ -660,28 +660,28 @@ impl NetSettings {
                                                 .style(InputStyle::InkBorder)
                                                 .width(Length::FillPortion(2))
                                         })
-                                        .push(Button::new(private_pwd_file, Icon::new(if self.is_shown_private_key { '\u{f06e}' } else { '\u{f070}' })).on_press(NetSettingsMsg::ToggleKey)),
+                                        .push(Button::new(private_pwd_file, Icon::new(if self.is_shown_private_key { Icons::File } else { Icons::FileUpload })).on_press(NetSettingsMsg::ToggleKey)),
                                 )
                                 .push(
                                     Row::new()
                                         .spacing(4)
                                         .push(default_text("Private Key").width(Length::FillPortion(1)))
                                         .push(TextInput::new(private_key, "", private_key_val, NetSettingsMsg::PrivateKeyChanged).padding(6).style(InputStyle::InkBorder).width(Length::FillPortion(2)))
-                                        .push(Button::new(private_key_file, Icon::new('\u{f0c6}')).on_press(NetSettingsMsg::OpenFile1).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
+                                        .push(Button::new(private_key_file, Icon::new(Icons::File)).on_press(NetSettingsMsg::OpenFile1).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
                                 )
                                 .push(
                                     Row::new()
                                         .spacing(4)
                                         .push(default_text("CA Cert").width(Length::FillPortion(1)))
                                         .push(TextInput::new(ca_cert, "", ca_cert_val, NetSettingsMsg::CaCertChanged).padding(6).style(InputStyle::InkBorder).width(Length::FillPortion(2)))
-                                        .push(Button::new(ca_cert_file, Icon::new('\u{f0c6}')).on_press(NetSettingsMsg::OpenFile2).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
+                                        .push(Button::new(ca_cert_file, Icon::new(Icons::File)).on_press(NetSettingsMsg::OpenFile2).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
                                 )
                                 .push(
                                     Row::new()
                                         .spacing(4)
                                         .push(default_text("User Cert").width(Length::FillPortion(1)))
                                         .push(TextInput::new(user_cert, "", user_cert_val, NetSettingsMsg::UserCertChanged).padding(6).style(InputStyle::InkBorder).width(Length::FillPortion(2)))
-                                        .push(Button::new(user_cert_file, Icon::new('\u{f0c6}')).on_press(NetSettingsMsg::OpenFile3).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
+                                        .push(Button::new(user_cert_file, Icon::new(Icons::File)).on_press(NetSettingsMsg::OpenFile3).style(ButtonStyle::Circular(86, 101, 115, 1.0))),
                                 ),
                         )
                         .width(Length::Fill),
@@ -809,9 +809,9 @@ impl NetSettings {
                                                 .style(InputStyle::InkBorder)
                                                 .width(Length::FillPortion(2)),
                                         )
-                                        .push(Button::new(&mut self.wlan_mtu_plus, Icon::new('\u{f067}')).on_press(NetSettingsMsg::WlanMtuPlus).style(ButtonStyle::Circular(215, 219, 221, 0.5)))
-                                        .push(Button::new(&mut self.wlan_mtu_minus, Icon::new('\u{f068}')).on_press(NetSettingsMsg::WlanMtuMinus).style(ButtonStyle::Circular(215, 219, 221, 0.5)))
-                                        .push(Button::new(&mut self.wlan_mtu_refresh, Icon::new('\u{f2f9}')).on_press(NetSettingsMsg::WlanMtuRefresh).style(ButtonStyle::Circular(215, 219, 221, 0.5))),
+                                        .push(Button::new(&mut self.wlan_mtu_plus, Icon::new(Icons::Ad)).on_press(NetSettingsMsg::WlanMtuPlus).style(ButtonStyle::Circular(215, 219, 221, 0.5)))
+                                        .push(Button::new(&mut self.wlan_mtu_minus, Icon::new(Icons::Minus)).on_press(NetSettingsMsg::WlanMtuMinus).style(ButtonStyle::Circular(215, 219, 221, 0.5)))
+                                        .push(Button::new(&mut self.wlan_mtu_refresh, Icon::new(Icons::Redo)).on_press(NetSettingsMsg::WlanMtuRefresh).style(ButtonStyle::Circular(215, 219, 221, 0.5))),
                                 ),
                             )
                         } else {
