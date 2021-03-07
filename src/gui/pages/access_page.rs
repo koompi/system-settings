@@ -1,6 +1,6 @@
 use crate::helpers::ROOT_PATH;
 use iced::{button, container, pick_list, scrollable, slider, Align, Button, Checkbox, Color, Column, Container, Element, Length, PickList, Row, Scrollable, Slider, Space, Svg, Text};
-use iced_custom_widget::Icon;
+use iced_custom_widget::{Icon, Icons};
 
 use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider};
 use smart_default::SmartDefault;
@@ -297,17 +297,17 @@ impl AccessPage {
             let preview_caption = Container::new(Text::new("Subtitles will look like this.")).padding(2).style(*preview_cap_style);
             let preview_sec = Container::new(preview_caption).width(Length::Fill).height(Length::Units(70)).center_x().center_y().style(CustomContainer::ForegroundWhite);
             let lb_sub_style = Text::new("Style for subtitles and captions:");
-            let cap_styles_view = sub_styles
-               .iter_mut()
-               .enumerate()
-               .fold(Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).spacing(4).padding(7).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (title, state, _))| {
+            let cap_styles_view = sub_styles.iter_mut().enumerate().fold(
+               Scrollable::new(scroll).height(Length::Fill).width(Length::Fill).spacing(4).padding(7).scroller_width(4).scrollbar_width(4),
+               |scrollable, (idx, (title, state, _))| {
                   let btn = Button::new(state, Text::new(*title))
                      .on_press(AccessMessage::SubStyleChanged(idx))
                      .style(if *selected_sub_style == idx { CustomButton::Selected } else { CustomButton::Text });
                   scrollable.push(btn)
-               });
-            let btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(AccessMessage::BtnAddClicked).style(CustomButton::Text);
-            let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
+               },
+            );
+            let btn_add = Button::new(add_state, Icon::new(Icons::Ad).size(23)).padding(2).on_press(AccessMessage::BtnAddClicked).style(CustomButton::Text);
+            let mut btn_remove = Button::new(remove_state, Icon::new(Icons::Minus).size(23)).padding(2).style(CustomButton::Text);
             if len > 1 {
                btn_remove = btn_remove.on_press(AccessMessage::BtnRemoveClicked);
             }
@@ -412,13 +412,13 @@ impl AccessPage {
 
             let lb_shortcuts = Text::new("Accessibility shortcuts:");
             let txt_shortcuts_hint = Text::new("Quickly press Ctrl three times to toggle Accessibility Shortcuts.").size(12);
-            let shortcuts_view = shortcuts_ls
-               .iter_mut()
-               .enumerate()
-               .fold(Scrollable::new(scroll).width(Length::Fill).height(Length::Fill).spacing(7).padding(7).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (title, is_checked))| {
+            let shortcuts_view = shortcuts_ls.iter_mut().enumerate().fold(
+               Scrollable::new(scroll).width(Length::Fill).height(Length::Fill).spacing(7).padding(7).scroller_width(4).scrollbar_width(4),
+               |scrollable, (idx, (title, is_checked))| {
                   let checkbox = Checkbox::new(*is_checked, *title, move |is| AccessMessage::ShortcutToggled(idx, is)).spacing(10).style(CustomCheckbox::Default);
                   scrollable.push(checkbox)
-               });
+               },
+            );
 
             Container::new(Column::new().spacing(15).push(lb_shortcuts).push(txt_shortcuts_hint).push(Container::new(shortcuts_view).style(CustomContainer::ForegroundWhite)))
                .width(Length::Fill)

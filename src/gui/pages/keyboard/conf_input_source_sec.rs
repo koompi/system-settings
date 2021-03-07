@@ -1,7 +1,7 @@
 use crate::gui::addon_widgets::icon_btn;
 use crate::gui::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomSelect};
 use iced::{button, pick_list, Align, Checkbox, Column, Container, Element, Length, PickList, Row, Space, Text};
-
+use iced_custom_widget::Icons;
 #[derive(Debug, Clone, Default)]
 pub struct ConfigInputSrcSec {
     pub prev_candidate_state: pick_list::State<String>,
@@ -82,8 +82,8 @@ impl ConfigInputSrcSec {
             .spacing(10)
             .push(Column::new().spacing(15).align_items(Align::End).push(lb_prev_candidate).push(lb_next_candidate).push(lb_enable_emoji).push(lb_key_modifier))
             .push(Column::new().spacing(5).push(select_prev_candidate).push(select_next_candidate).push(chb_enable_emoji).push(select_key_modifier));
-        let mut btn_add = icon_btn(btn_add_state, '\u{f067}', "Add", None).style(CustomButton::Primary);
-        let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
+        let mut btn_add = icon_btn(btn_add_state, Icons::Ad, "Add", None).style(CustomButton::Primary);
+        let btn_cancel = icon_btn(btn_cancel_state, Icons::ArrowLeft, "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
         if *is_changed {
             btn_add = btn_add.on_press(AddClicked);
         }

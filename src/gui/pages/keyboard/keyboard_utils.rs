@@ -1,8 +1,8 @@
 use super::add_input_source_sec::AddInputSrcSec;
 use super::conf_input_source_sec::ConfigInputSrcSec;
 use iced::{button, pick_list, scrollable, slider};
+use iced_custom_widget::Icons;
 use smart_default::SmartDefault;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, SmartDefault)]
 pub enum TurnBacklightOff {
     #[default]
@@ -59,7 +59,7 @@ impl Keyboard {
 
 #[derive(Debug, Clone, Default)]
 pub struct Shortcuts {
-    pub shortcuts_tab: Vec<(char, &'static str, button::State)>,
+    pub shortcuts_tab: Vec<(Icons, &'static str, button::State)>,
     pub shortcuts_tab_map: Vec<Vec<(bool, &'static str, &'static str)>>,
     pub left_pane_selected: usize,
     pub right_pane_selected: usize,
@@ -72,13 +72,13 @@ impl Shortcuts {
     pub fn new() -> Self {
         Self {
             shortcuts_tab: vec![
-                ('\u{f86d}', "Menu & Dock", button::State::new()),
-                ('\u{f86d}', "Workspaces", button::State::new()),
-                ('\u{f11c}', "Keyboard", button::State::new()),
-                ('\u{f11c}', "Input Sources", button::State::new()),
-                ('\u{f083}', "Screenshots", button::State::new()),
-                ('\u{f552}', "Services", button::State::new()),
-                ('\u{f002}', "Spotlight", button::State::new()),
+                (Icons::User, "Menu & Dock", button::State::new()),
+                (Icons::User, "Workspaces", button::State::new()),
+                (Icons::User, "Keyboard", button::State::new()),
+                (Icons::User, "Input Sources", button::State::new()),
+                (Icons::User, "Screenshots", button::State::new()),
+                (Icons::User, "Services", button::State::new()),
+                (Icons::User, "Spotlight", button::State::new()),
             ],
             shortcuts_tab_map: vec![
                 vec![(true, "Turn Dock Hiding On/Off", "shift+ctrl+D"), (false, "Show Menu", "")],

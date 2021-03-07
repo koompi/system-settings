@@ -1,6 +1,6 @@
 use crate::helpers::ROOT_PATH;
 use iced::{button, pick_list, slider, Align, Button, Checkbox, Column, Container, Element, Length, PickList, Row, Slider, Space, Svg, Text};
-use iced_custom_widget::{number_input, Icon, NumberInput};
+use iced_custom_widget::{number_input, Icon, Icons, NumberInput};
 
 use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomSelect, CustomSlider};
 use chrono::prelude::*;
@@ -38,7 +38,7 @@ pub enum BatteryMessage {
 
 #[derive(Debug, Clone)]
 pub struct BatteryPage {
-    sidebar_state: Vec<(char, String, button::State)>,
+    sidebar_state: Vec<(Icons, String, button::State)>,
     current_sidebar_tab_idx: usize,
     current_battery: u8,
     current_time: String,
@@ -56,10 +56,10 @@ impl BatteryPage {
         let (is_pm, hour) = now.time().hour12();
         Self {
             sidebar_state: vec![
-                ('\u{f080}', "Usage".to_string(), button::State::new()),
-                ('\u{f240}', "Battery".to_string(), button::State::new()),
-                ('\u{f5ba}', "Power Adapter".to_string(), button::State::new()),
-                ('\u{f133}', "Schedule".to_string(), button::State::new()),
+                (Icons::BatteryFull, "Usage".to_string(), button::State::new()),
+                (Icons::BatteryFull, "Battery".to_string(), button::State::new()),
+                (Icons::BatteryFull, "Power Adapter".to_string(), button::State::new()),
+                (Icons::BatteryFull, "Schedule".to_string(), button::State::new()),
             ],
             current_sidebar_tab_idx: 0,
             current_battery: 55,

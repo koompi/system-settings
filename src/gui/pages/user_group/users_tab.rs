@@ -6,9 +6,9 @@ mod user_info_page;
 
 use crate::gui::styles::{CustomButton, CustomContainer};
 use iced::{button, scrollable, Align, Button, Column, Container, Element, Image, Length, Row, Scrollable, Space, Text};
-use iced_custom_widget::Icon;
+use iced_custom_widget::{Icon, Icons};
 use libkoompi::system_settings::users_groups::{AccountType, User, UsersGroupsManager};
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use {
    add_user_page::{AddUserMsg, AddUserPage},
    change_groups_page::{ChangeGroupsMsg, ChangeGroupsPage},
@@ -21,7 +21,7 @@ use {
 pub struct UsersTab {
    usrgrp_mn: RefCell<UsersGroupsManager>,
    curr_usr: RefCell<User>,
-   ls_users: Vec<(User, button::State)>,
+   ls_users: Vec<(RefCell<User>, button::State)>,
    selected_user: Option<usize>,
    scroll_users: scrollable::State,
    add_state: button::State,
@@ -60,17 +60,16 @@ pub enum UsersMsg {
 }
 
 impl UsersTab {
-   pub fn new(usrgrp_mn: RefMut<UsersGroupsManager>) -> Self {
+   pub fn new(usrgrp_mn: &mut UsersGroupsManager, ls_users: &mut Vec<User>, curr_usr: &mut Option<User>) -> Self {
       use ContentPage::*;
-      let list_users = usrgrp_mn.list_users();
-      let (curr_usr, selected_user, content) = match list_users.iter().find(|usr| usr.uid().eq(&usrgrp_mn.current_uid())) {
+      let (curr_usr, selected_user, content) = match curr_usr {
          Some(usr) => (usr.to_owned(), Some(0), UserInfo(UserInfoPage::new(usr, true, usr.is_admin()))),
          None => (User::default(), None, Empty),
       };
       Self {
-         usrgrp_mn: RefCell::new(usrgrp_mn.clone()),
+         usrgrp_mn: RefCell::new(usrgrp_mn.to_owned()),
          curr_usr: RefCell::new(curr_usr),
-         ls_users: list_users.iter().map(|usr| (usr.to_owned(), button::State::new())).collect(),
+         ls_users: ls_users.iter().map(|usr| (RefCell::new(usr.to_owned()), button::State::new())).collect(),
          selected_user,
          content,
          scroll_users: Default::default(),
@@ -92,18 +91,19 @@ impl UsersTab {
       match msg {
          SelectedUsr(idx) => {
             self.selected_user = Some(idx);
-            if let Some((usr, _)) = ls_users.get(idx) {
+            if let Some((user, _)) = ls_users.get(idx) {
+               let usr = user.borrow();
                let is_curr_usr = is_curr_usr(usr.uid());
 
                match content {
-                  UserInfo(user_info_page) => user_info_page.with_user(usr, is_curr_usr),
+                  UserInfo(user_info_page) => user_info_page.with_user(&usr, is_curr_usr),
                   ChangeInfo(change_user_info_page) => {
                      let usrgrp_ref = usrgrp_mn.borrow();
                      let groupname = usrgrp_ref.all_groups().iter().find(|grp| grp.gid() == usr.gid()).map(|grp| grp.name());
-                     change_user_info_page.with_user(usr, is_curr_usr, groupname);
+                     change_user_info_page.with_user(&usr, is_curr_usr, groupname);
                   }
-                  ChangeGroups(change_groups_page) => change_groups_page.with_user(usr),
-                  _ => self.content = UserInfo(UserInfoPage::new(usr, is_curr_usr, curr_is_admin)),
+                  ChangeGroups(change_groups_page) => change_groups_page.with_user(&usr),
+                  _ => self.content = UserInfo(UserInfoPage::new(&usr, is_curr_usr, curr_is_admin)),
                }
             }
          }
@@ -115,18 +115,16 @@ impl UsersTab {
          RemoveClicked => {
             if curr_is_admin {
                if let Some(selected) = self.selected_user {
-                  if let Some((usr, _)) = ls_users.get(selected) {
+                  if let Some((user, _)) = ls_users.get(selected) {
+                     let usr = user.borrow();
+
                      match usrgrp_mn.borrow_mut().delete_user(usr.username(), false) {
                         Ok(is_ok) => {
                            if is_ok {
+                              std::mem::drop(usr);
                               ls_users.remove(selected);
-                              if let Some((usr, _)) = ls_users.first() {
-                                 self.selected_user = Some(0);
-                                 self.content = UserInfo(UserInfoPage::new(usr, usr.uid().eq(&curr_usr.uid()), curr_is_admin));
-                              } else {
-                                 self.selected_user = None;
-                                 self.content = Empty;
-                              }
+                              self.selected_user = Some(0);
+                              self.content = UserInfo(UserInfoPage::new(&curr_usr, true, curr_is_admin));
                            } else {
                               println!("can not delete group");
                            }
@@ -140,7 +138,8 @@ impl UsersTab {
          UserInfoMSG(usr_info_msg) => {
             if let UserInfo(user_info_page) = content {
                if let Some(idx) = self.selected_user {
-                  if let Some((usr, _)) = ls_users.get_mut(idx) {
+                  if let Some((user, _)) = ls_users.get_mut(idx) {
+                     let mut usr = user.borrow_mut();
                      let is_curr_usr = is_curr_usr(usr.uid());
 
                      use UserInfoMsg::*;
@@ -168,7 +167,7 @@ impl UsersTab {
                               }
                            }
                         }
-                        ChangeGroupClicked => {
+                        ChangeGroupsClicked => {
                            let usrgrp_ref = usrgrp_mn.borrow();
                            let all_groups = usrgrp_ref.all_groups();
                            self.content = ChangeGroups(ChangeGroupsPage::new(&usr, all_groups));
@@ -181,7 +180,8 @@ impl UsersTab {
          ChangePwdMSG(change_pwd_msg) => {
             if let ChangePwd(change_pwd_page) = content {
                if let Some(idx) = self.selected_user {
-                  if let Some((usr, _)) = ls_users.get_mut(idx) {
+                  if let Some((user, _)) = ls_users.get_mut(idx) {
+                     let mut usr = user.borrow_mut();
                      let is_curr_usr = is_curr_usr(usr.uid());
                      use ChangePwdMsg::*;
                      match change_pwd_msg {
@@ -226,16 +226,11 @@ impl UsersTab {
                   use AddUserMsg::*;
                   match add_user_msg {
                      CreateClicked(user) => match usrgrp_mn.borrow_mut().create_user(user.fullname, user.username.clone(), user.acc_type, user.pwd, user.pwd_verify) {
-                        Ok(user) => {
-                           if let Some(user) = user {
-                              ls_users.push((user.clone(), button::State::new()));
-                              if let Some((usr, _)) = ls_users.last() {
-                                 self.selected_user = Some(ls_users.len() - 1);
-                                 self.content = UserInfo(UserInfoPage::new(&usr, is_curr_usr(usr.uid()), curr_is_admin));
-                              } else {
-                                 self.selected_user = Some(0);
-                                 self.content = UserInfo(UserInfoPage::new(&curr_usr, true, curr_is_admin));
-                              }
+                        Ok(newuser) => {
+                           if let Some(newuser) = newuser {
+                              ls_users.push((RefCell::new(newuser.to_owned()), button::State::new()));
+                              self.selected_user = Some(ls_users.len() - 1);
+                              self.content = UserInfo(UserInfoPage::new(&newuser, is_curr_usr(newuser.uid()), curr_is_admin));
                            } else {
                               self.selected_user = Some(0);
                               self.content = UserInfo(UserInfoPage::new(&curr_usr, true, curr_is_admin));
@@ -244,8 +239,9 @@ impl UsersTab {
                         Err(err) => eprintln!("{:?}", err),
                      },
                      CancelClicked => {
-                        let user = ls_users.iter().map(|(usr, _)| usr).collect::<Vec<&User>>()[self.selected_user.unwrap_or(0)];
-                        self.content = UserInfo(UserInfoPage::new(user, is_curr_usr(user.uid()), curr_is_admin));
+                        let user = ls_users.iter().map(|(usr, _)| usr).collect::<Vec<&RefCell<User>>>()[self.selected_user.unwrap_or(0)];
+                        let usr = user.borrow();
+                        self.content = UserInfo(UserInfoPage::new(&usr, is_curr_usr(usr.uid()), curr_is_admin));
                      }
                      _ => add_user_page.update(add_user_msg),
                   }
@@ -255,7 +251,8 @@ impl UsersTab {
          ChangeInfoMSG(change_info_msg) => {
             if let ChangeInfo(change_info_page) = content {
                if let Some(idx) = self.selected_user {
-                  if let Some((usr, _)) = ls_users.get_mut(idx) {
+                  if let Some((user, _)) = ls_users.get_mut(idx) {
+                     let mut usr = user.borrow_mut();
                      let is_curr_usr = is_curr_usr(usr.uid());
 
                      use ChangeInfoMsg::*;
@@ -287,7 +284,8 @@ impl UsersTab {
          ChangeGroupsMSG(change_groups_msg) => {
             if let ChangeGroups(change_groups_page) = content {
                if let Some(idx) = self.selected_user {
-                  if let Some((usr, _)) = ls_users.get_mut(idx) {
+                  if let Some((user, _)) = ls_users.get_mut(idx) {
+                     let mut usr = user.borrow_mut();
                      let is_curr_usr = is_curr_usr(usr.uid());
 
                      use ChangeGroupsMsg::*;
@@ -334,7 +332,8 @@ impl UsersTab {
       let scrollable_users = ls_users
          .iter_mut()
          .enumerate()
-         .fold(Scrollable::new(scroll_users).height(Length::Fill).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (user, state))| {
+         .fold(Scrollable::new(scroll_users).height(Length::Fill).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (usr, state))| {
+            let user = usr.borrow();
             let profile_pic: Element<_> = if user.profile_path().exists() {
                Image::new(user.profile_path()).width(Length::Units(30)).height(Length::Units(30)).into()
             } else {
@@ -381,8 +380,8 @@ impl UsersTab {
                _ => row_btn.into(),
             })
          });
-      let mut btn_add = Button::new(add_state, Icon::new('\u{f067}').size(23)).padding(2).style(CustomButton::Text);
-      let mut btn_remove = Button::new(remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
+      let mut btn_add = Button::new(add_state, Icon::new(Icons::Ad).size(23)).padding(2).style(CustomButton::Text);
+      let mut btn_remove = Button::new(remove_state, Icon::new(Icons::Minus).size(23)).padding(2).style(CustomButton::Text);
       if let Some(idx) = *selected_user {
          if idx.ne(&0) && is_admin {
             btn_remove = btn_remove.on_press(RemoveClicked);

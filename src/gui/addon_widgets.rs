@@ -1,8 +1,7 @@
 use crate::gui::styles::{CustomButton, CustomContainer};
 use iced::{button, Align, Button, Container, Length, Row, Text};
-use iced_custom_widget::Icon;
-
-pub fn icon_btn<'a, M: 'a + Clone>(state: &'a mut button::State, icon: char, text: &str, size: Option<u16>) -> Button<'a, M> {
+use iced_custom_widget::{Icon, Icons};
+pub fn icon_btn<'a, M: 'a + Clone>(state: &'a mut button::State, icon: Icons, text: &str, size: Option<u16>) -> Button<'a, M> {
    let mut ico = Icon::new(icon);
    if let Some(size) = size {
       ico = ico.size(size);

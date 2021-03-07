@@ -1,7 +1,7 @@
 use crate::gui::addon_widgets::icon_btn;
 use crate::gui::styles::{CustomButton, CustomContainer, CustomTextInput};
 use iced::{button, scrollable, text_input, Button, Column, Container, Element, Length, Row, Scrollable, Space, Text, TextInput};
-
+use iced_custom_widget::Icons;
 #[derive(Debug, Clone, Default)]
 pub struct AddInputSrcSec {
     pub search_state: text_input::State,
@@ -90,8 +90,8 @@ impl AddInputSrcSec {
         let inp_src_pane = Container::new(Column::new().push(Container::new(Text::new("Add Input Source")).width(Length::Fill).padding(7).style(CustomContainer::Header)).push(scrollable_inp_src))
             .height(Length::Fill)
             .style(CustomContainer::ForegroundWhite);
-        let mut btn_add = icon_btn(btn_add_state, '\u{f067}', "Add", None).style(CustomButton::Primary);
-        let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(AddInputSrcMessage::CancelClicked).style(CustomButton::Hovered);
+        let mut btn_add = icon_btn(btn_add_state, Icons::Ad, "Add", None).style(CustomButton::Primary);
+        let btn_cancel = icon_btn(btn_cancel_state, Icons::ArrowLeft, "Cancel", None).on_press(AddInputSrcMessage::CancelClicked).style(CustomButton::Hovered);
         if let Some(layout) = selected_inp_src {
             btn_add = btn_add.on_press(AddInputSrcMessage::AddClicked(layout.clone()));
         }

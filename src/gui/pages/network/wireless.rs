@@ -1,7 +1,7 @@
 use super::netsettings::{NetSettings, NetSettingsMsg};
 use crate::gui::styles::{buttons::ButtonStyle, rules::RuleStyle};
 use async_std::task;
-use iced::{button, scrollable, text_input, Align, Button, Column, Container, Element, Length, Row, Rule, Scrollable, Space, Text, TextInput};
+use iced::{button, scrollable, text_input, Align, Button, Column, Container, Element, Font, HorizontalAlignment, Length, Row, Rule, Scrollable, Space, Text, TextInput};
 use iced_custom_widget as icw;
 use icw::components::Toggler;
 use icw::components::{Icon, Icons};
@@ -32,11 +32,16 @@ pub struct Wireless {
     is_found: bool,
     passwd: String,
 }
+// impl Default for Icons {
+//     fn default() -> Self {
+//         Icons::Atom
+//     }
+// }
 #[derive(Default, Debug, Clone)]
 struct WifiProperty {
     pub detail: button::State,
     pub status: bool,
-    pub settings_icon: Icons,
+    pub settings_icon: char,
     pub settings: button::State,
     pub ssid: String,
     pub connect: button::State,
@@ -51,6 +56,14 @@ struct WifiProperty {
     pub is_connecting: bool,
     pub button_string: String,
     pub con_state: ConnectionState,
+}
+const ICONS: Font = Font::External {
+    name: "Line Awesome",
+    bytes: include_bytes!("../../../../assets/fonts/la-solid-900.woff"),
+};
+
+fn icon(unicode: char) -> Text {
+    Text::new(&unicode.to_string()).font(ICONS).width(Length::Units(20)).horizontal_alignment(HorizontalAlignment::Center).size(20)
 }
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -90,7 +103,7 @@ fn get_list_ssid() -> Vec<WifiProperty> {
                 let mut wifi_props: WifiProperty = WifiProperty::new();
                 wifi_props.ssid = accesspoint.ssid;
                 wifi_props.detail = button::State::new();
-                wifi_props.settings_icon = Icons::Key;
+                wifi_props.settings_icon = '\u{f084}';
                 wifi_props.settings = button::State::new();
                 wifi_props.connect = button::State::new();
                 wifi_props.input_passwd = text_input::State::new();

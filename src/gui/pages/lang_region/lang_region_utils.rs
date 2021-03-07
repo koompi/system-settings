@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use iced::{button, pick_list, scrollable, text_input};
 use smart_default::SmartDefault;
 use std::fmt::{self, Display, Formatter};
-
+use iced_custom_widget::Icons;
 #[derive(Debug, Clone, SmartDefault)]
 pub struct GeneralTab {
     pub prefered_langs: Vec<(PreferedLang, button::State)>,
@@ -57,7 +57,7 @@ impl GeneralTab {
 
 #[derive(Debug, Clone, Default)]
 pub struct AppsTab {
-    pub app_list: Vec<(char, String, pick_list::State<String>, String, button::State)>,
+    pub app_list: Vec<(Icons, String, pick_list::State<String>, String, button::State)>,
     pub selected_app: Option<usize>,
     pub add_state: button::State,
     pub remove_state: button::State,

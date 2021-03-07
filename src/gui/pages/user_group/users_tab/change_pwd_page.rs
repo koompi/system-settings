@@ -1,9 +1,7 @@
-use iced::{
-   text_input, button, Button, TextInput, Text, Container, Length, Column, Row, Align, Space, Element,
-};
-use crate::gui::styles::{CustomTextInput, CustomButton};
-use iced_custom_widget::Icon;
 use crate::gui::addon_widgets::icon_btn;
+use crate::gui::styles::{CustomButton, CustomTextInput};
+use iced::{button, text_input, Align, Button, Column, Container, Element, Length, Row, Space, Text, TextInput};
+use iced_custom_widget::{Icon, Icons};
 
 #[derive(Debug, Default)]
 pub struct ChangePwdPage {
@@ -54,15 +52,23 @@ impl ChangePwdPage {
          NewPwdChanged(val) => self.new_pwd_val = val.trim().to_string(),
          VerifyPwdChanged(val) => self.verify_pwd_val = val.trim().to_string(),
          ShowPwdToggled => self.is_show_pwd = !self.is_show_pwd,
-         CancelClicked | ChangeClicked(..) => {},
+         CancelClicked | ChangeClicked(..) => {}
       }
    }
 
    pub fn view(&mut self) -> Element<ChangePwdMsg> {
       use ChangePwdMsg::*;
       let Self {
-         old_pwd_state, old_pwd_val, new_pwd_state, new_pwd_val, verify_pwd_state, verify_pwd_val,
-         btn_change_state, btn_cancel_state, btn_show_pwd, ..
+         old_pwd_state,
+         old_pwd_val,
+         new_pwd_state,
+         new_pwd_val,
+         verify_pwd_state,
+         verify_pwd_val,
+         btn_change_state,
+         btn_cancel_state,
+         btn_show_pwd,
+         ..
       } = self;
 
       let lb_old_pwd = Text::new("Old Password:");
@@ -75,39 +81,34 @@ impl ChangePwdPage {
       if !self.is_show_pwd {
          txt_new_pwd = txt_new_pwd.password();
       }
-      let btn_show_pwd = Button::new(btn_show_pwd, Icon::new(if self.is_show_pwd {'\u{f06e}'} else {'\u{f070}'})).on_press(ShowPwdToggled).style(CustomButton::Text);
+      let btn_show_pwd = Button::new(btn_show_pwd, Icon::new(if self.is_show_pwd { Icons::Eye } else { Icons::EyeSlash })).on_press(ShowPwdToggled).style(CustomButton::Text);
       let txt_verify_pwd = TextInput::new(verify_pwd_state, "", &verify_pwd_val, VerifyPwdChanged).password().padding(7).width(Length::Units(227)).style(CustomTextInput::Default);
       let mut input_sec = Column::new().spacing(7);
       if self.is_curr_usr {
-         lb_sec = lb_sec.push(lb_old_pwd); 
+         lb_sec = lb_sec.push(lb_old_pwd);
          input_sec = input_sec.push(txt_old_pwd);
       }
       lb_sec = lb_sec.push(lb_new_pwd).push(lb_verify_pwd);
-      input_sec = input_sec
-         .push(Row::new().spacing(5).align_items(Align::Center).push(txt_new_pwd).push(btn_show_pwd))
-         .push(txt_verify_pwd);
+      input_sec = input_sec.push(Row::new().spacing(5).align_items(Align::Center).push(txt_new_pwd).push(btn_show_pwd)).push(txt_verify_pwd);
 
-      let mut btn_change = icon_btn(btn_change_state, '\u{f00c}', "Okay", None).style(CustomButton::Primary);
-      let btn_cancel = icon_btn(btn_cancel_state, '\u{f05e}', "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
-   
-      if (!self.is_curr_usr || !old_pwd_val.is_empty()) && (!new_pwd_val.is_empty() && new_pwd_val.as_str().eq(verify_pwd_val.as_str()))  {
+      let mut btn_change = icon_btn(btn_change_state, Icons::CheckCircle, "Okay", None).style(CustomButton::Primary);
+      let btn_cancel = icon_btn(btn_cancel_state, Icons::Minus, "Cancel", None).on_press(CancelClicked).style(CustomButton::Hovered);
+
+      if (!self.is_curr_usr || !old_pwd_val.is_empty()) && (!new_pwd_val.is_empty() && new_pwd_val.as_str().eq(verify_pwd_val.as_str())) {
          btn_change = btn_change.on_press(ChangeClicked(old_pwd_val.clone(), new_pwd_val.clone(), verify_pwd_val.clone()));
       }
 
       Container::new(
-         Column::new().width(Length::Fill).spacing(10).align_items(Align::Center)
-         .push(
-            Row::new().padding(10).spacing(10).align_items(Align::Center)
-            .push(lb_sec)
-            .push(input_sec)
-         )
-         .push(Space::with_height(Length::Fill))
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(Space::with_width(Length::Fill))
-            .push(btn_cancel)
-            .push(btn_change)
-         )
-      ).width(Length::Fill).height(Length::Fill).into()
+         Column::new()
+            .width(Length::Fill)
+            .spacing(10)
+            .align_items(Align::Center)
+            .push(Row::new().padding(10).spacing(10).align_items(Align::Center).push(lb_sec).push(input_sec))
+            .push(Space::with_height(Length::Fill))
+            .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_change)),
+      )
+      .width(Length::Fill)
+      .height(Length::Fill)
+      .into()
    }
 }

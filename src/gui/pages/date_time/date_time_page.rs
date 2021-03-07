@@ -3,7 +3,7 @@ use crate::gui::addon_widgets::{icon_btn, tabbar};
 use crate::gui::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomTextInput};
 use chrono::{DateTime, Local};
 use iced::{button, canvas::Canvas, time, Align, Button, Checkbox, Column, Container, Element, Length, Row, Scrollable, Space, Subscription, Text, TextInput};
-use iced_custom_widget::Icon;
+use iced_custom_widget::{Icon, Icons};
 use libkoompi::system_settings::{datetime::DateTimeManager, locale::LocaleManager};
 
 const TZ_FMT: &'static str = "%z";
@@ -343,7 +343,7 @@ impl DateTimePage {
                         .push(chb_auto_tz)
                         .push(Column::new().spacing(10).push(txt_tz_hint).push(txt_current_tz))
                         .push(input_search_tz)
-                        .push(Row::new().spacing(20).align_items(Align::Center).push(continent_pane).push(Icon::new('\u{f105}').size(27)).push(tz_pane)),
+                        .push(Row::new().spacing(20).align_items(Align::Center).push(continent_pane).push(Icon::new(Icons::Plane).size(27)).push(tz_pane)),
                 )
                 .width(Length::Fill)
             }
@@ -351,9 +351,9 @@ impl DateTimePage {
         };
 
         // ផ្នែកខាងក្រោម
-        let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DateTimeMessage::DefaultsClicked).style(CustomButton::Default);
-        let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
-        let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
+        let btn_defaults = icon_btn(btn_defaults_state, Icons::Atom, "Defaults", None).on_press(DateTimeMessage::DefaultsClicked).style(CustomButton::Default);
+        let mut btn_reset = icon_btn(btn_reset_state, Icons::Atom, "Reset", None).style(CustomButton::Hovered);
+        let mut btn_ok = icon_btn(btn_ok_state, Icons::CheckCircle, "OK", None).style(CustomButton::Primary);
         if *is_changed {
             btn_ok = btn_ok.on_press(DateTimeMessage::ApplyClicked);
             btn_reset = btn_reset.on_press(DateTimeMessage::ResetClicked);
@@ -361,11 +361,13 @@ impl DateTimePage {
         let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center).push(btn_defaults).push(btn_reset).push(Space::with_width(Length::Fill)).push(btn_ok);
         let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
-      // មាតិកា
-      let content = Column::new().width(Length::Fill).align_items(Align::Center)
-         .push(tabbar_sec)
-         .push(tabview.height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
-         .push(bottom_section);
+        // មាតិកា
+        let content = Column::new()
+            .width(Length::Fill)
+            .align_items(Align::Center)
+            .push(tabbar_sec)
+            .push(tabview.height(Length::Fill).padding(15).style(CustomContainer::ForegroundGray))
+            .push(bottom_section);
 
         Container::new(content).padding(20).width(Length::FillPortion(15)).height(Length::Fill).style(CustomContainer::Background).into()
     }

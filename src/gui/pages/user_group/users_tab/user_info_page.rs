@@ -58,7 +58,7 @@ impl UserInfoPage {
          fullname, profile_path, btn_change_pwd_state, btn_change_info_state, btn_change_groups_state, ..
       } = self;
 
-      println!("{:?}", profile_path.display());
+      // println!("{:?}", profile_path.display());
       let profile: Element<_> = if profile_path.exists() {
          Image::new(profile_path.to_path_buf()).width(Length::Units(75)).height(Length::Units(75)).into()
       } else {
@@ -78,29 +78,30 @@ impl UserInfoPage {
       let mut btn_change_pwd = Button::new(btn_change_pwd_state, Text::new(format!("  {}  ", if self.is_curr_usr {"Change Password"} else {"Reset Password"})))
          .style(CustomButton::Default);
       let mut btn_change_grps = Button::new(btn_change_groups_state, Text::new("  Advanced  ")).style(CustomButton::Default);
-      if  self.allow_usr_admin || self.is_curr_usr {
+      if self.allow_usr_admin || self.is_curr_usr {
          btn_change_info = btn_change_info.on_press(ChangeInfoClicked);
          btn_change_pwd = btn_change_pwd.on_press(ChangePwdClicked);
+      }
+      if self.allow_usr_admin {
          btn_change_grps = btn_change_grps.on_press(ChangeGroupsClicked);
       }
 
       Container::new(
-         Column::new().spacing(10)
+         Column::new().spacing(10).padding(10)
          .push(
-            Row::new().padding(10).spacing(15).align_items(Align::Center)
+            Row::new().spacing(15).align_items(Align::Center)
             .push(profile)
             .push(txt_username)
             .push(Space::with_width(Length::Fill))
             .push(btn_change_info)
          )
+         .push(sec_allow_usr_admin)
          .push(
-            Row::new().padding(10).align_items(Align::Center)
-            .push(sec_allow_usr_admin)
-            .push(Space::with_width(Length::Fill))
+            Row::new().align_items(Align::Center)
             .push(btn_change_pwd)
+            .push(Space::with_width(Length::Fill))
+            .push(btn_change_grps)
          )
-         .push(Space::with_height(Length::Fill))
-         .push(btn_change_grps)
       ).width(Length::Fill).height(Length::Fill).into()
    }
 }
