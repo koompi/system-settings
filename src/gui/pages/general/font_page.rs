@@ -1,4 +1,4 @@
-use iced::{Text, text_input, Column, PickList, Slider,slider, pick_list, Element, Align, Length, Container};
+use iced::{Text, text_input, Column, PickList, Slider,slider, pick_list, Element, Align, Length, Container,HorizontalAlignment, Row};
 use super::super::super::styles::{CustomSelect};
 #[macro_export]
 macro_rules! select_display {
@@ -43,6 +43,7 @@ impl FontStyle{
             FontMsg::FontChanged(font) => {
                 self.selected_font = font;
             }
+            // FontMsg::FontChanged(value) => self.font_size = value,
             
         }
             
@@ -63,15 +64,27 @@ impl FontStyle{
             )
             .spacing(10)
             .push(
-                
-                Slider::new(
-                    &mut self.state,
-                    0.0..=100.0,
-                    self.value,
-                    FontMsg::SliderChange,
-                )
-                .step(0.01),
+                Row::new()
+                    .align_items(Align::Center)
+                    .spacing(10)
+                    .push(     
+                        Slider::new(
+                            &mut self.state,
+                            0.0..=100.0,
+                            self.value,
+                            FontMsg::SliderChange,
+                        )
+                        .step(1.0),
+                        
+                    )
+                    .push(
+                        Row::new()
+                            .align_items(Align::Center)
+                            .push(Text::new(&self.value.to_string()).horizontal_alignment(HorizontalAlignment::Center).width(Length::Units(20)))
+                            .push(Text::new("%")),
+                    )
             )
+            
             .spacing(20);
         let font_choice=
             Column::new()

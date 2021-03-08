@@ -3,7 +3,8 @@ use iced::{
    Container, Checkbox, Row, Text, Button, Column, Scrollable, PickList,
 };
 use iced_custom_widget::{Icon, IconBrand, number_input, NumberInput};
-use super::super::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect};
+use crate::gui::addon_widgets::tabbar;
+use crate::gui::styles::{CustomButton, CustomContainer, CustomCheckbox, CustomSelect};
 use smart_default::SmartDefault;
 
 #[derive(Debug, Clone)]
@@ -13,6 +14,7 @@ pub enum PrivacyMessage {
    ReqPWToggled(bool),
    ReqPWDurChanged(ReqPWDuration),
    ShowMsgScreenLockToggled(bool),
+   ShowMsgScreenLock,
    LogoutAfterToggled(bool),
    LogoutAfterDurChanged(u8),
    ReqAdminPWToggled(bool),
@@ -41,9 +43,9 @@ impl PrivacyPage {
    pub fn new() -> Self {
       Self {
          tabbar_state: vec![
-            ("  General  ", button::State::new()),
-            ("  Privacy  ", button::State::new()),
-            ("  Firewall  ", button::State::new()),
+            ("General", button::State::new()),
+            ("Privacy", button::State::new()),
+            ("Firewall", button::State::new()),
          ],
          current_tab_idx: 0,
          general_tab: GeneralTab::new(),
@@ -62,6 +64,7 @@ impl PrivacyPage {
          ReqPWToggled(is_checked) => self.general_tab.req_pw = is_checked,
          ReqPWDurChanged(val) => self.general_tab.req_pw_dur_val = val,
          ShowMsgScreenLockToggled(is_checked) => self.general_tab.show_msg_screen_lock = is_checked,
+         ShowMsgScreenLock => {},
          LogoutAfterToggled(is_checked) => self.general_tab.logout_after = is_checked,
          LogoutAfterDurChanged(val) => self.general_tab.logout_after_dur_state.dur_val = val,
          ReqAdminPWToggled(is_checked) => self.general_tab.req_admin_pw_sys_pref = is_checked,
@@ -85,6 +88,7 @@ impl PrivacyPage {
    }
 
    pub fn view(&mut self) -> Element<PrivacyMessage> {
+      use PrivacyMessage::*;
       let PrivacyPage {
          tabbar_state,
          current_tab_idx,
@@ -96,12 +100,7 @@ impl PrivacyPage {
       } = self;
 
       // របារផ្ទាំង
-      let tabbar = tabbar_state.iter_mut().enumerate().fold(Row::new().spacing(2).align_items(Align::Center), |tabbar, (idx, (title, state))| {
-         let btn = Button::new(state, Text::new(*title)).padding(5).on_press(PrivacyMessage::TabChanged(idx)).style(if *current_tab_idx == idx {CustomButton::SelectedTab} else {CustomButton::Tab});
-         tabbar.push(btn)
-      }); 
-      let tabbar_con = Container::new(tabbar).padding(2).center_x().style(CustomContainer::Segment);
-      let tabbar_section = Container::new(tabbar_con).padding(7).width(Length::Fill).center_x();
+      let tabbar_section = tabbar(tabbar_state, *current_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -123,14 +122,14 @@ impl PrivacyPage {
             } = general_tab;
 
             let lb_login_pw = Text::new("A login password has been set for this user");
-            let btn_change_pw = Button::new(change_pw_state, Text::new("  Change Password  ")).on_press(PrivacyMessage::ChangePW(!(*is_change_pw))).style(CustomButton::Default);
+            let btn_change_pw = Button::new(change_pw_state, Text::new("  Change Password  ")).on_press(ChangePW(!(*is_change_pw))).style(CustomButton::Default);
             let change_pw_sec = Container::new(
                Row::new().spacing(10)
                .push(lb_login_pw)
                .push(btn_change_pw)
             );
-            let chb_req_pw = Checkbox::new(*req_pw, "Require password", PrivacyMessage::ReqPWToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_req_pw_dur = PickList::new(req_pw_dur_state, &ReqPWDuration::ALL[..], Some(*req_pw_dur_val), PrivacyMessage::ReqPWDurChanged).style(CustomSelect::Primary);
+            let chb_req_pw = Checkbox::new(*req_pw, "Require password", ReqPWToggled).spacing(10).style(CustomCheckbox::Default);
+            let pl_req_pw_dur = PickList::new(req_pw_dur_state, &ReqPWDuration::ALL[..], Some(*req_pw_dur_val), ReqPWDurChanged).style(CustomSelect::Primary);
             let lb_after_sleep = Text::new("after sleep or screen saver begin.");
             let req_pw_sec = Container::new(
                Row::new().spacing(10).align_items(Align::Center)
@@ -138,15 +137,18 @@ impl PrivacyPage {
                .push(pl_req_pw_dur)
                .push(lb_after_sleep)
             );
-            let chb_show_msg_screen_lock = Checkbox::new(*show_msg_screen_lock, "Show a message when the screen is locked", PrivacyMessage::ShowMsgScreenLockToggled).spacing(10).style(CustomCheckbox::Default);
-            let btn_set_lock_msg = Button::new(set_lock_msg_state, Text::new("  Set Lock Message  ")).style(CustomButton::Default);
+            let chb_show_msg_screen_lock = Checkbox::new(*show_msg_screen_lock, "Show a message when the screen is locked", ShowMsgScreenLockToggled).spacing(10).style(CustomCheckbox::Default);
+            let mut btn_set_lock_msg = Button::new(set_lock_msg_state, Text::new("  Set Lock Message  ")).style(CustomButton::Default);
+            if *show_msg_screen_lock {
+               btn_set_lock_msg = btn_set_lock_msg.on_press(ShowMsgScreenLock);
+            }
             let show_msg_sec = Container::new(
                Row::new().spacing(10).align_items(Align::Center)
                .push(chb_show_msg_screen_lock)
                .push(btn_set_lock_msg)
             );
-            let chb_logout_after = Checkbox::new(*logout_after, "Log out after", PrivacyMessage::LogoutAfterToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_logout_after_dur = NumberInput::new(dur_state, *dur_val, 100, PrivacyMessage::LogoutAfterDurChanged).width(Length::Units(50));
+            let chb_logout_after = Checkbox::new(*logout_after, "Log out after", LogoutAfterToggled).spacing(10).style(CustomCheckbox::Default);
+            let pl_logout_after_dur = NumberInput::new(dur_state, *dur_val, 100, LogoutAfterDurChanged).width(Length::Units(50));
             let lb_min_inactivity = Text::new("minutes of inactivity");
             let logout_after_dur_sec = Container::new(
                Row::new().spacing(10).align_items(Align::Center)
@@ -154,7 +156,7 @@ impl PrivacyPage {
                .push(pl_logout_after_dur)
                .push(lb_min_inactivity)
             );
-            let chb_req_admin = Checkbox::new(*req_admin_pw_sys_pref, "Require an administrator password to access system preferences", PrivacyMessage::ReqAdminPWToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_req_admin = Checkbox::new(*req_admin_pw_sys_pref, "Require an administrator password to access system preferences", ReqAdminPWToggled).spacing(10).style(CustomCheckbox::Default);
             
             Container::new(
                Column::new().width(Length::Fill).spacing(10).align_items(Align::Start)
@@ -176,8 +178,8 @@ impl PrivacyPage {
             } = privacy_tab;
 
             // ផ្ទាំងខាងឆ្វេង
-            let left_tab_col = privacy_tabs.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |scrollable, (idx, (icon, title, state))| {
-               let btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(30)).push(Text::new(*title))).width(Length::Fill).on_press(PrivacyMessage::PrivacyTabSelected(idx)).style(if *selected_privacy_tab == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar});
+            let left_tab_col = privacy_tabs.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |scrollable, (idx, (icon, title, state))| {
+               let btn = Button::new(state, Row::new().spacing(7).align_items(Align::Center).push(Icon::new(*icon).size(30)).push(Text::new(*title))).width(Length::Fill).on_press(PrivacyTabSelected(idx)).style(if *selected_privacy_tab == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar});
                scrollable.push(btn)
             });
             
@@ -187,12 +189,12 @@ impl PrivacyPage {
             let (hint, enable, ls_apps) = privacy_tab_map.get_mut(*selected_privacy_tab).unwrap();
             let mut main_view_col = Column::new().spacing(10);
             if let Some((is_checked, title)) = enable {
-               main_view_col = main_view_col.push(Checkbox::new(*is_checked, *title, PrivacyMessage::EnablePrivacyToggled));
+               main_view_col = main_view_col.push(Checkbox::new(*is_checked, *title, EnablePrivacyToggled));
             }
             main_view_col = main_view_col.push(Text::new(*hint));
-            let apps_list_view = ls_apps.iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).width(Length::Fill).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, icon, title))| {
+            let apps_list_view = ls_apps.iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).width(Length::Fill).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (is_checked, icon, title))| {
                let row = Row::new().width(Length::Fill).align_items(Align::Center).padding(4)
-                  .push(Checkbox::new(*is_checked, *title, move |is| PrivacyMessage::AppsPrivacyToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Checkbox::new(*is_checked, *title, move |is| AppsPrivacyToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
                   // .push(Space::with_width(Length::Fill))
                   .push(IconBrand::new(*icon).size(30));
 
@@ -220,12 +222,12 @@ impl PrivacyPage {
             let firewall_state = |is_on| if is_on {"On"} else {"Off"};
             let firewall_status = Container::new(Space::with_width(Length::Units(10))).height(Length::Units(10)).style(if *is_turn_on_firewall {CustomContainer::Success} else {CustomContainer::Warning});
             let txt_firewall = Text::new(format!("Firewall: {}", firewall_state(*is_turn_on_firewall))).size(14);
-            let btn_turn_firewall = Button::new(turn_firewall_state, Text::new(format!("  Turn {} Firewall  ", firewall_state(!(*is_turn_on_firewall))))).on_press(PrivacyMessage::TurnFirewallClicked).style(CustomButton::Default);
+            let btn_turn_firewall = Button::new(turn_firewall_state, Text::new(format!("  Turn {} Firewall  ", firewall_state(!(*is_turn_on_firewall))))).on_press(TurnFirewallClicked).style(CustomButton::Default);
             let txt_firewall_hint = Text::new("The firewall is turned on and set up to prevent unauthorized applications, programs and services from accepting incoming connections.").size(12);
-            let chb_block_all_in_con = Checkbox::new(*block_all_in_con, "Block all incoming connections", PrivacyMessage::BlockAllInConToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_block_all_in_con = Checkbox::new(*block_all_in_con, "Block all incoming connections", BlockAllInConToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_block_all_hint = Text::new("Blocks all incoming connections except those required for basic Internet Services, such as DHCP.").size(12);
-            let chb_auto_allow_built_in_software = Checkbox::new(*auto_allow_built_in_software, "Automatically allow built-in software to recieve incoming connections", PrivacyMessage::AutoAllowBuiltInToggled).spacing(10).style(CustomCheckbox::Default);
-            let chb_auto_allow_down_signed_software = Checkbox::new(*auto_allow_down_signed_software, "Automatically allow downloaded signed software to recieve incoming connections", PrivacyMessage::AutoAllowDownSignedToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_allow_built_in_software = Checkbox::new(*auto_allow_built_in_software, "Automatically allow built-in software to recieve incoming connections", AutoAllowBuiltInToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_allow_down_signed_software = Checkbox::new(*auto_allow_down_signed_software, "Automatically allow downloaded signed software to recieve incoming connections", AutoAllowDownSignedToggled).spacing(10).style(CustomCheckbox::Default);
 
             Container::new(
                Column::new().spacing(10)
@@ -254,7 +256,7 @@ impl PrivacyPage {
       // ផ្នែកខាងក្រោម
       let bottom_row = Row::new().padding(15).spacing(20).align_items(Align::Center)
          .push(Text::new(if *is_advanced {"Sorry, It's just UI"} else {""}))
-         .push(Button::new(advanced_state, Text::new("  Advanced  ")).style(CustomButton::Default).on_press(PrivacyMessage::AdvancedToggled(!self.is_advanced)));
+         .push(Button::new(advanced_state, Text::new("  Advanced  ")).style(CustomButton::Default).on_press(AdvancedToggled(!self.is_advanced)));
       let bottom_section = Container::new(bottom_row).width(Length::Fill).align_x(Align::End);
 
       // មាតិកា   

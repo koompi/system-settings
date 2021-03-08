@@ -106,7 +106,7 @@ impl DesktopPage {
                }
             });
             let category_folder_sec = Container::new(
-               Scrollable::new(category_folder_scroll).padding(5)
+               Scrollable::new(category_folder_scroll).padding(5).scroller_width(4).scrollbar_width(4)
                .push(Text::new("Default").size(12))
                .push(default_category_col)
                .push(Text::new("Photos").size(12))
@@ -136,7 +136,7 @@ impl DesktopPage {
                )
             });
             let wallpaper_sec = Container::new(
-               Scrollable::new(wallpaper_scroll).width(Length::Fill).push(wallpaper_grid_view)
+               Scrollable::new(wallpaper_scroll).width(Length::Fill).scroller_width(4).scrollbar_width(4).push(wallpaper_grid_view)
             ).width(Length::FillPortion(7)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងលើ
@@ -204,7 +204,7 @@ impl DesktopPage {
                )
             });
             let screen_saver_sec = Container::new(
-               Scrollable::new(wallpaper_scroll).width(Length::Fill).push(screensaver_grid_view)
+               Scrollable::new(wallpaper_scroll).width(Length::Fill).scroller_width(4).scrollbar_width(4).push(screensaver_grid_view)
             ).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ

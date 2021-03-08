@@ -174,6 +174,7 @@ impl KeyboardPage {
    }
 
    pub fn view(&mut self) -> Element<KeyboardMessage> {
+      use KeyboardMessage::*;
       let KeyboardPage {
          tabbar_state,
          current_tab_idx,
@@ -188,7 +189,7 @@ impl KeyboardPage {
       } = self;
 
       // របារផ្ទាំង
-      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, |idx| KeyboardMessage::TabChanged(idx));
+      let tabbar_sec = tabbar(tabbar_state, *current_tab_idx, TabChanged);
 
       // ទិដ្ឋភាពទូទៅ
       let tabview = match self.current_tab_idx {
@@ -205,9 +206,9 @@ impl KeyboardPage {
             } = keyboard;
 
             let lb_key_repeat = Text::new("Key Repeat").size(14);
-            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyboardMessage::KeyRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
+            let slider_key_repeat = Slider::new(key_repeat_state, 1..=8, *key_repeat_val, KeyRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let lb_delay_repeat = Text::new("Delay Until Repeat").size(14);
-            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, KeyboardMessage::DelayRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
+            let slider_delay_repeat = Slider::new(delay_repeat_state, 1..=6, *delay_repeat_val, DelayRepeatChanged).width(Length::Units(175)).style(CustomSlider::Default);
             let key_repeat_row = Row::new().width(Length::Fill).padding(20).spacing(50).align_items(Align::Center)
                .push(
                   Column::new().spacing(15).align_items(Align::Center)
@@ -229,9 +230,9 @@ impl KeyboardPage {
                );
             let key_repeat_con = Container::new(key_repeat_row).center_x();
 
-            let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", KeyboardMessage::AdjustBrightnessToggled).spacing(10).style(CustomCheckbox::Default);
-            let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", KeyboardMessage::TurnBacklightOffToggled).spacing(10).style(CustomCheckbox::Default);
-            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), KeyboardMessage::BacklightOffDurationChanged).style(CustomSelect::Primary);
+            let chk_adjust_brightness = Checkbox::new(*adjust_brightness_low_light, "Adjust keyboard brightness in low light", AdjustBrightnessToggled).spacing(10).style(CustomCheckbox::Default);
+            let chk_turn_backlight_off = Checkbox::new(*turn_backlight_off, "Turn keyboard backlight off after", TurnBacklightOffToggled).spacing(10).style(CustomCheckbox::Default);
+            let pl_backlight_off_duration = PickList::new(turn_backlight_off_after_state, &TurnBacklightOff::ALL[..], Some(*turn_backlight_off_after_val), BacklightOffDurationChanged).style(CustomSelect::Primary);
             let lb_inactivity = Text::new("of inactivity");
             let keyboard_backligh_off_row = Row::new().spacing(15).align_items(Align::Center)
                .push(chk_turn_backlight_off)
@@ -262,15 +263,15 @@ impl KeyboardPage {
             let lb_shortcuts = Text::new("To change a shortcut, select it, click key combination, and then type new keys.").size(15);
 
             // ផ្ទាំងខាងឆ្វេង
-            let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
-               col.push(icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(KeyboardMessage::LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar}))
+            let left_tab_col = shortcuts_tab.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (icon, title, state))| {
+               col.push(icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(LeftTabSelected(idx)).style(if *left_pane_selected == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar}))
             });
             let left_pane = Container::new(left_tab_col).width(Length::FillPortion(4)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្ទាំងខាងស្ដាំ
-            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (is_checked, title, shortcut))| {
+            let right_pane_col = shortcuts_tab_map.get_mut(*left_pane_selected).unwrap().iter_mut().enumerate().fold(Scrollable::new(right_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (is_checked, title, shortcut))| {
                let row = Row::new().align_items(Align::Center).padding(4)
-                  .push(Checkbox::new(*is_checked, *title, move |is| KeyboardMessage::RightPaneSelectedToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
+                  .push(Checkbox::new(*is_checked, *title, move |is| RightPaneSelectedToggled(idx, is)).spacing(10).style(CustomCheckbox::Default))
                   .push(Space::with_width(Length::Fill)).push(Text::new(*shortcut))
                   .push(Space::with_width(Length::Units(15)));
 
@@ -279,7 +280,7 @@ impl KeyboardPage {
             let right_pane = Container::new(right_pane_col).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite);
 
             // ផ្នែកខាងក្រោម
-            let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyboardMessage::KeyNavToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_keyboard_nav = Checkbox::new(*use_keyboard_nav, "Use keyboard navigations to move focus between controls", KeyNavToggled).spacing(10).style(CustomCheckbox::Default);
             let txt_hint = Text::new("Press the Tab key to move focus forward and Shift tab to move focus backward.");
             let bottom_col = Column::new().spacing(10).width(Length::Fill)
                .push(Space::with_height(Length::Units(50)))
@@ -322,8 +323,8 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងឆ្វេង
             let inp_src_len = input_sources.len();
-            let left_tab_col = input_sources.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4), |col, (idx, (icon, title, state))| {
-               let btn = icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(KeyboardMessage::InputSourceLeftTabSelected(idx));
+            let left_tab_col = input_sources.iter_mut().enumerate().fold(Scrollable::new(left_pane_scroll).height(Length::Fill).padding(7).spacing(4).scroller_width(4).scrollbar_width(4), |col, (idx, (icon, title, state))| {
+               let btn = icon_btn(state, *icon, title, Some(23)).width(Length::Fill).on_press(InputSourceLeftTabSelected(idx));
                col.push(
                   if let Some(selected_idx) = input_sources_selected {
                      btn.style(if *selected_idx == idx {CustomButton::SelectedSidebar} else {CustomButton::Sidebar})
@@ -332,24 +333,24 @@ impl KeyboardPage {
                   }
                )
             });
-            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(KeyboardMessage::AddClicked).style(CustomButton::Text);
+            let btn_add = Button::new(btn_add_state, Icon::new('\u{f067}').size(23)).padding(2).on_press(AddClicked).style(CustomButton::Text);
             let mut btn_remove = Button::new(btn_remove_state, Icon::new('\u{f068}').size(23)).padding(2).style(CustomButton::Text);
             let mut btn_up = Button::new(btn_up_state, Icon::new('\u{f062}').size(23)).padding(2).style(CustomButton::Hovered);
             let mut btn_down = Button::new(btn_down_state, Icon::new('\u{f063}').size(23)).padding(2).style(CustomButton::Hovered);
             let mut btn_config = Button::new(btn_config_state, Icon::new('\u{f013}').size(23)).padding(2).style(CustomButton::Hovered);
             if let Some(selected_idx) = input_sources_selected {
                if *selected_idx != 0 {
-                  btn_up = btn_up.on_press(KeyboardMessage::UpClicked);
+                  btn_up = btn_up.on_press(UpClicked);
                }
                if *selected_idx != (inp_src_len - 1) {
-                  btn_down = btn_down.on_press(KeyboardMessage::DownClicked);
+                  btn_down = btn_down.on_press(DownClicked);
                }
                if !(*is_adding || *is_config) {
-                  btn_config = btn_config.on_press(KeyboardMessage::ConfigClicked);
+                  btn_config = btn_config.on_press(ConfigClicked);
                }
             }
             if input_sources_selected.is_some() && inp_src_len > 1 {
-               btn_remove = btn_remove.on_press(KeyboardMessage::RemoveClicked);
+               btn_remove = btn_remove.on_press(RemoveClicked);
             }
             let btn_group = Container::new(Row::new().push(btn_add).push(btn_remove)).width(Length::Fill).style(CustomContainer::Header);
             let btn_shift_group = Container::new(Column::new().spacing(10).push(btn_up).push(btn_down).push(btn_config)).height(Length::Fill).center_y();
@@ -368,7 +369,7 @@ impl KeyboardPage {
 
             // ផ្ទាំងខាងស្ដាំ
             let right_pane: Element<_> = if *is_config {
-               config_input_source_sec.view().map(move |msg| KeyboardMessage::ConfigInputSrcMsg(msg))
+               config_input_source_sec.view().map(move |msg| ConfigInputSrcMsg(msg))
             } else if !(*is_adding) {
                let keyboard_image_con = match input_sources_selected {
                   Some(idx) => match idx {
@@ -390,15 +391,15 @@ impl KeyboardPage {
                };
    
                Container::new(
-                  Scrollable::new(right_pane_scroll).push(keyboard_image_con)
+                  Scrollable::new(right_pane_scroll).scroller_width(4).scrollbar_width(4).push(keyboard_image_con)
                ).width(Length::FillPortion(6)).height(Length::Fill).style(CustomContainer::ForegroundWhite).into()
             } else {
-               add_input_source_sec.view().map(move |msg| KeyboardMessage::AddInputSrcMsg(msg))
+               add_input_source_sec.view().map(move |msg| AddInputSrcMsg(msg))
             };
 
             // ផ្នែកខាងក្រោម
-            let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", KeyboardMessage::ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
-            let chb_auto_switch = Checkbox::new(*auto_switch, "Automatically switch to a document's input source", KeyboardMessage::AutoSwitchToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_show_input_menu = Checkbox::new(*show_input_menu, "Show Input menu in menu bar", ShowInputMenuToggled).spacing(10).style(CustomCheckbox::Default);
+            let chb_auto_switch = Checkbox::new(*auto_switch, "Automatically switch to a document's input source", AutoSwitchToggled).spacing(10).style(CustomCheckbox::Default);
             let bottom_right_col = Column::new().spacing(10)
                .push(chb_show_input_menu)
                .push(chb_auto_switch);
@@ -457,14 +458,14 @@ impl KeyboardPage {
             let lb_act_inp_src = Text::new("Activate Input Source:");
             let lb_deact_inp_src = Text::new("Deactivate Input Source:");
             let ls_hotkeys: Vec<String> = GlobalOptions::hotkey_opts.iter().map(ToString::to_string).collect();
-            let select_toggle_inp_src = PickList::new(toggle_inp_src_state, ls_hotkeys.clone(), toggle_inp_src_val.clone(), KeyboardMessage::ToggleInpSrcChanged).style(CustomSelect::Primary);
-            let chb_show_press_toggle_key_repeat = Checkbox::new(*show_press_toggle_repeat, "", KeyboardMessage::ShowPressToggleKey).spacing(10).style(CustomCheckbox::Default);
-            let select_temp_switch_inp_src = PickList::new(temp_switch_first_n_cur_inp_src_state, ls_hotkeys.clone(), temp_switch_first_n_cur_inp_src_val.clone(), KeyboardMessage::TempSwitchInpSrcChanged).style(CustomSelect::Primary);
-            let select_swich_inp_src_fw = PickList::new(switch_inp_src_fw_state, ls_hotkeys.clone(), switch_inp_src_fw_val.clone(), KeyboardMessage::SwitchInpSrcFWChanged).style(CustomSelect::Primary);
-            let select_switch_inp_src_bw = PickList::new(switch_inp_src_bw_state, ls_hotkeys.clone(), switch_inp_src_bw_val.clone(), KeyboardMessage::SwitchInpSrcBWChanged).style(CustomSelect::Primary);
-            let chb_skip_fst_inp_while_switch = Checkbox::new(*skip_first_inp_src_switch, "", KeyboardMessage::Skip1InpSrc).spacing(10).style(CustomCheckbox::Default);
-            let select_act_inp_src = PickList::new(act_inp_src_state, ls_hotkeys.clone(), act_inp_src_val.clone(), KeyboardMessage::ActInpSrcChanged).style(CustomSelect::Primary);
-            let select_deact_inp_src = PickList::new(deact_inp_src_state, ls_hotkeys.clone(), deact_inp_src_val.clone(), KeyboardMessage::DeactInpSrcChanged).style(CustomSelect::Primary);
+            let select_toggle_inp_src = PickList::new(toggle_inp_src_state, ls_hotkeys.clone(), toggle_inp_src_val.clone(), ToggleInpSrcChanged).style(CustomSelect::Primary);
+            let chb_show_press_toggle_key_repeat = Checkbox::new(*show_press_toggle_repeat, "", ShowPressToggleKey).spacing(10).style(CustomCheckbox::Default);
+            let select_temp_switch_inp_src = PickList::new(temp_switch_first_n_cur_inp_src_state, ls_hotkeys.clone(), temp_switch_first_n_cur_inp_src_val.clone(), TempSwitchInpSrcChanged).style(CustomSelect::Primary);
+            let select_swich_inp_src_fw = PickList::new(switch_inp_src_fw_state, ls_hotkeys.clone(), switch_inp_src_fw_val.clone(), SwitchInpSrcFWChanged).style(CustomSelect::Primary);
+            let select_switch_inp_src_bw = PickList::new(switch_inp_src_bw_state, ls_hotkeys.clone(), switch_inp_src_bw_val.clone(), SwitchInpSrcBWChanged).style(CustomSelect::Primary);
+            let chb_skip_fst_inp_while_switch = Checkbox::new(*skip_first_inp_src_switch, "", Skip1InpSrc).spacing(10).style(CustomCheckbox::Default);
+            let select_act_inp_src = PickList::new(act_inp_src_state, ls_hotkeys.clone(), act_inp_src_val.clone(), ActInpSrcChanged).style(CustomSelect::Primary);
+            let select_deact_inp_src = PickList::new(deact_inp_src_state, ls_hotkeys.clone(), deact_inp_src_val.clone(), DeactInpSrcChanged).style(CustomSelect::Primary);
             let hotkey_sec = Row::new().spacing(10)
                .push(
                   Column::new().spacing(15).align_items(Align::End)
@@ -497,10 +498,10 @@ impl KeyboardPage {
             let lb_switch_show_inp_src_info = Text::new("Show Input Source info when switch:");
             let lb_change_focus_show_inp_src_info = Text::new("Show Input Source info when changing focus:");
             let ls_share_inp_state: Vec<String> = GlobalOptions::share_inp_state_opt.iter().map(ToString::to_string).collect();
-            let chb_act_by_def = Checkbox::new(*act_by_def, "", KeyboardMessage::ActiveByDef).spacing(10).style(CustomCheckbox::Default);
-            let select_share_inp_state = PickList::new(share_inp_state, ls_share_inp_state.clone(), share_inp_state_val.clone(), KeyboardMessage::ShareInpStateChanged).style(CustomSelect::Primary);
-            let chb_switch_show_inp_src_info = Checkbox::new(*switch_show_inp_src_info, "", KeyboardMessage::SwitchShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
-            let chb_change_focus_show_inp_src_info = Checkbox::new(*change_focus_show_inp_src_info, "", KeyboardMessage::ChangeFocusShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
+            let chb_act_by_def = Checkbox::new(*act_by_def, "", ActiveByDef).spacing(10).style(CustomCheckbox::Default);
+            let select_share_inp_state = PickList::new(share_inp_state, ls_share_inp_state.clone(), share_inp_state_val.clone(), ShareInpStateChanged).style(CustomSelect::Primary);
+            let chb_switch_show_inp_src_info = Checkbox::new(*switch_show_inp_src_info, "", SwitchShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
+            let chb_change_focus_show_inp_src_info = Checkbox::new(*change_focus_show_inp_src_info, "", ChangeFocusShowInpSrcInfo).spacing(10).style(CustomCheckbox::Default);
             let behavior_sec = Row::new().spacing(10)
                .push(
                   Column::new().spacing(15).align_items(Align::End)
@@ -529,12 +530,12 @@ impl KeyboardPage {
       };
 
       // ផ្នែកខាងក្រោម
-      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(KeyboardMessage::DefaultsClicked).style(CustomButton::Default);
+      let btn_defaults = icon_btn(btn_defaults_state, '\u{f2ea}', "Defaults", None).on_press(DefaultsClicked).style(CustomButton::Default);
       let mut btn_reset = icon_btn(btn_reset_state, '\u{f00d}', "Reset", None).style(CustomButton::Hovered);
       let mut btn_ok = icon_btn(btn_ok_state, '\u{f00c}', "OK", None).style(CustomButton::Primary);
       if *is_changed {
-         btn_ok = btn_ok.on_press(KeyboardMessage::OKClicked);
-         btn_reset = btn_reset.on_press(KeyboardMessage::ResetClicked);
+         btn_ok = btn_ok.on_press(OKClicked);
+         btn_reset = btn_reset.on_press(ResetClicked);
       }
 
       let bottom_sec = Container::new(

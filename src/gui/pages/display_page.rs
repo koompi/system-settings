@@ -340,7 +340,7 @@ impl DisplayPage {
             // ផ្ទាំងខាងឆ្វេង
             let lb_display_profile = Text::new("Display profile:");
             let profile_pane = display_profiles.iter_mut().enumerate().fold(
-               Scrollable::new(scroll).spacing(4),
+               Scrollable::new(scroll).spacing(4).scroller_width(4).scrollbar_width(4),
                |scrollable, (idx, (name, state))| {
                   let mut profile = Button::new(state, Text::new(name.to_string()))
                      .width(Length::Fill)

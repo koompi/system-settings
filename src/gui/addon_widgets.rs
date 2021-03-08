@@ -1,6 +1,6 @@
-use iced::{Button, button, Row, Text, Align, Container, Length};
-use iced_custom_widget::Icon;
 use crate::gui::styles::{CustomButton, CustomContainer};
+use iced::{button, Align, Button, Container, Length, Row, Text};
+use iced_custom_widget::Icon;
 
 pub fn icon_btn<'a, M: 'a + Clone>(state: &'a mut button::State, icon: char, text: &str, size: Option<u16>) -> Button<'a, M> {
    let mut ico = Icon::new(icon);

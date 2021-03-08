@@ -1,15 +1,13 @@
-use iced::{
-   text_input, TextInput, Text, button, Container, Length, Column, Row, Align, Space, Element,
-};
-use crate::gui::styles::{CustomTextInput, CustomButton};
 use crate::gui::addon_widgets::icon_btn;
+use crate::gui::styles::{CustomButton, CustomTextInput};
+use iced::{button, text_input, Align, Column, Container, Element, Length, Row, Space, Text, TextInput};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct AddGroupPage {
-   pub fullname_state: text_input::State,
-   pub fullname_val: String,
-   pub btn_create_state: button::State,
-   pub btn_cancel_state: button::State,
+   fullname_state: text_input::State,
+   fullname_val: String,
+   btn_create_state: button::State,
+   btn_cancel_state: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -35,7 +33,10 @@ impl AddGroupPage {
    pub fn view(&mut self) -> Element<AddGroupMsg> {
       use AddGroupMsg::*;
       let Self {
-         fullname_state, fullname_val, btn_create_state, btn_cancel_state,
+         fullname_state,
+         fullname_val,
+         btn_create_state,
+         btn_cancel_state,
       } = self;
 
       let lb_grp_name = Text::new("Group name:");
@@ -49,18 +50,9 @@ impl AddGroupPage {
 
       Container::new(
          Column::new().width(Length::Fill).spacing(10)
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(lb_grp_name)
-            .push(txt_grp_name)
-         )
+         .push(Row::new().spacing(10).align_items(Align::Center).push(lb_grp_name).push(txt_grp_name))
          .push(Space::with_height(Length::Fill))
-         .push(
-            Row::new().spacing(10).align_items(Align::Center)
-            .push(Space::with_width(Length::Fill))
-            .push(btn_cancel)
-            .push(btn_create)
-         )
-      ).width(Length::FillPortion(7)).height(Length::Fill).into()
+         .push(Row::new().spacing(10).align_items(Align::Center).push(Space::with_width(Length::Fill)).push(btn_cancel).push(btn_create)),
+      ).width(Length::Fill).height(Length::Fill).padding(10).into()
    }
 }
