@@ -2,7 +2,9 @@ const LABEL_WIDTH: u16 = 250;
 const ROW_WIDTH: u16 = 500;
 use super::super::styles::{CustomButton, CustomCheckbox, CustomContainer, CustomRadio, CustomSelect};
 use crate::helpers::ROOT_PATH;
+
 use iced::{button, pick_list, text_input, Align, Button, Checkbox, Column, Container, Element, HorizontalAlignment, Length, PickList, Radio, Row, Rule, Space, Svg, Text, TextInput};
+use crate::select_display;
 use vedas_core::macros::select;
 
 #[derive(Debug, Clone)]
@@ -36,7 +38,7 @@ pub struct NotifyPage {
     priority1: bool,
     priority2: bool,
     appprogress1: bool,
-    appprogress2: bool,
+    appprogress2: bool, 
     appprogress3: bool,
     notifybadges: bool,
     hide_time: text_input::State,
