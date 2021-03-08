@@ -1,8 +1,8 @@
 // use super::super::super::styles::{CustomButton, CustomContainer, CustomRadio, CustomSelect};
-use iced::{Align, Button, Checkbox, Column, Command, Container, Element, Length, PickList, Radio, Row, Rule, Scrollable, Space, Svg, Text, button, pick_list, scrollable, slider,Slider, TextInput,text_input};
+use iced::{Align, Column, Container, Element, Length,  Row, Rule, Scrollable, Text, scrollable};
 use iced_custom_widget as icw;
 use icw::components::Tab;
-use icw::components::Icon;
+use icw::components::{Icon, Icons};
 use crate::gui::styles::containers::ContainerStyle;
 // use serde::de::value;
 use super::theme_page::{Theme, ThemeMsg};
@@ -84,7 +84,7 @@ impl General {
                     Choice::A,
                     Some(self.choice),
                     GeneralMessage::TabSelect,
-                    tab_content('\u{f53f}', "General"),
+                    tab_content(Icons::Palette, "General"),
                 )
                 .width(Length::Fill)
                 .height(Length::Units(50)),
@@ -94,7 +94,7 @@ impl General {
                     Choice::B,
                     Some(self.choice),
                     GeneralMessage::TabSelect,
-                    tab_content('\u{f86d}', "Icon"),
+                    tab_content(Icons::Icons, "Icon"),
                 )
                 .width(Length::Fill)
                 .height(Length::Units(50)),
@@ -104,7 +104,7 @@ impl General {
                     Choice::C,
                     Some(self.choice),
                     GeneralMessage::TabSelect,
-                    tab_content('\u{f245}', "Cursor"),
+                    tab_content(Icons::MousePointer, "Cursor"),
                 )
                 .width(Length::Fill)
                 .height(Length::Units(50)),
@@ -114,7 +114,7 @@ impl General {
                     Choice::D,
                     Some(self.choice),
                     GeneralMessage::TabSelect,
-                    tab_content('\u{f031}', "Font"),
+                    tab_content(Icons::Font, "Font"),
                 )
                 .width(Length::Fill)
                 .height(Length::Units(50)),
@@ -166,9 +166,9 @@ impl General {
     }
 }
     
-fn tab_content(unicode: char, name: &str) -> Row<'static, GeneralMessage> {
+fn tab_content(icon: Icons, name: &str) -> Row<'static, GeneralMessage> {
     Row::new()
-        .push(Icon::new(unicode).size(24))
+        .push(Icon::new(icon).size(24))
         .push(Text::new(name).size(16))
         .align_items(Align::Center)
         .spacing(8)
