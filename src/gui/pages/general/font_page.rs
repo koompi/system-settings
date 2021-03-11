@@ -1,5 +1,12 @@
 use iced::{Text, text_input, Column, PickList, Slider,slider, pick_list, Element, Align, Length, Container,HorizontalAlignment, Row};
 use super::super::super::styles::{CustomSelect};
+use std::default;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{prelude::*, Error, Result};
+use toml::{from_str, to_string_pretty};
+use std::fs;
+const HOME: &'static str = env!("HOME");
 #[macro_export]
 macro_rules! select_display {
     ($name:ident, $($key:path => $value:expr),+ ) => {
@@ -19,11 +26,13 @@ pub struct FontStyle{
     selected_font: FontList,
     font: pick_list::State<FontList>,
     search: text_input::State,
+    
 }
 #[derive(Debug,Clone, Copy)]
 pub enum FontMsg{
-    SliderChange(f32),
+    SliderChange(f32),  
     FontChanged(FontList),
+    // FontInfo(FontInfo),
 
 }
 impl FontStyle{
@@ -39,11 +48,17 @@ impl FontStyle{
     }
     pub fn update(&mut self, msg: FontMsg){
         match msg{
-            FontMsg::SliderChange(x) => self.value = x,   
+            FontMsg::SliderChange(x) => self.value = x,  
+            // FontMsg::FontInfo(info)=>{
+            //     let font_info = to_string_pretty(&info).unwrap();
+            //     writer("font.conf",&info ).unwrap();
+            // } 
             FontMsg::FontChanged(font) => {
                 self.selected_font = font;
-            }
-            // FontMsg::FontChanged(value) => self.font_size = value,
+                create_dir();    
+                let font_conf = to_string_pretty(&font).unwrap();
+                writer("font.conf",&font ).unwrap();
+            }    
             
         }
             
@@ -104,26 +119,43 @@ impl FontStyle{
                 .text_size(18)
                 .style(CustomSelect::Default),
             );
-         
-
         let whole_content = Column::new()
-        .align_items(Align::Center)
-        .push(font_size)
-        .push(font_choice)
-        .padding(20)
-        .spacing(10);
+            .align_items(Align::Center)
+            .push(font_size)
+            .push(font_choice)
+            .padding(20)
+            .spacing(10);
         Container::new(whole_content)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
         
     }
 }
-#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq)]
+// #[derive(Debug, Default, Deserialize, Serialize)]
+// pub struct Font{
+//         fontlist:FontList,
+//         fontinfo:FontInfo,
+// }
+
+// #[derive(Debug, Deserialize, Serialize)]
+// pub struct FontInfo{
+//     name:String,
+//     desc:String,
+// }
+// impl Default for FontInfo{
+//     fn default() -> Self {
+//         Self {
+//             name: String::from("KOOMPI"),
+//             desc: String::from("Theme for KOOMPI OS"),
+//         }
+//     }
+// }
+#[derive(Debug, Copy, Clone, Eq, PartialOrd, PartialEq,Serialize, Deserialize)]
 pub enum FontList {
     Monospace,
     Arial,
-    Serif,  
+    Serif, 
 }
 impl FontList {
     const ALL: [FontList; 3] = [
@@ -141,4 +173,23 @@ impl Default for FontList {
     fn default() -> Self {
         FontList::Monospace
     }
+}
+pub fn reader(name: &str) -> Result<String> {
+    let path = std::path::Path::new(format!("{}/.config/koompi/font", HOME).as_str()).join(name);
+
+    std::fs::read_to_string(path)  
+}
+pub fn writer(name: &str, data: &FontList) -> Result<()> {
+    
+    let path = std::path::Path::new(format!("{}/.config/koompi/font", HOME).as_str()).join(name);
+   
+    let mut file = File::create(path).unwrap();
+    match file.write_all(to_string_pretty(data).unwrap().as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+        } 
+}
+pub fn create_dir() -> std::io::Result<()>{
+    fs::create_dir_all(format!("{}/.config/koompi/font",HOME))?;
+    Ok(())
 }
