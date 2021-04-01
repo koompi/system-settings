@@ -1,5 +1,5 @@
 # System Settings
-[![License](https://img.shields.io/crates/l/iced.svg)](https://github.com/koompi/system-settings/blob/main/LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 > System settings are used as part of the desktop environment (KOOMPI Desktop). it is designed to be simple and user-friendly.
 
 ## Screenshots
